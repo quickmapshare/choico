@@ -8,8 +8,24 @@
 const MODEL = "claude-haiku-5-5";
 const DRY = process.argv.includes("--dry-run");
 
+// Đọc .env ở thư mục gốc dự án nếu biến chưa có. Tự đọc thay vì dùng --env-file,
+// vì --env-file cắt giá trị tại dấu # (mật khẩu có thể chứa #).
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+const fileEnv = join(dirname(fileURLToPath(import.meta.url)), "..", ".env");
+if (existsSync(fileEnv)) {
+  for (const dong of readFileSync(fileEnv, "utf8").split(/\r?\n/)) {
+    const i = dong.indexOf("=");
+    if (i < 1 || dong.trim().startsWith("#")) continue;
+    const k = dong.slice(0, i).trim();
+    if (process.env[k] === undefined) process.env[k] = dong.slice(i + 1).trim().replace(/^(['"])(.*)\1$/, "$2");
+  }
+}
+
+// Cắt khoảng trắng và \r cuối (file .env trên Windows có CRLF).
 const env = (k) => {
-  const v = process.env[k];
+  const v = (process.env[k] ?? "").trim();
   if (!v) throw new Error(`Thiếu biến môi trường ${k}`);
   return v;
 };
@@ -65,7 +81,9 @@ async function danhGia(ban) {
     body: JSON.stringify({ model: MODEL, max_tokens: 300, messages: [{ role: "user", content: noiDung }] }),
   });
   if (!r.ok) throw new Error(`Claude API lỗi: ${r.status} ${await r.text()}`);
-  const text = (await r.json()).content.find((c) => c.type === "text")?.text ?? "";
+  const phanHoi = await r.json();
+  const text = phanHoi.content.find((c) => c.type === "text")?.text ?? "";
+  if (!text) throw new Error(`Phản hồi AI không có text (stop=${phanHoi.stop_reason}, khối=${phanHoi.content.map((c) => c.type).join(",")})`);
   const khop = text.match(/\{[\s\S]*\}/);
   if (!khop) throw new Error(`Phản hồi AI không phải JSON: ${text.slice(0, 300)}`);
   const json = JSON.parse(khop[0]);
