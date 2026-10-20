@@ -14,12 +14,20 @@ const duLieu = chos.map((c) => ({
 }));
 const tien = lang === "en" ? "/en" : "";
 ---
-<section class="the" aria-live="polite" data-lang={lang} data-tien={tien}>
+<section class="the widget-hom-nay" aria-live="polite" data-lang={lang} data-tien={tien}>
   <h2>{t(lang, "widgetTieuDe")}</h2>
   <p id="widget-tong" class="phu">{t(lang, "widgetDangTinh")}</p>
   <ul id="widget-ds"></ul>
   <script id="widget-du-lieu" type="application/json" set:html={JSON.stringify(duLieu)}></script>
 </section>
+
+<style>
+  /* Nền xanh rất nhạt, pha với màu thẻ nên tự đổi theo chế độ sáng/tối */
+  .widget-hom-nay {
+    background: color-mix(in srgb, var(--xanh) 7%, var(--mat));
+    border-color: color-mix(in srgb, var(--xanh) 22%, var(--vien));
+  }
+</style>
 
 <script>
   import { coPhienHomNay, ngayHienTai } from "../lib/lich-phien.js";
