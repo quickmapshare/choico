@@ -18,18 +18,26 @@ const ma = [
   `</script>`,
 ].join("\n");
 ---
-<details class="ma-nhung-khung" open>
-  <summary>{t(lang, "nhungTieuDe")}</summary>
+<section class="the ma-nhung-khung">
+  <h3>{t(lang, "nhungTieuDe")}</h3>
   <p class="phu">{t(lang, "nhungMoTa")}</p>
   <textarea readonly rows="9" class="ma-nhung-o">{ma}</textarea>
-  <p><button type="button" class="ma-nhung-nut" data-nhan-chep={t(lang, "nhungSaoChep")} data-nhan-da-chep={t(lang, "nhungDaChep")} data-nhan-chon-tay={t(lang, "nhungChonTay")}>{t(lang, "nhungSaoChep")}</button></p>
-</details>
+  <div class="ma-nhung-hang">
+    <a class="ma-nhung-xem" href={src.href} target="_blank" rel="noopener">{t(lang, "nhungXemTruoc")} ↗</a>
+    <button type="button" class="ma-nhung-nut" data-nhan-chep={t(lang, "nhungSaoChep")} data-nhan-da-chep={t(lang, "nhungDaChep")} data-nhan-chon-tay={t(lang, "nhungChonTay")}>{t(lang, "nhungSaoChep")}</button>
+  </div>
+</section>
 
 <style>
-  .ma-nhung-khung { margin: .75rem 0 1.25rem; }
-  .ma-nhung-khung summary { cursor: pointer; color: var(--nhan); font-weight: 600; }
+  .ma-nhung-khung { margin-top: 1rem; }
+  .ma-nhung-khung h3 { font-size: 1rem; margin: .1rem 0 .3rem; }
+  .ma-nhung-khung .phu { margin: 0 0 .6rem; font-size: .88rem; }
   .ma-nhung-o {
+    display: block;
+    box-sizing: border-box;
     width: 100%;
+    min-width: 0;
+    margin: 0;
     font: .8rem/1.5 ui-monospace, Consolas, monospace;
     background: var(--nen);
     color: var(--chu);
@@ -38,8 +46,18 @@ const ma = [
     padding: .6rem .7rem;
     resize: vertical;
   }
+  .ma-nhung-hang {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: .5rem .75rem;
+    margin-top: .6rem;
+  }
+  .ma-nhung-xem { font-size: .9rem; }
   .ma-nhung-nut {
     font: inherit;
+    font-size: .9rem;
     padding: .4rem .9rem;
     border-radius: 8px;
     border: 1px solid var(--nhan);
@@ -53,8 +71,7 @@ const ma = [
 <script>
   for (const nut of document.querySelectorAll(".ma-nhung-nut")) {
     nut.addEventListener("click", async () => {
-      const khung = nut.closest(".ma-nhung-khung");
-      const o = khung?.querySelector("textarea");
+      const o = nut.closest(".ma-nhung-khung")?.querySelector("textarea");
       if (!o) return;
       try {
         await navigator.clipboard.writeText(o.value);
