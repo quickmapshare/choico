@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { coPhienTheoQuy, coPhienHomNay, ngayHienTai, dinhDangDuong, dinhDangAm, tenNamCanChi, cacPhienTiepTheo, moTaQuy, luoiThang, nhanThangAm } from "../src/lib/lich-phien.js";
+import { coPhienTheoQuy, coPhienHomNay, ngayHienTai, dinhDangDuong, dinhDangAm, tenNamCanChi, cacPhienTiepTheo, moTaQuy, luoiThang, nhanThangAm, tenThangCanChi, leAmCua, tietKhiTrongNam, ngayDuongTuAm } from "../src/lib/lich-phien.js";
 
 const ngay = (s) => { const [y, m, d] = s.split("-").map(Number); return { y, m, d }; };
 
@@ -191,5 +191,58 @@ describe("lưới lịch tháng", () => {
     expect(ngayNhuan.am).toMatchObject({ ngay: 1, thang: 6, nhuan: true });
     expect(nhanThangAm(ngayNhuan.am)).toBe("tháng nhuận 6");
     expect(nhanThangAm(ngayNhuan.am, "en")).toBe("leap month 6");
+  });
+});
+
+describe("can chi tháng âm", () => {
+  it("tháng Giêng năm Bính Ngọ 2026 là Canh Dần", () => {
+    expect(tenThangCanChi(2026, 1)).toBe("Canh Dần");
+  });
+
+  it("tháng 12 cuối năm đi đúng thứ tự can chi", () => {
+    // Tháng Giêng Canh Dần, tháng 12 là Tân Sửu (Canh+11 = Tân, Dần+11 = Sửu)
+    expect(tenThangCanChi(2026, 12)).toBe("Tân Sửu");
+  });
+});
+
+describe("ngày lễ âm", () => {
+  it("mùng 1 Tết và Trung thu 2025 nhận đúng lễ", () => {
+    expect(leAmCua({ ngay: 1, thang: 1, nhuan: false })).toEqual(["tet"]);
+    expect(leAmCua({ ngay: 15, thang: 8, nhuan: false })).toEqual(["trungThu"]);
+  });
+
+  it("tháng nhuận không có lễ", () => {
+    expect(leAmCua({ ngay: 15, thang: 8, nhuan: true })).toEqual([]);
+  });
+});
+
+describe("tiết khí", () => {
+  it("Xuân phân 2026 rơi vào 20/03", () => {
+    const xuanPhan = tietKhiTrongNam(2026).find((tk) => tk.so === 0);
+    expect(xuanPhan.ngay).toEqual({ y: 2026, m: 3, d: 20 });
+  }); 
+
+  it("năm có đủ 24 tiết khí, mỗi tiết khí một lần", () => {
+    const ds = tietKhiTrongNam(2026);
+    expect(ds).toHaveLength(24);
+    expect(new Set(ds.map((tk) => tk.so)).size).toBe(24);
+  });
+});
+
+describe("đổi ngày âm sang dương", () => {
+  it("mùng 1 Tết Bính Ngọ 2026 là 17/02/2026", () => {
+    expect(ngayDuongTuAm({ ngay: 1, thang: 1, nam: 2026 })).toEqual({ y: 2026, m: 2, d: 17 });
+  });
+
+  it("Trung thu 2025 (15/8 âm) là 06/10/2025", () => {
+    expect(ngayDuongTuAm({ ngay: 15, thang: 8, nam: 2025 })).toEqual({ y: 2025, m: 10, d: 6 });
+  });
+
+  it("tháng nhuận 6/2025 đổi được", () => {
+    expect(ngayDuongTuAm({ ngay: 1, thang: 6, nam: 2025, nhuan: true })).toEqual({ y: 2025, m: 7, d: 25 });
+  });
+
+  it("ngày không tồn tại trả về null", () => {
+    expect(ngayDuongTuAm({ ngay: 31, thang: 2, nam: 2026 })).toBeNull();
   });
 });

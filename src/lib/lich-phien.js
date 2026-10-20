@@ -113,6 +113,78 @@ export function luoiThang(nam, thang) {
   return { soNgay, thuDau, ngay };
 }
 
+// Can chi của tháng âm. Tháng Giêng năm Giáp hoặc Kỷ là Bính Dần; các tháng sau đổi can và chi theo thứ tự.
+export function tenThangCanChi(namAm, thangAm) {
+  const canNam = ((namAm - 4) % 10 + 10) % 10;
+  const canThang1 = (canNam % 5) * 2 + 2;
+  const can = (canThang1 + thangAm - 1) % 10;
+  const chi = (thangAm + 1) % 12;
+  return `${CAN[can]} ${CHI[chi]}`;
+}
+
+// Ngày lễ âm (không tính tháng nhuận). khoa tra trong t(lang, "le").
+export const LE_AM = [
+  { thang: 1, ngay: 1, khoa: "tet" },
+  { thang: 1, ngay: 15, khoa: "nguyenTieu" },
+  { thang: 3, ngay: 3, khoa: "hanThuc" },
+  { thang: 5, ngay: 5, khoa: "doanNgo" },
+  { thang: 7, ngay: 15, khoa: "vuLan" },
+  { thang: 8, ngay: 15, khoa: "trungThu" },
+  { thang: 12, ngay: 23, khoa: "ongTao" },
+];
+
+// Các khóa lễ rơi vào ngày âm này.
+export function leAmCua(am) {
+  if (am.nhuan) return [];
+  return LE_AM.filter((le) => le.thang === am.thang && le.ngay === am.ngay).map((le) => le.khoa);
+}
+
+// Kinh độ mặt trời (độ, 0..360) tại thời điểm jdUT (Julian day, giờ UT). Công thức đơn giản, sai khoảng 0,01 độ.
+function kinhDoMatTroi(jdUT) {
+  const T = (jdUT - 2451545.0) / 36525;
+  const L0 = 280.46646 + 36000.76983 * T;
+  const M = (357.52911 + 35999.05029 * T) * Math.PI / 180;
+  const C = (1.914602 - 0.004817 * T) * Math.sin(M) + 0.019993 * Math.sin(2 * M) + 0.000289 * Math.sin(3 * M);
+  return ((L0 + C) % 360 + 360) % 360;
+}
+
+// Kinh độ mặt trời lúc 0h ngày dương này theo giờ Việt Nam.
+function kinhDoLucNuaDem(ngay) {
+  const jdUT0h = ngayThanhSo(ngay) + 2440587.5;
+  return kinhDoMatTroi(jdUT0h - 7 / 24);
+}
+
+// 24 tiết khí, theo thứ tự từ Xuân phân (kinh độ 0 độ), mỗi tiết cách nhau 15 độ.
+export const TIET_KHI_SO = 24;
+
+// Các tiết khí rơi trong năm dương: [{ ngay: {y, m, d}, so }], so là chỉ số tiết khí 0..23.
+export function tietKhiTrongNam(nam) {
+  const ketQua = [];
+  // Tiết khí nằm trong ngày có thời điểm vượt mốc, nên so nửa đêm hôm nay với nửa đêm hôm sau.
+  let ngay = { y: nam, m: 1, d: 1 };
+  let phanTruoc = Math.floor(kinhDoLucNuaDem(ngay) / 15);
+  for (;;) {
+    const sau = congNgay(ngay, 1);
+    if (sau.y !== nam) break;
+    const phan = Math.floor(kinhDoLucNuaDem(sau) / 15);
+    if (phan !== phanTruoc) ketQua.push({ ngay, so: phan });
+    phanTruoc = phan;
+    ngay = sau;
+  }
+  return ketQua;
+}
+
+// Ngày dương của một ngày âm. Trả về null nếu không tìm thấy trong năm dương nam và nam + 1.
+export function ngayDuongTuAm({ ngay, thang, nam, nhuan = false }) {
+  let d = { y: nam, m: 1, d: 1 };
+  for (let i = 0; i < 732; i++) {
+    const am = ngayAmVN(d);
+    if (am.nam === nam && am.ngay === ngay && am.thang === thang && am.nhuan === nhuan) return d;
+    d = congNgay(d, 1);
+  }
+  return null;
+}
+
 // Mô tả quy tắc để hiện trên trang chợ, ví dụ "ngày 5, ngày 10 âm lịch hằng tháng".
 export function moTaQuy(quy, lang = "vi") {
   if (quy.loai === "ngay_am") {
