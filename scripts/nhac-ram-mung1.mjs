@@ -14,6 +14,8 @@ const LINK_LICH = "https://chophien.pages.dev/am-lich/";
 const thamSo = process.argv.slice(2);
 const guiThat = thamSo.includes("--send");
 const ngayArg = thamSo.find((a) => a.startsWith("--ngay="))?.slice("--ngay=".length);
+// --thu: thêm dòng [Tin thử] để kênh biết đây là tin kiểm tra, không phải tin của ngày hôm nay
+const laTinThu = thamSo.includes("--thu");
 
 // Ngày dương cần xét: mặc định là hôm nay theo giờ Việt Nam
 function ngayCanXet() {
@@ -66,11 +68,12 @@ if (process.argv[1]?.endsWith("nhac-ram-mung1.mjs")) {
     console.log(`Hôm nay ${ngay.d}/${ngay.m}/${ngay.y} không phải mùng 1 hoặc rằm, không đăng.`);
     process.exit(0);
   }
-  console.log(text);
+  const noiDung = laTinThu ? `[Tin thử] Nội dung dưới đây dùng để kiểm tra bot, không phải tin của hôm nay.\n\n${text}` : text;
+  console.log(noiDung);
   if (!guiThat) {
     console.log("\n(Chưa gửi. Thêm --send để đăng.)");
     process.exit(0);
   }
-  await guiTelegram(text);
+  await guiTelegram(noiDung);
   console.log("\nĐã đăng lên Telegram.");
 }

@@ -10,6 +10,10 @@ on:
         description: "Chỉ kiểm tra cấu hình Telegram, không đăng tin"
         type: boolean
         default: false
+      thu_ngay:
+        description: "Đăng tin thử cho ngày dương YYYY-MM-DD (có tiền tố [Tin thử])"
+        type: string
+        default: ""
 
 jobs:
   nhac:
@@ -25,8 +29,14 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      # Tin thử: đăng tin của một ngày chỉ định, có tiền tố [Tin thử]
+      - if: ${{ inputs.thu_ngay != '' }}
+        run: node scripts/nhac-ram-mung1.mjs --send --thu --ngay=${{ inputs.thu_ngay }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       # Ngày không phải mùng 1 hoặc rằm thì script thoát, không đăng gì
-      - if: ${{ !inputs.kiem_tra }}
+      - if: ${{ !inputs.kiem_tra && inputs.thu_ngay == '' }}
         run: node scripts/nhac-ram-mung1.mjs --send
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
