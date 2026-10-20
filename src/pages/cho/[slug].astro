@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import { taiDuLieu } from "../../lib/du-lieu.js";
 import LichPhien from "../../components/LichPhien.astro";
+import GopY from "../../components/GopY.astro";
 
 export async function getStaticPaths() {
   const { cho } = await taiDuLieu();
@@ -26,6 +27,8 @@ const nguon = Array.isArray(cho.nguon) ? cho.nguon : [];
   ) : (
     <p class="canh-bao">Lịch phiên của chợ này chưa được xác minh. Vui lòng kiểm tra lại với nguồn bên dưới.</p>
   )}
+
+  <GopY loai="bao_sai" choId={cho.id} />
 
   {nguon.length > 0 && (
     <>

@@ -1,0 +1,85 @@
+---
+// Form góp ý: "bao_sai" (báo thông tin sai ở một chợ) hoặc "them_cho" (đề xuất chợ mới ở một khu vực).
+// Góp ý đi vào hàng chờ, không hiện lên web cho đến khi được duyệt.
+const { loai, choId = "", khuId = "" } = Astro.props;
+const tieuDe = loai === "bao_sai" ? "Báo thông tin sai" : "Thêm chợ";
+const idForm = `gop-y-${loai}`;
+---
+<section class="the">
+  <details>
+    <summary><strong>{tieuDe}</strong></summary>
+    <form id={idForm} data-loai={loai} data-cho={choId} data-khu={khuId} class="gop-y">
+      {loai === "them_cho" && (
+        <>
+          <label>Tên chợ <input name="ten_cho" maxlength="200" required /></label>
+          <label>Địa chỉ <input name="dia_chi" maxlength="500" /></label>
+        </>
+      )}
+      <label>{loai === "bao_sai" ? "Thông tin cần sửa" : "Lịch phiên và mô tả"}
+        <textarea name="noi_dung" minlength="10" maxlength="2000" required rows="4"></textarea>
+      </label>
+      <label>Link nguồn (nếu có) <input name="nguon_url" type="url" maxlength="500" /></label>
+      <label>Tên của bạn (không bắt buộc) <input name="nguoi_gui" maxlength="100" /></label>
+      <label>Email để chúng tôi liên hệ (không bắt buộc, không công khai) <input name="email" type="email" /></label>
+      <button type="submit">Gửi góp ý</button>
+      <p class="phu" role="status"></p>
+    </form>
+  </details>
+</section>
+
+<style>
+  .gop-y label { display: block; margin: .5rem 0; font-size: .95rem; }
+  .gop-y input, .gop-y textarea { display: block; width: 100%; box-sizing: border-box; margin-top: .25rem; padding: .4rem; font: inherit; color: inherit; background: transparent; border: 1px solid var(--vien); border-radius: .3rem; }
+  .gop-y button { margin-top: .5rem; padding: .45rem 1rem; font: inherit; border-radius: .3rem; border: 1px solid var(--vien); background: var(--nen); color: var(--chu); cursor: pointer; }
+  details summary { cursor: pointer; }
+</style>
+
+<script>
+  // Địa chỉ PocketBase công khai (chỉ cho phép tạo bản ghi trong hàng chờ, không đọc được).
+  const PB_CONG_KHAI = "https://api.botgap.dev";
+
+  for (const form of document.querySelectorAll("form.gop-y")) {
+    const trangThai = form.querySelector('[role="status"]');
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector("button");
+      const fd = new FormData(form);
+      const loai = form.dataset.loai;
+      const body = {
+        loai,
+        trang_thai: "cho_duyet",
+        noi_dung: String(fd.get("noi_dung") || "").trim(),
+        nguon_url: String(fd.get("nguon_url") || "").trim(),
+        nguoi_gui: String(fd.get("nguoi_gui") || "").trim(),
+        email: String(fd.get("email") || "").trim(),
+      };
+      if (loai === "them_cho") {
+        body.ten_cho = String(fd.get("ten_cho") || "").trim();
+        body.dia_chi = String(fd.get("dia_chi") || "").trim();
+        if (form.dataset.khu) body.khu_vuc = form.dataset.khu;
+      } else if (form.dataset.cho) {
+        body.cho = form.dataset.cho;
+      }
+      // Bỏ các trường rỗng để PocketBase không kiểm tra định dạng trên chuỗi rỗng
+      for (const k of Object.keys(body)) if (body[k] === "") delete body[k];
+
+      btn.disabled = true;
+      trangThai.textContent = "Đang gửi…";
+      try {
+        const r = await fetch(`${PB_CONG_KHAI}/api/collections/cho_phien_gop_y/records`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!r.ok) throw new Error(String(r.status));
+        form.reset();
+        trangThai.textContent = "Cảm ơn bạn. Góp ý đã được ghi nhận và sẽ được kiểm tra trước khi cập nhật.";
+      } catch (err) {
+        trangThai.textContent = "Chưa gửi được. Vui lòng thử lại sau.";
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+</script>

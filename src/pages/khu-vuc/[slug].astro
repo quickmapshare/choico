@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { taiDuLieu } from "../../lib/du-lieu.js";
+import GopY from "../../components/GopY.astro";
 
 export async function getStaticPaths() {
   const { khuVuc } = await taiDuLieu();
@@ -23,4 +24,5 @@ const dsCho = cho.filter((c) => c.khu_vuc === khu.id);
       <div class="phu">{c.trang_thai_xac_minh === "da_xac_minh" ? "Lịch phiên đã xác minh" : "Lịch phiên chưa xác minh"}</div>
     </div>
   ))}
+  <GopY loai="them_cho" khuId={khu.id} />
 </Layout>
