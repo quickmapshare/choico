@@ -1,11 +1,12 @@
 ---
-// Khung mã nhúng ngay dưới widget. loc: { tinh } hoặc { khu } (slug) để nhúng đúng phạm vi; không có thì là cả nước.
+// Khung mã nhúng ngay dưới widget. loc: { khu }, { tinh } hoặc { cho } (slug) để nhúng đúng phạm vi; không có thì là cả nước.
 import { t } from "../i18n/strings.js";
 const { loc = {}, lang = "vi" } = Astro.props;
 
 const src = new URL("/nhung/", Astro.site);
 if (loc.khu) src.searchParams.set("khu", loc.khu);
 else if (loc.tinh) src.searchParams.set("tinh", loc.tinh);
+else if (loc.cho) src.searchParams.set("cho", loc.cho);
 
 // Mã nhúng: một iframe và một đoạn script nhỏ để khung tự cao theo nội dung
 const ma = [

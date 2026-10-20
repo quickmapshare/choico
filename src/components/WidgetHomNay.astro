@@ -54,6 +54,7 @@ const tien = lang === "en" ? "/en" : "";
       const tham = new URLSearchParams(location.search);
       if (tham.get("khu")) pool = chos.filter((c) => c.khu_slug === tham.get("khu"));
       else if (tham.get("tinh")) pool = chos.filter((c) => c.tinh_slug === tham.get("tinh"));
+      else if (tham.get("cho")) pool = chos.filter((c) => c.slug === tham.get("cho"));
     }
     const coPhien = pool.filter((c) => coPhienHomNay(c, hom) === true);
     tong.textContent = coPhien.length ? t(lang, "widgetCo", coPhien.length) : t(lang, "widgetKhong");
