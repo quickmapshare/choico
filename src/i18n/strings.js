@@ -73,6 +73,8 @@ const CHU = {
     quyNgayThang: (cacNgay, thang) => `${cacNgay} tháng ${thang} âm lịch hằng năm`,
     quyNgay: (so) => `ngày ${so}`,
     quyChuKy: (n, ngay) => `mỗi ${n} ngày, tính từ ${ngay}`,
+    quyHangNgay: "hàng ngày",
+    quyHangTuan: (thu) => `mỗi tuần vào ${thu}`,
   },
   en: {
     daXacMinhNgay: (ngay) => `Verified on ${ngay}`,
@@ -140,6 +142,8 @@ const CHU = {
     quyNgayThang: (cacNgay, thang) => `${cacNgay} of lunar month ${thang} every year`,
     quyNgay: (so) => `day ${so}`,
     quyChuKy: (n, ngay) => `every ${n} days, counting from ${ngay}`,
+    quyHangNgay: "daily",
+    quyHangTuan: (thu) => `every week on ${thu}`,
   },
 };
 

@@ -110,6 +110,11 @@ export function moTaQuy(quy, lang = "vi") {
   if (quy.loai === "chu_ky") {
     const { y, m, d } = chuoiThanhNgay(quy.ngay_goc);
     const ngayGoc = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+    if (quy.chu_ky === 1) return t(lang, "quyHangNgay");
+    if (quy.chu_ky === 7) {
+      const thu = t(lang, "thu")[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+      return t(lang, "quyHangTuan", thu);
+    }
     return t(lang, "quyChuKy", quy.chu_ky, ngayGoc);
   }
   return "";

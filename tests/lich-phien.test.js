@@ -159,3 +159,14 @@ describe("ngày âm theo tháng cố định (chợ theo năm)", () => {
     expect(moTaQuy(vieng, "en")).toBe("day 7, day 8 of lunar month 1 every year");
   });
 });
+
+describe("mô tả chu kỳ dễ hiểu", () => {
+  it("chu kỳ 1 ngày là hàng ngày", () => {
+    expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-10-20", chu_ky: 1 }, "vi")).toBe("hàng ngày");
+    expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-10-20", chu_ky: 1 }, "en")).toBe("daily");
+  });
+  it("chu kỳ 7 ngày là mỗi tuần vào một thứ", () => {
+    expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-10-18", chu_ky: 7 }, "vi")).toBe("mỗi tuần vào Chủ nhật");
+    expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-10-22", chu_ky: 7 }, "en")).toBe("every week on Thursday");
+  });
+});
