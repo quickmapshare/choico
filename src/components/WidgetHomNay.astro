@@ -7,7 +7,8 @@ const { chos, lang = "vi" } = Astro.props;
 const duLieu = chos.map((c) => ({
   ten: c.ten,
   slug: c.slug,
-  dia_chi: c.dia_chi ?? "",
+  // Nơi hiển thị: "Xã/phường, Tỉnh/thành"
+  noi: [c.khu?.ten, c.khu?.tinh?.ten].filter(Boolean).join(", "),
   trang_thai_xac_minh: "da_xac_minh",
   lich_phien: c.lich ?? [],
 }));
@@ -42,11 +43,12 @@ const tien = lang === "en" ? "/en" : "";
       a.href = `${tien}/cho/${c.slug}/`;
       a.textContent = c.ten;
       li.append(a);
-      if (c.dia_chi) {
-        const span = document.createElement("span");
-        span.className = "phu";
-        span.textContent = ` — ${c.dia_chi}`;
-        li.append(span);
+      // Dòng dưới: xã/phường, tỉnh/thành (nếu có)
+      if (c.noi) {
+        const dong = document.createElement("div");
+        dong.className = "phu";
+        dong.textContent = c.noi;
+        li.append(dong);
       }
       ds.append(li);
     }
