@@ -1,6 +1,7 @@
 ---
 // Khung chung cho mọi trang. lang: "vi" hoặc "en".
 import NgayHomNay from "../components/NgayHomNay.astro";
+import CoNgonNgu from "../components/CoNgonNgu.astro";
 import { t, duongDan } from "../i18n/strings.js";
 const { tieuDe, moTa, lang = "vi" } = Astro.props;
 // Đường dẫn cùng trang ở ngôn ngữ còn lại: /tinh/x/ <-> /en/tinh/x/
@@ -32,15 +33,13 @@ const khac = lang === "en" ? "vi" : "en";
       .phu { color: var(--phu); font-size: .95rem; }
       .the { border: 1px solid var(--vien); border-radius: .5rem; padding: .75rem 1rem; margin: .5rem 0; }
       .canh-bao { border-left: 4px solid #c0392b; padding-left: .75rem; }
-      .chuyen-ngu { float: right; font-size: .9rem; }
+      .chuyen-ngu-khung { float: right; }
       ul { padding-left: 1.2rem; }
     </style>
   </head>
   <body>
     <main>
-      <div class="chuyen-ngu">
-        <a href={duongKhac} hreflang={khac} lang={khac}>{t(lang, khac === "en" ? "trangTiengAnh" : "xemBanTiengViet")}</a>
-      </div>
+      <div class="chuyen-ngu-khung"><CoNgonNgu lang={lang} href={duongKhac} /></div>
       <NgayHomNay lang={lang} />
       <slot />
     </main>
