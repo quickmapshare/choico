@@ -1,0 +1,42 @@
+---
+import Layout from "../layouts/Layout.astro";
+import LichPhien from "../components/LichPhien.astro";
+import GopY from "../components/GopY.astro";
+import { t, duongDan } from "../i18n/strings.js";
+const { lang, cho, linkMap } = Astro.props;
+const daXacMinh = cho.trang_thai_xac_minh === "da_xac_minh";
+const nguon = Array.isArray(cho.nguon) ? cho.nguon : [];
+---
+<Layout lang={lang} tieuDe={t(lang, "tieuDeCho", cho.ten)} moTa={t(lang, "moTaCho", cho.ten, cho.khu?.ten)}>
+  <p>
+    {cho.khu?.tinh && <><a href={duongDan(lang, `/tinh/${cho.khu.tinh.slug}/`)}>{cho.khu.tinh.ten}</a> › </>}
+    {cho.khu && <><a href={duongDan(lang, `/khu-vuc/${cho.khu.slug}/`)}>{cho.khu.ten}</a> › </>}
+    <a href={duongDan(lang, "/")}>{t(lang, "trangChu")}</a>
+  </p>
+  <h1>{t(lang, "tenChoHeading", cho.ten)}</h1>
+  {cho.dia_chi && <p>{t(lang, "diaChiLabel")}: {cho.dia_chi}</p>}
+  {cho.loai_hang && <p class="phu">{t(lang, "hangNoiBat")}: {cho.loai_hang}</p>}
+  {cho.mo_ta && <p>{cho.mo_ta}</p>}
+  <p><a href={linkMap} target="_blank" rel="noopener">{t(lang, "xemMap")}</a></p>
+
+  <h2>{t(lang, "lichPhien")}</h2>
+  {daXacMinh ? (
+    <>
+      <p class="phu">{cho.xac_minh_ngay ? t(lang, "daXacMinhNgay", cho.xac_minh_ngay.slice(0, 10)) : t(lang, "daXacMinh")}</p>
+      <LichPhien lich={cho.lich} lang={lang} />
+    </>
+  ) : (
+    <p class="canh-bao">{t(lang, "canhBaoChuaXacMinh")}</p>
+  )}
+
+  <GopY loai="bao_sai" choId={cho.id} lang={lang} />
+
+  {nguon.length > 0 && (
+    <>
+      <h2>{t(lang, "nguon")}</h2>
+      <ul>
+        {nguon.map((n) => <li>{n.url ? <a href={n.url} rel="nofollow noopener">{n.ten ?? n.url}</a> : n.ten}</li>)}
+      </ul>
+    </>
+  )}
+</Layout>

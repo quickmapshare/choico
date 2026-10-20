@@ -5,6 +5,10 @@ const CHU = {
   vi: {
     tenTrang: "Chợ phiên Việt Nam",
     trangChu: "Trang chủ",
+    daXacMinhNgay: (ngay) => `Đã xác minh ngày ${ngay}`,
+    tenChoHeading: (ten) => `Chợ ${ten}`,
+    diaChiLabel: "Địa chỉ",
+    chonCho: "Chọn chợ",
     tieuDeChu: "Chợ phiên Việt Nam: chợ nào có phiên hôm nay",
     moTaChu: "Chợ nào có phiên hôm nay và lịch phiên của từng chợ ở Việt Nam.",
     ghiChuChu: "Lịch phiên chỉ hiển thị khi đã xác minh. Thông tin còn lại có ghi nguồn.",
@@ -63,6 +67,10 @@ const CHU = {
     quyChuKy: (n, ngay) => `mỗi ${n} ngày, tính từ ${ngay}`,
   },
   en: {
+    daXacMinhNgay: (ngay) => `Verified on ${ngay}`,
+    tenChoHeading: (ten) => `${ten} market`,
+    diaChiLabel: "Address",
+    chonCho: "Choose a market",
     tenTrang: "Vietnam Traditional Markets",
     trangChu: "Home",
     tieuDeChu: "Vietnam Traditional Markets: which market holds a session today",

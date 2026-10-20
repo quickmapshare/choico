@@ -1,5 +1,5 @@
 ---
-import Layout from "../../layouts/Layout.astro";
+import TrangTinh from "../../views/TrangTinh.astro";
 import { taiDuLieu } from "../../lib/du-lieu.js";
 
 export async function getStaticPaths() {
@@ -11,12 +11,4 @@ const { tinh } = Astro.props;
 const { khuVuc } = await taiDuLieu();
 const phuong = khuVuc.filter((k) => k.cap === "xa_phuong" && k.cha === tinh.id);
 ---
-<Layout tieuDe={`Chợ phiên ${tinh.ten}`} moTa={`Các xã, phường có chợ phiên ở ${tinh.ten}.`}>
-  <p><a href="/">← Trang chủ</a></p>
-  <h1>Chợ phiên {tinh.ten}</h1>
-  {tinh.ghi_chu && <p class="phu">{tinh.ghi_chu}</p>}
-  {phuong.length === 0 && <p class="phu">Chưa có xã, phường nào ở đây.</p>}
-  <ul>
-    {phuong.map((k) => <li><a href={`/khu-vuc/${k.slug}/`}>{k.ten}</a></li>)}
-  </ul>
-</Layout>
+<TrangTinh lang="vi" tinh={tinh} phuong={phuong} />

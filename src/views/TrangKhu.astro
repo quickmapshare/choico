@@ -1,0 +1,23 @@
+---
+import Layout from "../layouts/Layout.astro";
+import GopY from "../components/GopY.astro";
+import { t, duongDan } from "../i18n/strings.js";
+const { lang, khu, dsCho } = Astro.props;
+---
+<Layout lang={lang} tieuDe={t(lang, "tieuDeKhu", khu.ten)} moTa={t(lang, "moTaKhu", khu.ten, khu.tinh?.ten)}>
+  <p>
+    {khu.tinh && <><a href={duongDan(lang, `/tinh/${khu.tinh.slug}/`)}>{khu.tinh.ten}</a> › </>}
+    <a href={duongDan(lang, "/")}>{t(lang, "trangChu")}</a>
+  </p>
+  <h1>{t(lang, "tieuDeKhu", khu.ten)}</h1>
+  {khu.ghi_chu && <p class="phu">{khu.ghi_chu}</p>}
+  {dsCho.length === 0 && <p class="phu">{t(lang, "chuaCoCho")}</p>}
+  {dsCho.map((c) => (
+    <div class="the">
+      <a href={duongDan(lang, `/cho/${c.slug}/`)}><strong>{t(lang, "tenChoHeading", c.ten)}</strong></a>
+      {c.dia_chi && <div class="phu">{c.dia_chi}</div>}
+      <div class="phu">{c.trang_thai_xac_minh === "da_xac_minh" ? t(lang, "lichDaXacMinh") : t(lang, "lichChuaXacMinh")}</div>
+    </div>
+  ))}
+  <GopY loai="them_cho" khuId={khu.id} lang={lang} />
+</Layout>

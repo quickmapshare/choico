@@ -1,8 +1,11 @@
 ---
-// Khung chung cho mọi trang. lang: "vi" hoặc "en". duongKhac: đường dẫn cùng trang ở ngôn ngữ còn lại.
+// Khung chung cho mọi trang. lang: "vi" hoặc "en".
 import NgayHomNay from "../components/NgayHomNay.astro";
 import { t, duongDan } from "../i18n/strings.js";
-const { tieuDe, moTa, lang = "vi", duongKhac = "/" } = Astro.props;
+const { tieuDe, moTa, lang = "vi" } = Astro.props;
+// Đường dẫn cùng trang ở ngôn ngữ còn lại: /tinh/x/ <-> /en/tinh/x/
+const duongHienTai = Astro.url.pathname;
+const duongKhac = lang === "en" ? (duongHienTai.replace(/^\/en/, "") || "/") : ("/en" + duongHienTai);
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 const khac = lang === "en" ? "vi" : "en";
 ---
