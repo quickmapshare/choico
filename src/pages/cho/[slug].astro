@@ -13,7 +13,8 @@ const { cho } = Astro.props;
 const daXacMinh = cho.trang_thai_xac_minh === "da_xac_minh";
 const nguon = Array.isArray(cho.nguon) ? cho.nguon : [];
 // Link mở Google Maps: ưu tiên tọa độ, không có thì tìm theo tên và địa chỉ
-const mapQuery = cho.lat != null && cho.lng != null ? `${cho.lat},${cho.lng}` : encodeURIComponent([`Chợ ${cho.ten}`, cho.dia_chi, cho.khu?.ten].filter(Boolean).join(", "));
+const coToaDo = Boolean(cho.lat) && Boolean(cho.lng); // PocketBase trả 0 khi chưa nhập
+const mapQuery = coToaDo ? `${cho.lat},${cho.lng}` : encodeURIComponent([`Chợ ${cho.ten}`, cho.dia_chi, cho.khu?.ten].filter(Boolean).join(", "));
 const linkMap = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
 ---
 <Layout tieuDe={`Chợ ${cho.ten} – lịch phiên`} moTa={`${cho.ten}${cho.khu ? ", " + cho.khu.ten : ""}: địa chỉ và lịch phiên.`}>
