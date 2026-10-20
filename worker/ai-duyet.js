@@ -97,15 +97,5 @@ export default {
     ctx.waitUntil(
       soDuyet(env).then((kq) => console.log(`AI sơ duyệt ${kq.length} góp ý`, JSON.stringify(kq))),
     );
-  },
-  // Chạy thủ công để kiểm tra: GET /?dry=1 trả về kết quả mà không ghi
-  async fetch(req, env) {
-    const url = new URL(req.url);
-    if (url.searchParams.get("dry") === "1") env = { ...env, DRY_RUN: "1" };
-    try {
-      return Response.json(await soDuyet(env));
-    } catch (err) {
-      return Response.json({ loi: err.message }, { status: 500 });
-    }
-  },
+  }
 };
