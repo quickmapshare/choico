@@ -4,6 +4,8 @@
 import Layout from "../layouts/Layout.astro";
 import { t, duongDan } from "../i18n/strings.js";
 import GopY from "../components/GopY.astro";
+// Kênh Telegram nhắc rằm và mùng 1 (kênh riêng tư, dùng link mời)
+const LINK_TELEGRAM = "https://t.me/+c0iPYu4BQd83YTU1";
 const { lang, cho = [] } = Astro.props;
 ---
 <Layout lang={lang} tieuDe={t(lang, "tieuDeAmLich")} moTa={t(lang, "moTaAmLich")}>
@@ -13,6 +15,7 @@ const { lang, cho = [] } = Astro.props;
     <GopY loai="them_cho" lang={lang} />
   </div>
   <p class="phu">{t(lang, "moTaAmLich")}</p>
+  <p><a class="nut-telegram" href={LINK_TELEGRAM} target="_blank" rel="noopener">{t(lang, "telegramNhacRam")}</a></p>
 
   <noscript><p class="canh-bao">{t(lang, "amLichCanJs")}</p></noscript>
   <section class="am-lich" id="am-lich" data-lang={lang} hidden>
@@ -273,6 +276,16 @@ const { lang, cho = [] } = Astro.props;
   .am-lich-ds p { margin: 0 0 .2rem; font-weight: 600; font-size: .95rem; }
   .am-lich-ds ul { margin: 0; font-size: .92rem; }
   .am-lich .vet { margin-top: 1rem; }
+  .nut-telegram {
+    display: inline-block;
+    padding: .5rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--nhan);
+    color: var(--nhan);
+    font-weight: 600;
+    font-size: .95rem;
+  }
+  .nut-telegram:hover { background: var(--nhan-nhe); text-decoration: none; }
   .am-lich-doi-tieu-de { margin-top: 2.2rem; }
   .am-lich-doi-luoi { display: grid; gap: .9rem; }
   @media (min-width: 40rem) { .am-lich-doi-luoi { grid-template-columns: 1fr 1fr; } }
