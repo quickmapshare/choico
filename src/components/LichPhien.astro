@@ -1,0 +1,42 @@
+---
+// Lịch phiên của một chợ đã xác minh: mô tả quy tắc và 3 phiên tiếp theo tính theo ngày hiện tại.
+// Chỉ dùng khi chợ đã xác minh (trang chợ đã lọc trước).
+const { lich } = Astro.props;
+const mota = lich.map((q) => ({ loai: q.loai, ngay: q.ngay, thang_nhuan: q.thang_nhuan, ngay_goc: q.ngay_goc, chu_ky: q.chu_ky }));
+---
+<div class="the">
+  <p><strong>Phiên họp:</strong> <span id="lich-mota"></span></p>
+  <p id="lich-tiep" class="phu">Đang tính phiên tiếp theo…</p>
+  <script id="lich-du-lieu" type="application/json" set:html={JSON.stringify(mota)}></script>
+</div>
+
+<script>
+  import { cacPhienTiepTheo, dinhDangDuong, moTaQuy, ngayHienTai } from "../lib/lich-phien.js";
+
+  const nhan = document.getElementById("lich-du-lieu");
+  const moTaEl = document.getElementById("lich-mota");
+  const tiepEl = document.getElementById("lich-tiep");
+
+  try {
+    const lich = JSON.parse(nhan.textContent || "[]");
+    moTaEl.textContent = lich.map(moTaQuy).filter(Boolean).join("; ") || "chưa có quy tắc";
+    const ds = cacPhienTiepTheo(lich, ngayHienTai(), 3);
+    if (ds.length === 0) {
+      tiepEl.textContent = "Chưa tìm thấy phiên trong 400 ngày tới.";
+    } else {
+      tiepEl.innerHTML = "";
+      const tieu = document.createElement("strong");
+      tieu.textContent = "Các phiên tiếp theo:";
+      const ul = document.createElement("ul");
+      for (const ngay of ds) {
+        const li = document.createElement("li");
+        li.textContent = dinhDangDuong(ngay);
+        ul.append(li);
+      }
+      tiepEl.append(tieu, ul);
+    }
+  } catch (err) {
+    tiepEl.textContent = "Không tải được lịch phiên.";
+    console.error(err);
+  }
+</script>

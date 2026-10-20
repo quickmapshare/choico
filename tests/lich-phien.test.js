@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { coPhienTheoQuy, coPhienHomNay, ngayHienTai, dinhDangDuong, dinhDangAm, tenNamCanChi } from "../src/lib/lich-phien.js";
+import { coPhienTheoQuy, coPhienHomNay, ngayHienTai, dinhDangDuong, dinhDangAm, tenNamCanChi, cacPhienTiepTheo, moTaQuy } from "../src/lib/lich-phien.js";
 
 const ngay = (s) => { const [y, m, d] = s.split("-").map(Number); return { y, m, d }; };
 
@@ -91,5 +91,31 @@ describe("định dạng ngày hiển thị", () => {
 
   it("tháng nhuận được ghi rõ", () => {
     expect(dinhDangAm({ y: 2025, m: 7, d: 25 })).toBe("Ngày 1 tháng nhuận 6 năm Ất Tỵ");
+  });
+});
+
+describe("phiên tiếp theo", () => {
+  const haDong = [{ loai: "ngay_am", ngay: [5, 10, 15, 20, 25, 30] }];
+
+  it("hôm nay không có phiên thì lấy các phiên sau đó", () => {
+    // 20/10/2026 là 11/9 âm, phiên kế tiếp là 15/9 = 24/10/2026
+    const ds = cacPhienTiepTheo(haDong, ngay("2026-10-20"), 2);
+    expect(ds).toEqual([{ y: 2026, m: 10, d: 24 }, { y: 2026, m: 10, d: 29 }]);
+  });
+
+  it("không tính chính ngày hôm nay", () => {
+    // 24/10/2026 là 15/9 âm: phiên đầu tiên sau ngày đó phải lớn hơn 24/10
+    const ds = cacPhienTiepTheo(haDong, ngay("2026-10-24"), 1);
+    expect(ds).toEqual([{ y: 2026, m: 10, d: 29 }]);
+  });
+
+  it("chu kỳ ngày", () => {
+    const ds = cacPhienTiepTheo([{ loai: "chu_ky", ngay_goc: "2026-01-01", chu_ky: 5 }], ngay("2026-01-01"), 2);
+    expect(ds).toEqual([{ y: 2026, m: 1, d: 6 }, { y: 2026, m: 1, d: 11 }]);
+  });
+
+  it("mô tả quy tắc dễ đọc", () => {
+    expect(moTaQuy({ loai: "ngay_am", ngay: [5, 10, -1] })).toBe("ngày 5, ngày 10, ngày cuối tháng âm lịch hằng tháng (không tính tháng nhuận)");
+    expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-01-01", chu_ky: 5 })).toBe("mỗi 5 ngày, tính từ 01/01/2026");
   });
 });

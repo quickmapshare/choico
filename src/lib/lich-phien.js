@@ -91,3 +91,36 @@ export function dinhDangAm(ngayDuong) {
   const thang = `${am.nhuan ? "nhuận " : ""}${am.thang}`;
   return `Ngày ${am.ngay} tháng ${thang} năm ${tenNamCanChi(Solar.fromYmd(ngayDuong.y, ngayDuong.m, ngayDuong.d).getLunar().getYear())}`;
 }
+
+// Mô tả quy tắc để hiện trên trang chợ, ví dụ "Ngày 5, 10, 15 âm lịch hằng tháng".
+export function moTaQuy(quy) {
+  if (quy.loai === "ngay_am") {
+    const cacNgay = quy.ngay
+      .map((so) => (so === -1 ? "ngày cuối tháng" : `ngày ${so}`))
+      .join(", ");
+    const ghiChu = (quy.thang_nhuan ?? "bo_qua") === "bo_qua" ? " (không tính tháng nhuận)" : "";
+    return `${cacNgay} âm lịch hằng tháng${ghiChu}`;
+  }
+  if (quy.loai === "chu_ky") {
+    const { y, m, d } = chuoiThanhNgay(quy.ngay_goc);
+    const ngayGoc = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+    return `mỗi ${quy.chu_ky} ngày, tính từ ${ngayGoc}`;
+  }
+  return "";
+}
+
+// Cộng n ngày dương lịch.
+export function congNgay(ngay, n) {
+  const t = new Date(Date.UTC(ngay.y, ngay.m - 1, ngay.d) + n * 86400000);
+  return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() };
+}
+
+// Các ngày có phiên sau tuNgay (không gồm tuNgay), tối đa soLuong ngày, tìm trong tối đa gioiHanNgay ngày.
+export function cacPhienTiepTheo(lich, tuNgay = ngayHienTai(), soLuong = 3, gioiHanNgay = 400) {
+  const ketQua = [];
+  for (let i = 1; i <= gioiHanNgay && ketQua.length < soLuong; i++) {
+    const ngay = congNgay(tuNgay, i);
+    if (lich.some((quy) => coPhienTheoQuy(quy, ngay))) ketQua.push(ngay);
+  }
+  return ketQua;
+}
