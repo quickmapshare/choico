@@ -22,10 +22,11 @@ const tien = lang === "en" ? "/en" : "";
 </section>
 
 <style>
-  /* Nền xanh rất nhạt, pha với màu thẻ nên tự đổi theo chế độ sáng/tối */
+  /* Nền xanh nhạt, viền rõ hơn, đệm ngang rộng để khung rộng hơn nội dung. Pha màu nên tự đổi theo chế độ sáng/tối */
   .widget-hom-nay {
-    background: color-mix(in srgb, var(--xanh) 13%, var(--mat));
-    border-color: color-mix(in srgb, var(--xanh) 30%, var(--vien));
+    background: color-mix(in srgb, var(--xanh) 6%, var(--mat));
+    border: 1px solid color-mix(in srgb, var(--xanh) 55%, var(--vien));
+    padding: 1.1rem 1.5rem 1.25rem;
   }
 </style>
 
