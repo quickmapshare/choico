@@ -38,7 +38,8 @@ Chỉ mở rộng sang quận khác khi đã có tín hiệu nhu cầu (lượt 
 
 ## Trạng thái hiện tại
 - Đã có trang tạm `index.html` deploy lên Cloudflare Pages tại `https://chophien.pages.dev/`.
-- Chưa bắt đầu schema PocketBase, Astro, widget. Thiếu `docs/ideas.md` trong repo.
+- Đã có `docs/ideas.md` (ý tưởng và câu hỏi mở, cập nhật 2026-10-20).
+- Chưa bắt đầu schema PocketBase, Astro, widget.
 
 ## Lưu ý khi làm việc
 - Commit sau mỗi bước nhỏ, message rõ ràng.
