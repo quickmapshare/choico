@@ -1,0 +1,46 @@
+---
+// Widget "hôm nay có phiên không": tính phía trình duyệt theo múi giờ Asia/Ho_Chi_Minh.
+// Chỉ nhận chợ đã xác minh (lich đã được lọc ở lớp dữ liệu).
+const { chos } = Astro.props;
+const duLieu = chos.map((c) => ({ ten: c.ten, slug: c.slug, dia_chi: c.dia_chi ?? "", lich: c.lich }));
+---
+<section class="the" aria-live="polite">
+  <h2>Hôm nay có phiên không?</h2>
+  <p id="widget-tong" class="phu">Đang tính…</p>
+  <ul id="widget-ds"></ul>
+  <script id="widget-du-lieu" type="application/json" set:html={JSON.stringify(duLieu)}></script>
+</section>
+
+<script>
+  import { coPhienHomNay, ngayHienTai } from "../lib/lich-phien.js";
+
+  const nhan = document.getElementById("widget-du-lieu");
+  const tong = document.getElementById("widget-tong");
+  const ds = document.getElementById("widget-ds");
+
+  try {
+    const chos = JSON.parse(nhan.textContent || "[]");
+    const hom = ngayHienTai();
+    const coPhien = chos.filter((c) => coPhienHomNay(c, hom) === true);
+    tong.textContent = coPhien.length
+      ? `Có ${coPhien.length} chợ có phiên hôm nay.`
+      : "Hôm nay chưa có chợ nào có phiên trong dữ liệu đã xác minh.";
+    for (const c of coPhien) {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = `/cho/${c.slug}/`;
+      a.textContent = c.ten;
+      li.append(a);
+      if (c.dia_chi) {
+        const span = document.createElement("span");
+        span.className = "phu";
+        span.textContent = ` — ${c.dia_chi}`;
+        li.append(span);
+      }
+      ds.append(li);
+    }
+  } catch (err) {
+    tong.textContent = "Không tải được lịch phiên hôm nay.";
+    console.error(err);
+  }
+</script>

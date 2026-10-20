@@ -1,0 +1,18 @@
+{
+  "name": "cho-phien",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "astro": "^7.4.1",
+    "lunar-javascript": "^1.7.7"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.5"
+  }
+}

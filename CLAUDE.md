@@ -41,7 +41,10 @@ Chỉ mở rộng sang quận khác khi đã có tín hiệu nhu cầu (lượt 
 - Đã có trang tạm `index.html` deploy lên Cloudflare Pages tại `https://chophien.pages.dev/`.
 - Đã có `docs/ideas.md` (ý tưởng và câu hỏi mở, cập nhật 2026-10-20).
 - Đã tạo schema PocketBase trên PocketBase của botgap (`api.botgap.dev`, cùng VPS, không phải PocketBase của FormMail Hub): collection `cho_phien_khu_vuc` và `cho_phien_cho`, rule null. Migration ghi trong `pocketbase/pb_migrations/1792000000_cho_phien_schema.js`. Migration này đã áp dụng bằng API, chưa chạy qua `deploy-pb.sh` của snapask.me, nên không copy file này sang repo snapask.me nếu chưa xử lý.
-- Chưa làm: Astro, widget, engine lịch phiên và test.
+- Đã có engine lịch phiên `src/lib/lich-phien.js` (ngày âm, ngày cuối tháng âm, chu kỳ), 11 test Vitest (`npm test`) gồm tháng nhuận 2025 và Tết 2026.
+- Đã có Astro (`npm run build`): trang chủ có widget "hôm nay có phiên", trang khu vực `/khu-vuc/[slug]/`, trang chợ `/cho/[slug]/`. Build lấy dữ liệu từ PocketBase bằng `PB_URL`, `PB_ADMIN_EMAIL`, `PB_ADMIN_PASSWORD`. Đã kiểm tra build với PocketBase thật (chưa có chợ nào nên trang còn trống). Widget chưa kiểm thử trên trình duyệt.
+- Cần làm trên Cloudflare Pages: build command `npm run build`, output directory `dist`, thêm 3 biến môi trường trên. Trước khi đổi, `index.html` tạm ở root vẫn được giữ để trang không hỏng.
+- Chưa làm: nhập chợ thật (cần nguồn đã xác minh).
 
 ## Lưu ý khi làm việc
 - Commit sau mỗi bước nhỏ, message rõ ràng.

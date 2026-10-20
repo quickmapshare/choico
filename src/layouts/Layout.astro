@@ -1,0 +1,33 @@
+---
+const { tieuDe, moTa } = Astro.props;
+---
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{tieuDe}</title>
+    <meta name="description" content={moTa} />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <style>
+      :root { color-scheme: light dark; --nen: #faf7f2; --chu: #2b2b2b; --phu: #555; --vien: #d9d2c5; }
+      @media (prefers-color-scheme: dark) {
+        :root { --nen: #1c1b19; --chu: #eee; --phu: #bbb; --vien: #3a3733; }
+      }
+      body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--nen); color: var(--chu); line-height: 1.6; }
+      main { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1rem; }
+      a { color: inherit; }
+      h1 { font-size: 1.6rem; margin: .5rem 0 1rem; }
+      h2 { font-size: 1.15rem; margin-top: 1.5rem; }
+      .phu { color: var(--phu); font-size: .95rem; }
+      .the { border: 1px solid var(--vien); border-radius: .5rem; padding: .75rem 1rem; margin: .5rem 0; }
+      .canh-bao { border-left: 4px solid #c0392b; padding-left: .75rem; }
+      ul { padding-left: 1.2rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>

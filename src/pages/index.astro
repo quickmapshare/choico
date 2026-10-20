@@ -1,0 +1,20 @@
+---
+import Layout from "../layouts/Layout.astro";
+import WidgetHomNay from "../components/WidgetHomNay.astro";
+import { taiDuLieu } from "../lib/du-lieu.js";
+
+const { khuVuc, cho } = await taiDuLieu();
+const choDaXacMinh = cho.filter((c) => c.trang_thai_xac_minh === "da_xac_minh");
+---
+<Layout tieuDe="Chợ phiên Việt Nam: chợ nào có phiên hôm nay" moTa="Chợ nào có phiên hôm nay và lịch phiên của từng chợ ở Việt Nam.">
+  <h1>Chợ phiên Việt Nam</h1>
+  <p class="phu">Lịch phiên chỉ hiển thị khi đã được xác minh. Thông tin còn lại có ghi nguồn.</p>
+
+  <WidgetHomNay chos={choDaXacMinh} />
+
+  <h2>Khu vực</h2>
+  {khuVuc.length === 0 && <p class="phu">Chưa có khu vực nào.</p>}
+  <ul>
+    {khuVuc.map((k) => <li><a href={`/khu-vuc/${k.slug}/`}>{k.ten}</a></li>)}
+  </ul>
+</Layout>
