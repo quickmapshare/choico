@@ -5,18 +5,21 @@ import GopY from "../../components/GopY.astro";
 
 export async function getStaticPaths() {
   const { khuVuc } = await taiDuLieu();
-  return khuVuc.map((k) => ({ params: { slug: k.slug }, props: { khu: k } }));
+  return khuVuc.filter((k) => k.cap === "xa_phuong").map((k) => ({ params: { slug: k.slug }, props: { khu: k } }));
 }
 
 const { khu } = Astro.props;
 const { cho } = await taiDuLieu();
 const dsCho = cho.filter((c) => c.khu_vuc === khu.id);
 ---
-<Layout tieuDe={`Chợ phiên ${khu.ten}`} moTa={`Danh sách chợ phiên ở ${khu.ten} và tình trạng xác minh lịch phiên.`}>
-  <p><a href="/">← Trang chủ</a></p>
+<Layout tieuDe={`Chợ phiên ${khu.ten}`} moTa={`Danh sách chợ phiên ở ${khu.ten}${khu.tinh ? ", " + khu.tinh.ten : ""}.`}>
+  <p>
+    {khu.tinh && <><a href={`/tinh/${khu.tinh.slug}/`}>{khu.tinh.ten}</a> › </>}
+    <a href="/">Trang chủ</a>
+  </p>
   <h1>Chợ phiên {khu.ten}</h1>
   {khu.ghi_chu && <p class="phu">{khu.ghi_chu}</p>}
-  {dsCho.length === 0 && <p class="phu">Chưa có chợ nào ở khu vực này.</p>}
+  {dsCho.length === 0 && <p class="phu">Chưa có chợ nào ở xã, phường này.</p>}
   {dsCho.map((c) => (
     <div class="the">
       <a href={`/cho/${c.slug}/`}><strong>{c.ten}</strong></a>

@@ -39,6 +39,8 @@ export async function taiDuLieu() {
   const khuVuc = await layTatCa(base, token, "cho_phien_khu_vuc");
   const cho = await layTatCa(base, token, "cho_phien_cho");
   const khuTheoId = new Map(khuVuc.map((k) => [k.id, k]));
+  // Gắn tỉnh/thành cho từng xã/phường (trường cha)
+  for (const k of khuVuc) k.tinh = khuTheoId.get(k.cha) ?? null;
   const choDaGhep = cho.map((c) => ({
     ...c,
     khu: khuTheoId.get(c.khu_vuc) ?? null,
