@@ -7,7 +7,7 @@
 //      phiên mỗi N ngày kể từ ngày gốc (không tính ngày trước ngày gốc).
 // Múi giờ của phiên là Asia/Ho_Chi_Minh.
 
-import { Solar } from "lunar-javascript";
+import { ngayAmVN } from "./am-lich-vn.js";
 
 export const MUI_GIO = "Asia/Ho_Chi_Minh";
 
@@ -30,16 +30,14 @@ function chuoiThanhNgay(chuoi) {
 }
 
 // Ngày âm của một ngày dương: { ngay, thang, nhuan }.
-export function ngayAm({ y, m, d }) {
-  const lunar = Solar.fromYmd(y, m, d).getLunar();
-  const thang = lunar.getMonth();
-  return { ngay: lunar.getDay(), thang: Math.abs(thang), nhuan: thang < 0 };
+export function ngayAm(ngayDuong) {
+  const { ngay, thang, nhuan } = ngayAmVN(ngayDuong);
+  return { ngay, thang, nhuan };
 }
 
 // Ngày dương đó có phải ngày cuối của tháng âm không (ngày hôm sau là mùng 1).
-function laNgayCuoiThangAm({ y, m, d }) {
-  const sang = Solar.fromYmd(y, m, d).next(1);
-  return sang.getLunar().getDay() === 1;
+function laNgayCuoiThangAm(ngayDuong) {
+  return ngayAm(congNgay(ngayDuong, 1)).ngay === 1;
 }
 
 function khopNgayAm(quy, ngayDuong) {
@@ -89,7 +87,7 @@ export function dinhDangDuong({ y, m, d }) {
 export function dinhDangAm(ngayDuong) {
   const am = ngayAm(ngayDuong);
   const thang = `${am.nhuan ? "nhuận " : ""}${am.thang}`;
-  return `Ngày ${am.ngay} tháng ${thang} năm ${tenNamCanChi(Solar.fromYmd(ngayDuong.y, ngayDuong.m, ngayDuong.d).getLunar().getYear())}`;
+  return `Ngày ${am.ngay} tháng ${thang} năm ${tenNamCanChi(ngayAmVN(ngayDuong).nam)}`;
 }
 
 // Mô tả quy tắc để hiện trên trang chợ, ví dụ "Ngày 5, 10, 15 âm lịch hằng tháng".

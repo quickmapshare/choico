@@ -9,8 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "astro": "^7.4.1",
-    "lunar-javascript": "^1.7.7"
+    "astro": "^7.4.1"
   },
   "devDependencies": {
     "vitest": "^5.0.5"

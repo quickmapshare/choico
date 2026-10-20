@@ -21,7 +21,7 @@ Bối cảnh chi tiết, các phương án đã cân nhắc và câu hỏi còn 
 
 ## Lịch phiên
 - Lưu quy tắc phiên dạng có cấu trúc, không chỉ lưu chuỗi mô tả. Ví dụ: loại quy tắc (theo ngày âm lịch, theo chu kỳ ngày), tham số, ghi chú nguồn.
-- Lịch âm dùng thư viện chuyển đổi âm dương trên npm. Ghi rõ thư viện đã chọn khi quyết định.
+- Lịch âm dùng thuật toán Việt Nam tự viết trong `src/lib/am-lich-vn.js` (UTC+7, theo Hồ Ngọc Đức). Không dùng thư viện Trung Quốc (UTC+8) vì lệch một ngày ở một số tháng.
 - Mọi quy tắc lịch cần có bộ test với các trường hợp biên (tháng nhuận, cuối tháng âm).
 
 ## Phạm vi và thứ tự làm việc
@@ -35,6 +35,7 @@ Chỉ mở rộng sang quận khác khi đã có tín hiệu nhu cầu (lượt 
 
 ## Quyết định đã chốt
 - 2026-10-20: PocketBase cho Chợ phiên dùng chung instance của botgap (`api.botgap.dev`), collection tiền tố `cho_phien_`. Không dùng PocketBase của FormMail Hub.
+- 2026-10-20: Lịch âm dùng thuật toán Việt Nam UTC+7 tự viết (`src/lib/am-lich-vn.js`), không dùng `lunar-javascript`. Đã khớp mùng 1 Tết 2020–2026 và tháng nhuận 6/2025. Chưa đối chiếu với lịch vạn niên Việt Nam ngoài các mốc đó.
 - 2026-10-20: Dùng miền miễn phí của Cloudflare Pages `https://chophien.pages.dev/` cho giai đoạn đầu. Repo: `quickmapshare/cho-phien`, branch `main`, không cần build command (trang tĩnh).
 
 ## Trạng thái hiện tại
