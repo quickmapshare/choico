@@ -9,9 +9,9 @@ const nguon = Array.isArray(cho.nguon) ? cho.nguon : [];
 ---
 <Layout lang={lang} tieuDe={t(lang, "tieuDeCho", cho.ten)} moTa={t(lang, "moTaCho", cho.ten, cho.khu?.ten)}>
   <p>
+    <a href={duongDan(lang, "/")}>{t(lang, "trangChu")}</a> ›
     {cho.khu?.tinh && <><a href={duongDan(lang, `/tinh/${cho.khu.tinh.slug}/`)}>{cho.khu.tinh.ten}</a> › </>}
-    {cho.khu && <><a href={duongDan(lang, `/khu-vuc/${cho.khu.slug}/`)}>{cho.khu.ten}</a> › </>}
-    <a href={duongDan(lang, "/")}>{t(lang, "trangChu")}</a>
+    {cho.khu && <><a href={duongDan(lang, `/khu-vuc/${cho.khu.slug}/`)}>{cho.khu.ten}</a></>}
   </p>
   <h1>{t(lang, "tenChoHeading", cho.ten)}</h1>
   {cho.dia_chi && <p>{t(lang, "diaChiLabel")}: {cho.dia_chi}</p>}

@@ -6,8 +6,8 @@ const { lang, khu, dsCho } = Astro.props;
 ---
 <Layout lang={lang} tieuDe={t(lang, "tieuDeKhu", khu.ten)} moTa={t(lang, "moTaKhu", khu.ten, khu.tinh?.ten)}>
   <p>
-    {khu.tinh && <><a href={duongDan(lang, `/tinh/${khu.tinh.slug}/`)}>{khu.tinh.ten}</a> › </>}
-    <a href={duongDan(lang, "/")}>{t(lang, "trangChu")}</a>
+    <a href={duongDan(lang, "/")}>{t(lang, "trangChu")}</a> ›
+    {khu.tinh && <><a href={duongDan(lang, `/tinh/${khu.tinh.slug}/`)}>{khu.tinh.ten}</a></>}
   </p>
   <h1>{t(lang, "tieuDeKhu", khu.ten)}</h1>
   {khu.ghi_chu && <p class="phu">{khu.ghi_chu}</p>}
