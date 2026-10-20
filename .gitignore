@@ -5,3 +5,4 @@ dist/
 
 # Biến local cho wrangler dev (không commit)
 .dev.vars
+.wrangler/
