@@ -34,10 +34,11 @@ Bối cảnh chi tiết, các phương án đã cân nhắc và câu hỏi còn 
 Chỉ mở rộng sang quận khác khi đã có tín hiệu nhu cầu (lượt hiển thị và nhấp trong Google Search Console tăng đều).
 
 ## Quyết định đã chốt
-- (Chưa có. Ghi vào đây mỗi khi chốt một quyết định, kèm ngày.)
+- 2026-10-20: Dùng miền miễn phí của Cloudflare Pages `https://chophien.pages.dev/` cho giai đoạn đầu. Repo: `quickmapshare/cho-phien`, branch `main`, không cần build command (trang tĩnh).
 
 ## Trạng thái hiện tại
-- Đang ở bước: chưa bắt đầu. Cập nhật mục này sau mỗi phiên làm việc.
+- Đã có trang tạm `index.html` deploy lên Cloudflare Pages tại `https://chophien.pages.dev/`.
+- Chưa bắt đầu schema PocketBase, Astro, widget. Thiếu `docs/ideas.md` trong repo.
 
 ## Lưu ý khi làm việc
 - Commit sau mỗi bước nhỏ, message rõ ràng.
