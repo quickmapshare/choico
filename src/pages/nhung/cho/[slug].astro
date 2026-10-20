@@ -1,0 +1,33 @@
+---
+// Thẻ thông tin một chợ để nhúng: tên, địa chỉ, khu vực, lịch phiên. Chỉ chợ đã xác minh mới có trang này.
+import Layout from "../../../layouts/Layout.astro";
+import LichPhien from "../../../components/LichPhien.astro";
+import { taiDuLieu } from "../../../lib/du-lieu.js";
+import { t } from "../../../i18n/strings.js";
+
+export async function getStaticPaths() {
+  const { cho } = await taiDuLieu();
+  return cho
+    .filter((c) => c.trang_thai_xac_minh === "da_xac_minh")
+    .map((c) => ({ params: { slug: c.slug }, props: { cho: c } }));
+}
+
+const { cho } = Astro.props;
+const noi = [cho.khu?.ten, cho.khu?.tinh?.ten].filter(Boolean).join(", ");
+const trangDayDu = `https://chophien.pages.dev/cho/${cho.slug}/`;
+---
+<Layout lang="vi" tieuDe={t("vi", "tieuDeCho", cho.ten)} moTa={t("vi", "moTaCho", cho.ten, cho.khu?.ten)} nhung={true}>
+  <div class="the the-cho">
+    <h2>{t("vi", "tenChoHeading", cho.ten)}</h2>
+    {noi && <p class="phu">{noi}</p>}
+    {cho.dia_chi && <p>{t("vi", "diaChiLabel")}: {cho.dia_chi}</p>}
+    <h3>{t("vi", "lichPhien")}</h3>
+    <LichPhien lich={cho.lich ?? []} lang="vi" />
+    <p class="vet"><a href={trangDayDu} target="_blank" rel="noopener">Xem trang chợ đầy đủ ↗</a></p>
+  </div>
+</Layout>
+
+<style>
+  .the-cho h2 { margin-top: .2rem; }
+  .the-cho h3 { font-size: 1rem; margin: 1rem 0 .4rem; }
+</style>

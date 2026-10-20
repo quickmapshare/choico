@@ -3,10 +3,10 @@
 import { t } from "../i18n/strings.js";
 const { loc = {}, lang = "vi" } = Astro.props;
 
-const src = new URL("/nhung/", Astro.site);
+// Chợ có trang nhúng riêng; khu/tinh/cả nước dùng widget lọc chung
+const src = loc.cho ? new URL(`/nhung/cho/${loc.cho}/`, Astro.site) : new URL("/nhung/", Astro.site);
 if (loc.khu) src.searchParams.set("khu", loc.khu);
 else if (loc.tinh) src.searchParams.set("tinh", loc.tinh);
-else if (loc.cho) src.searchParams.set("cho", loc.cho);
 
 // Mã nhúng: một iframe và một đoạn script nhỏ để khung tự cao theo nội dung
 const ma = [
