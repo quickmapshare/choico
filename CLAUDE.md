@@ -34,12 +34,14 @@ Bối cảnh chi tiết, các phương án đã cân nhắc và câu hỏi còn 
 Chỉ mở rộng sang quận khác khi đã có tín hiệu nhu cầu (lượt hiển thị và nhấp trong Google Search Console tăng đều).
 
 ## Quyết định đã chốt
+- 2026-10-20: PocketBase cho Chợ phiên dùng chung instance của botgap (`api.botgap.dev`), collection tiền tố `cho_phien_`. Không dùng PocketBase của FormMail Hub.
 - 2026-10-20: Dùng miền miễn phí của Cloudflare Pages `https://chophien.pages.dev/` cho giai đoạn đầu. Repo: `quickmapshare/cho-phien`, branch `main`, không cần build command (trang tĩnh).
 
 ## Trạng thái hiện tại
 - Đã có trang tạm `index.html` deploy lên Cloudflare Pages tại `https://chophien.pages.dev/`.
 - Đã có `docs/ideas.md` (ý tưởng và câu hỏi mở, cập nhật 2026-10-20).
-- Chưa bắt đầu schema PocketBase, Astro, widget.
+- Đã tạo schema PocketBase trên PocketBase của botgap (`api.botgap.dev`, cùng VPS, không phải PocketBase của FormMail Hub): collection `cho_phien_khu_vuc` và `cho_phien_cho`, rule null. Migration ghi trong `pocketbase/pb_migrations/1792000000_cho_phien_schema.js`. Migration này đã áp dụng bằng API, chưa chạy qua `deploy-pb.sh` của snapask.me, nên không copy file này sang repo snapask.me nếu chưa xử lý.
+- Chưa làm: Astro, widget, engine lịch phiên và test.
 
 ## Lưu ý khi làm việc
 - Commit sau mỗi bước nhỏ, message rõ ràng.
