@@ -5,6 +5,11 @@ on:
     # 00:00 UTC = 07:00 giờ Việt Nam; GitHub có thể chạy trễ vài phút
     - cron: "0 0 * * *"
   workflow_dispatch:
+    inputs:
+      kiem_tra:
+        description: "Chỉ kiểm tra cấu hình Telegram, không đăng tin"
+        type: boolean
+        default: false
 
 jobs:
   nhac:
@@ -14,8 +19,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+      # Chế độ kiểm tra thủ công: chỉ đọc thông tin bot và kênh
+      - if: ${{ inputs.kiem_tra }}
+        run: node scripts/kiem-tra-telegram.mjs
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       # Ngày không phải mùng 1 hoặc rằm thì script thoát, không đăng gì
-      - run: node scripts/nhac-ram-mung1.mjs --send
+      - if: ${{ !inputs.kiem_tra }}
+        run: node scripts/nhac-ram-mung1.mjs --send
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
