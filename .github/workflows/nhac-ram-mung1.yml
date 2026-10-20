@@ -1,0 +1,21 @@
+name: Nhắc rằm và mùng 1
+
+on:
+  schedule:
+    # 00:00 UTC = 07:00 giờ Việt Nam; GitHub có thể chạy trễ vài phút
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  nhac:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      # Ngày không phải mùng 1 hoặc rằm thì script thoát, không đăng gì
+      - run: node scripts/nhac-ram-mung1.mjs --send
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
