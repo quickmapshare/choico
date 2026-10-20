@@ -9,9 +9,11 @@ const choDaXacMinh = cho.filter((c) => c.trang_thai_xac_minh === "da_xac_minh");
 const tinhs = khuVuc.filter((k) => k.cap === "tinh_thanh");
 ---
 <Layout lang={lang} tieuDe={t(lang, "tieuDeChu")} moTa={t(lang, "moTaChu")}>
-  <h1>{t(lang, "tenTrang")}</h1>
+  <div class="tieu-de-hang">
+    <h1>{t(lang, "tenTrang")}</h1>
+    <GopY loai="them_cho" lang={lang} />
+  </div>
   <p class="phu">{t(lang, "ghiChuChu")}</p>
-  <GopY loai="them_cho" lang={lang} />
 
   <WidgetHomNay chos={choDaXacMinh} lang={lang} />
   <MaNhung lang={lang} />

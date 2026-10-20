@@ -8,9 +8,11 @@ const { lang, cho = [] } = Astro.props;
 ---
 <Layout lang={lang} tieuDe={t(lang, "tieuDeAmLich")} moTa={t(lang, "moTaAmLich")}>
   <p><a href={duongDan(lang, "/")}>← {t(lang, "trangChu")}</a></p>
-  <h1>{t(lang, "tieuDeAmLich")}</h1>
+  <div class="tieu-de-hang">
+    <h1>{t(lang, "tieuDeAmLich")}</h1>
+    <GopY loai="them_cho" lang={lang} />
+  </div>
   <p class="phu">{t(lang, "moTaAmLich")}</p>
-  <GopY loai="them_cho" lang={lang} />
 
   <noscript><p class="canh-bao">{t(lang, "amLichCanJs")}</p></noscript>
   <section class="am-lich" id="am-lich" data-lang={lang} hidden>

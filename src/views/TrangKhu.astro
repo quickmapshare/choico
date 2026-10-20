@@ -12,9 +12,11 @@ const choDaXacMinh = dsCho.filter((c) => c.trang_thai_xac_minh === "da_xac_minh"
     <a href={duongDan(lang, "/")}>{t(lang, "trangChu")}</a>{" › "}
     {khu.tinh && <><a href={duongDan(lang, `/tinh/${khu.tinh.slug}/`)}>{khu.tinh.ten}</a></>}
   </p>
-  <h1>{t(lang, "tieuDeKhu", khu.ten)}</h1>
+  <div class="tieu-de-hang">
+    <h1>{t(lang, "tieuDeKhu", khu.ten)}</h1>
+    <GopY loai="them_cho" khuId={khu.id} lang={lang} />
+  </div>
   {khu.ghi_chu && <p class="phu">{khu.ghi_chu}</p>}
-  <GopY loai="them_cho" khuId={khu.id} lang={lang} />
   <WidgetHomNay chos={choDaXacMinh} lang={lang} />
   <MaNhung loc={{ khu: khu.slug }} lang={lang} />
   {dsCho.length === 0 && <p class="phu">{t(lang, "chuaCoCho")}</p>}

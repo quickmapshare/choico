@@ -134,6 +134,14 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 
       :focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; border-radius: 4px; }
     </style>
+    <!-- Dùng is:global vì khung này nằm trong view, không nằm trong Layout nên style có phạm vi sẽ không áp dụng -->
+    <style is:global>
+      /* Tiêu đề và nút góp ý nằm cùng một dòng; form mở ra thì chiếm cả dòng dưới */
+      .tieu-de-hang { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; }
+      .tieu-de-hang h1 { flex: 1 1 12rem; }
+      .tieu-de-hang > .gop-y-khung { margin-left: auto; }
+      .tieu-de-hang > .gop-y-khung:has(details[open]) { flex-basis: 100%; margin-left: 0; }
+    </style>
   </head>
   <body>
     {!nhung && (
