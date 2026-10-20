@@ -135,3 +135,27 @@ describe("ngôn ngữ tiếng Anh", () => {
     expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-01-01", chu_ky: 5 }, "en")).toBe("every 5 days, counting from 01/01/2026");
   });
 });
+
+describe("ngày âm theo tháng cố định (chợ theo năm)", () => {
+  // Tết 2026 là 17/02/2026 (mùng 1 tháng Giêng)
+  const vieng = { loai: "ngay_am", ngay: [7, 8], thang: [1] };
+  it("chợ Viềng: mùng 7 và 8 tháng Giêng", () => {
+    expect(coPhienTheoQuy(vieng, ngay("2026-02-23"))).toBe(true); // mùng 7 tháng Giêng
+    expect(coPhienTheoQuy(vieng, ngay("2026-02-24"))).toBe(true); // mùng 8 tháng Giêng
+    expect(coPhienTheoQuy(vieng, ngay("2026-02-25"))).toBe(false);
+  });
+  it("không lặp sang tháng khác có cùng ngày", () => {
+    // mùng 7 tháng 2 âm (cùng ngày trong tháng) không được tính
+    expect(coPhienTheoQuy(vieng, ngay("2026-03-19"))).toBe(false);
+  });
+  it("chợ Tết Mỹ Lợi: mùng 1 đến 3 tháng Giêng", () => {
+    const tet = { loai: "ngay_am", ngay: [1, 2, 3], thang: [1] };
+    expect(coPhienTheoQuy(tet, ngay("2026-02-17"))).toBe(true);
+    expect(coPhienTheoQuy(tet, ngay("2026-02-19"))).toBe(true);
+    expect(coPhienTheoQuy(tet, ngay("2026-02-20"))).toBe(false);
+  });
+  it("mô tả quy tắc theo tháng", () => {
+    expect(moTaQuy(vieng, "vi")).toBe("ngày 7, ngày 8 tháng 1 âm lịch hằng năm");
+    expect(moTaQuy(vieng, "en")).toBe("day 7, day 8 of lunar month 1 every year");
+  });
+});

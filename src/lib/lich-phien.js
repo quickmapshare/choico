@@ -44,6 +44,8 @@ function laNgayCuoiThangAm(ngayDuong) {
 function khopNgayAm(quy, ngayDuong) {
   const am = ngayAm(ngayDuong);
   if (am.nhuan && (quy.thang_nhuan ?? "bo_qua") === "bo_qua") return false;
+  // thang (tùy chọn): chỉ tính phiên trong các tháng âm này, ví dụ [1] = tháng Giêng
+  if (quy.thang && !quy.thang.includes(am.thang)) return false;
   return quy.ngay.some((so) => {
     if (so === -1) return laNgayCuoiThangAm(ngayDuong);
     return so === am.ngay;
@@ -100,6 +102,9 @@ export function moTaQuy(quy, lang = "vi") {
     const cacNgay = quy.ngay
       .map((so) => (so === -1 ? t(lang, "quyNgayCuoi") : t(lang, "quyNgay", so)))
       .join(", ");
+    if (quy.thang) {
+      return t(lang, "quyNgayThang", cacNgay, quy.thang.join(", "));
+    }
     return t(lang, "quyNgayAm", cacNgay, (quy.thang_nhuan ?? "bo_qua") === "bo_qua");
   }
   if (quy.loai === "chu_ky") {
