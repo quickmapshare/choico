@@ -3,7 +3,14 @@
 // Chỉ nhận chợ đã xác minh (lich đã được lọc ở lớp dữ liệu).
 import { t } from "../i18n/strings.js";
 const { chos, lang = "vi" } = Astro.props;
-const duLieu = chos.map((c) => ({ ten: c.ten, slug: c.slug, dia_chi: c.dia_chi ?? "", lich: c.lich }));
+// Tên trường khớp với coPhienHomNay (trang_thai_xac_minh, lich_phien). Chợ đã được lọc là đã xác minh.
+const duLieu = chos.map((c) => ({
+  ten: c.ten,
+  slug: c.slug,
+  dia_chi: c.dia_chi ?? "",
+  trang_thai_xac_minh: "da_xac_minh",
+  lich_phien: c.lich ?? [],
+}));
 const tien = lang === "en" ? "/en" : "";
 ---
 <section class="the" aria-live="polite" data-lang={lang} data-tien={tien}>
