@@ -1,12 +1,17 @@
 // Chữ giao diện song ngữ. Dữ liệu chợ (tên, địa chỉ, mô tả) giữ nguyên tiếng Việt.
 export const NGON_NGU = ["vi", "en"];
 
+// Tên chợ có thể đã bắt đầu bằng "Chợ" (ví dụ "Chợ Ú"), bỏ đi để khỏi lặp "Chợ Chợ Ú".
+function boChuChoDau(ten) {
+  return String(ten).replace(/^chợs+/i, "");
+}
+
 const CHU = {
   vi: {
     tenTrang: "Chợ phiên Việt Nam",
     trangChu: "Trang chủ",
     daXacMinhNgay: (ngay) => `Đã xác minh ngày ${ngay}`,
-    tenChoHeading: (ten) => `Chợ ${ten}`,
+    tenChoHeading: (ten) => `Chợ ${boChuChoDau(ten)}`,
     diaChiLabel: "Địa chỉ",
     chonCho: "Chọn chợ",
     tieuDeChu: "Chợ phiên Việt Nam: chợ nào có phiên hôm nay",
@@ -21,7 +26,7 @@ const CHU = {
     moTaTinh: (ten) => `Các xã, phường có chợ phiên ở ${ten}.`,
     tieuDeKhu: (ten) => `Chợ phiên ${ten}`,
     moTaKhu: (ten, tinh) => `Danh sách chợ phiên ở ${ten}${tinh ? ", " + tinh : ""}.`,
-    tieuDeCho: (ten) => `Chợ ${ten}: lịch phiên`,
+    tieuDeCho: (ten) => `Chợ ${boChuChoDau(ten)}: lịch phiên`,
     moTaCho: (ten, khu) => `${ten}${khu ? ", " + khu : ""}: địa chỉ và lịch phiên.`,
     daXacMinh: "Đã xác minh",
     chuaXacMinh: "Chưa xác minh",
@@ -71,7 +76,7 @@ const CHU = {
   },
   en: {
     daXacMinhNgay: (ngay) => `Verified on ${ngay}`,
-    tenChoHeading: (ten) => `${ten} market`,
+    tenChoHeading: (ten) => `${boChuChoDau(ten)} market`,
     diaChiLabel: "Address",
     chonCho: "Choose a market",
     tenTrang: "Vietnam Traditional Markets",
@@ -88,7 +93,7 @@ const CHU = {
     moTaTinh: (ten) => `Wards and communes with traditional markets in ${ten}.`,
     tieuDeKhu: (ten) => `Traditional markets in ${ten}`,
     moTaKhu: (ten, tinh) => `Traditional markets in ${ten}${tinh ? ", " + tinh : ""}.`,
-    tieuDeCho: (ten) => `${ten} market: session schedule`,
+    tieuDeCho: (ten) => `${boChuChoDau(ten)} market: session schedule`,
     moTaCho: (ten, khu) => `${ten}${khu ? ", " + khu : ""}: address and session schedule.`,
     daXacMinh: "Verified",
     chuaXacMinh: "Not verified",
