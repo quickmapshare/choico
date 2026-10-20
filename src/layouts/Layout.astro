@@ -2,6 +2,7 @@
 // Khung chung cho mọi trang. lang: "vi" hoặc "en".
 import NgayHomNay from "../components/NgayHomNay.astro";
 import CoNgonNgu from "../components/CoNgonNgu.astro";
+import Logo from "../components/Logo.astro";
 import { t, duongDan } from "../i18n/strings.js";
 const { tieuDe, moTa, lang = "vi" } = Astro.props;
 // Đường dẫn cùng trang ở ngôn ngữ còn lại: /tinh/x/ <-> /en/tinh/x/
@@ -19,6 +20,7 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     <link rel="canonical" href={duongCanhTac} />
     <link rel="alternate" hreflang="vi" href={new URL(lang === "vi" ? Astro.url.pathname : duongKhac, Astro.site)} />
     <link rel="alternate" hreflang="en" href={new URL(lang === "en" ? Astro.url.pathname : duongKhac, Astro.site)} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#f7f5f0" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#14161a" media="(prefers-color-scheme: dark)" />
     <style>
@@ -89,8 +91,8 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
         justify-content: space-between;
         gap: 1rem;
       }
-      .ten-web { font-weight: 700; text-decoration: none; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: .45rem; }
-      .ten-web::before { content: ""; width: .6rem; height: .6rem; border-radius: 50%; background: var(--nhan); }
+      .ten-web { font-weight: 700; text-decoration: none; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: .5rem; color: var(--chu); }
+      .ten-web .logo { color: var(--nhan); flex: none; }
 
       main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
       a { color: var(--nhan); text-decoration: none; }
@@ -126,7 +128,7 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
   <body>
     <header class="thanh-tren">
       <div class="thanh-tren-noi">
-        <a class="ten-web" href={duongDan(lang, "/")}>{t(lang, "tenTrang")}</a>
+        <a class="ten-web" href={duongDan(lang, "/")}><Logo /><span>{t(lang, "tenTrang")}</span></a>
         <CoNgonNgu lang={lang} href={duongKhac} />
       </div>
     </header>

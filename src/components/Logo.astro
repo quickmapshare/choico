@@ -1,0 +1,10 @@
+---
+// Logo: chiếc nón lá, biểu tượng quen thuộc của chợ quê Việt Nam. Dùng màu chữ hiện tại (currentColor).
+const { size = 26 } = Astro.props;
+---
+<svg class="logo" width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+  <path d="M6 31 C10 12 38 12 42 31 Z" fill="currentColor" />
+  <circle cx="24" cy="15" r="2" fill="currentColor" />
+  <path d="M10 26.5 C16 21.5 32 21.5 38 26.5" fill="none" stroke="var(--mat)" stroke-width="1.6" stroke-linecap="round" />
+  <ellipse cx="24" cy="31" rx="17" ry="3.6" fill="currentColor" opacity=".75" />
+</svg>
