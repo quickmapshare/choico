@@ -4,7 +4,8 @@ import NgayHomNay from "../components/NgayHomNay.astro";
 import CoNgonNgu from "../components/CoNgonNgu.astro";
 import Logo from "../components/Logo.astro";
 import { t, duongDan } from "../i18n/strings.js";
-const { tieuDe, moTa, lang = "vi" } = Astro.props;
+// nhung: trang con để nhúng vào web khác (iframe), không có thanh tiêu đề, không lập chỉ mục.
+const { tieuDe, moTa, lang = "vi", nhung = false } = Astro.props;
 // Đường dẫn cùng trang ở ngôn ngữ còn lại: /tinh/x/ <-> /en/tinh/x/
 const duongHienTai = Astro.url.pathname;
 const duongKhac = lang === "en" ? (duongHienTai.replace(/^\/en/, "") || "/") : ("/en" + duongHienTai);
@@ -17,6 +18,8 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tieuDe}</title>
     <meta name="description" content={moTa} />
+    {nhung && <meta name="robots" content="noindex" />}
+    {nhung && <base target="_blank" />}
     <link rel="canonical" href={duongCanhTac} />
     <link rel="alternate" hreflang="vi" href={new URL(lang === "vi" ? Astro.url.pathname : duongKhac, Astro.site)} />
     <link rel="alternate" hreflang="en" href={new URL(lang === "en" ? Astro.url.pathname : duongKhac, Astro.site)} />
@@ -126,20 +129,34 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     </style>
   </head>
   <body>
-    <header class="thanh-tren">
-      <div class="thanh-tren-noi">
-        <a class="ten-web" href={duongDan(lang, "/")}><Logo /><span>{t(lang, "tenTrang")}</span></a>
-        <CoNgonNgu lang={lang} href={duongKhac} />
-      </div>
-    </header>
+    {!nhung && (
+      <header class="thanh-tren">
+        <div class="thanh-tren-noi">
+          <a class="ten-web" href={duongDan(lang, "/")}><Logo /><span>{t(lang, "tenTrang")}</span></a>
+          <CoNgonNgu lang={lang} href={duongKhac} />
+        </div>
+      </header>
+    )}
     <main>
       <NgayHomNay lang={lang} />
       <slot />
-      <footer class="chan-trang">
-        {lang === "en"
-          ? "Session schedules are shown only once verified. Other information cites its source."
-          : "Lịch phiên chỉ hiển thị khi đã xác minh. Thông tin còn lại có ghi nguồn."}
-      </footer>
+      {!nhung && (
+        <footer class="chan-trang">
+          {lang === "en"
+            ? "Session schedules are shown only once verified. Other information cites its source."
+            : "Lịch phiên chỉ hiển thị khi đã xác minh. Thông tin còn lại có ghi nguồn."}
+        </footer>
+      )}
     </main>
+    {nhung && (
+      <script is:inline>
+        // Báo chiều cao cho trang cha để khung iframe vừa nội dung
+        if (window.parent !== window) {
+          const baoCao = () => window.parent.postMessage({ chophienCao: document.documentElement.scrollHeight }, "*");
+          new ResizeObserver(baoCao).observe(document.body);
+          baoCao();
+        }
+      </script>
+    )}
   </body>
 </html>

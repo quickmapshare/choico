@@ -1,0 +1,84 @@
+---
+// Trang lấy mã nhúng widget "hôm nay có phiên không" cho web khác.
+import Layout from "../../layouts/Layout.astro";
+import { taiDuLieu } from "../../lib/du-lieu.js";
+
+const GOC = "https://chophien.pages.dev";
+const { khuVuc } = await taiDuLieu();
+
+// Ba mẫu: cả nước, Hà Nội (tỉnh), Hà Đông (xã/phường). Mẫu nào chưa có dữ liệu thì bỏ qua.
+const mau = [
+  { ten: "Cả nước", duong: "/nhung/ca-nuoc/" },
+  { ten: "Hà Nội", duong: "/nhung/tinh/ha-noi/", slug: "ha-noi", cap: "tinh_thanh" },
+  { ten: "Hà Đông", duong: "/nhung/khu-vuc/ha-dong/", slug: "ha-dong", cap: "xa_phuong" },
+].filter((m) => !m.slug || khuVuc.some((k) => k.slug === m.slug && k.cap === m.cap));
+
+// Mã nhúng: một iframe và một đoạn script nhỏ để khung tự co giãn theo nội dung
+function maNhung(m) {
+  const src = GOC + m.duong;
+  return [
+    `<iframe src="${src}" title="Chợ phiên hôm nay - ${m.ten}" style="width:100%;border:0;height:300px" loading="lazy"></iframe>`,
+    `<script>`,
+    `addEventListener("message", (e) => {`,
+    `  if (e.origin !== "${GOC}" || !e.data?.chophienCao) return;`,
+    `  for (const f of document.querySelectorAll("iframe")) if (f.contentWindow === e.source) f.style.height = e.data.chophienCao + "px";`,
+    `});`,
+    `</script>`,
+  ].join("\n");
+}
+---
+<Layout lang="vi" tieuDe="Nhúng widget chợ phiên hôm nay" moTa="Lấy mã nhúng để hiện chợ nào có phiên hôm nay trên trang web của bạn.">
+  <h1>Nhúng widget "hôm nay có phiên không"</h1>
+  <p>Dán mã dưới đây vào trang web của bạn. Widget chỉ hiện chợ đã xác minh, tính theo giờ Việt Nam, và mở trang chợ trên chophien.pages.dev khi bấm vào.</p>
+
+  {mau.map((m, i) => (
+    <section class="the">
+      <h2>{m.ten}</h2>
+      <iframe src={GOC + m.duong} title={`Xem trước - ${m.ten}`} style="width:100%;border:0;height:300px" loading="lazy"></iframe>
+      <textarea id={`ma-${i}`} readonly rows="10" class="ma-nhung">{maNhung(m)}</textarea>
+      <p><button type="button" class="nut-sao-chep" data-ma={`ma-${i}`}>Sao chép mã</button></p>
+    </section>
+  ))}
+
+  <p class="phu">Khung có thể đặt nhiều lần trên cùng một trang. Mã dùng địa chỉ chophien.pages.dev, nếu đổi tên miền thì cần lấy mã mới.</p>
+
+  <script is:inline>
+    for (const nut of document.querySelectorAll(".nut-sao-chep")) {
+      nut.addEventListener("click", async () => {
+        const o = document.getElementById(nut.dataset.ma);
+        try {
+          await navigator.clipboard.writeText(o.value);
+          nut.textContent = "Đã sao chép";
+        } catch {
+          o.select();
+          nut.textContent = "Nhấn Ctrl+C để sao chép";
+        }
+        setTimeout(() => (nut.textContent = "Sao chép mã"), 2000);
+      });
+    }
+  </script>
+</Layout>
+
+<style>
+  .ma-nhung {
+    width: 100%;
+    font: .82rem/1.5 ui-monospace, Consolas, monospace;
+    background: var(--nen);
+    color: var(--chu);
+    border: 1px solid var(--vien);
+    border-radius: 8px;
+    padding: .6rem .7rem;
+    resize: vertical;
+  }
+  .nut-sao-chep {
+    font: inherit;
+    padding: .4rem .9rem;
+    border-radius: 8px;
+    border: 1px solid var(--nhan);
+    background: var(--mat);
+    color: var(--nhan);
+    cursor: pointer;
+  }
+  .nut-sao-chep:hover { background: var(--nhan-nhe); }
+  section iframe { margin-top: .3rem; }
+</style>
