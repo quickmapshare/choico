@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { coPhienTheoQuy, coPhienHomNay, ngayHienTai, dinhDangDuong, dinhDangAm, tenNamCanChi, cacPhienTiepTheo, moTaQuy } from "../src/lib/lich-phien.js";
+import { coPhienTheoQuy, coPhienHomNay, ngayHienTai, dinhDangDuong, dinhDangAm, tenNamCanChi, cacPhienTiepTheo, moTaQuy, luoiThang, nhanThangAm } from "../src/lib/lich-phien.js";
 
 const ngay = (s) => { const [y, m, d] = s.split("-").map(Number); return { y, m, d }; };
 
@@ -168,5 +168,28 @@ describe("mô tả chu kỳ dễ hiểu", () => {
   it("chu kỳ 7 ngày là mỗi tuần vào một thứ", () => {
     expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-10-18", chu_ky: 7 }, "vi")).toBe("mỗi tuần vào Chủ nhật");
     expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-10-22", chu_ky: 7 }, "en")).toBe("every week on Thursday");
+  });
+});
+
+describe("lưới lịch tháng", () => {
+  it("tháng 2/2026: 28 ngày, mùng 1 là Chủ nhật, mùng 1 Tết là 17/02", () => {
+    const luoi = luoiThang(2026, 2);
+    expect(luoi.soNgay).toBe(28);
+    expect(luoi.thuDau).toBe(0);
+    const tet = luoi.ngay.find((o) => o.duong.d === 17);
+    expect(tet.am).toMatchObject({ ngay: 1, thang: 1, nhuan: false });
+  });
+
+  it("tháng 12/2024 có 31 ngày, bắt đầu Chủ nhật", () => {
+    const luoi = luoiThang(2024, 12);
+    expect(luoi.soNgay).toBe(31);
+    expect(luoi.thuDau).toBe(0);
+  });
+
+  it("tháng nhuận 6/2025 hiện trong lưới tháng 7 dương", () => {
+    const ngayNhuan = luoiThang(2025, 7).ngay.find((o) => o.duong.d === 25);
+    expect(ngayNhuan.am).toMatchObject({ ngay: 1, thang: 6, nhuan: true });
+    expect(nhanThangAm(ngayNhuan.am)).toBe("tháng nhuận 6");
+    expect(nhanThangAm(ngayNhuan.am, "en")).toBe("leap month 6");
   });
 });

@@ -39,6 +39,7 @@ Chỉ mở rộng sang quận khác khi đã có tín hiệu nhu cầu (lượt 
 - 2026-10-20: Dùng miền miễn phí của Cloudflare Pages `https://chophien.pages.dev/` cho giai đoạn đầu. Repo: `quickmapshare/cho-phien`, branch `main`, không cần build command (trang tĩnh).
 
 ## Trạng thái hiện tại
+- Đã có trang lịch âm `/am-lich/` (và `/en/am-lich/`): xem từng tháng dương kèm ngày âm, lưới vẽ phía client theo `luoiThang()` trong `src/lib/lich-phien.js`. Dòng "Âm lịch:" dưới header link vào trang này. Chưa deploy lên Cloudflare Pages.
 - Đã có trang tạm `index.html` deploy lên Cloudflare Pages tại `https://chophien.pages.dev/`.
 - Đã có `docs/ideas.md` (ý tưởng và câu hỏi mở, cập nhật 2026-10-20).
 - Đã tạo schema PocketBase trên PocketBase của botgap (`api.botgap.dev`, cùng VPS, không phải PocketBase của FormMail Hub): collection `cho_phien_khu_vuc` và `cho_phien_cho`, rule null. Migration ghi trong `pocketbase/pb_migrations/1792000000_cho_phien_schema.js`. Migration này đã áp dụng bằng API, chưa chạy qua `deploy-pb.sh` của snapask.me, nên không copy file này sang repo snapask.me nếu chưa xử lý.

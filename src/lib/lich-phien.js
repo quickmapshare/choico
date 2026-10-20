@@ -96,6 +96,23 @@ export function dinhDangAm(ngayDuong, lang = "vi") {
   return t(lang, "ngayAm", am.ngay, am.thang, am.nhuan, namLoi);
 }
 
+// "tháng 9" hoặc "tháng nhuận 6" (en: "month 9", "leap month 6").
+export function nhanThangAm({ thang, nhuan }, lang = "vi") {
+  return t(lang, "thangAmNhan", thang, nhuan);
+}
+
+// Lưới một tháng dương: mỗi ô là { duong, am }. thuDau là thứ của ngày 1 (0 = Chủ nhật).
+export function luoiThang(nam, thang) {
+  const soNgay = new Date(Date.UTC(nam, thang, 0)).getUTCDate();
+  const thuDau = new Date(Date.UTC(nam, thang - 1, 1)).getUTCDay();
+  const ngay = [];
+  for (let d = 1; d <= soNgay; d++) {
+    const duong = { y: nam, m: thang, d };
+    ngay.push({ duong, am: ngayAm(duong) });
+  }
+  return { soNgay, thuDau, ngay };
+}
+
 // Mô tả quy tắc để hiện trên trang chợ, ví dụ "ngày 5, ngày 10 âm lịch hằng tháng".
 export function moTaQuy(quy, lang = "vi") {
   if (quy.loai === "ngay_am") {

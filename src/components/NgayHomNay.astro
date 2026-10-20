@@ -1,12 +1,12 @@
 ---
 // Hiện ngày dương và âm hôm nay, tính phía trình duyệt theo múi giờ Việt Nam.
-import { t } from "../i18n/strings.js";
+import { t, duongDan } from "../i18n/strings.js";
 const { lang = "vi" } = Astro.props;
 ---
 <div class="ngay-hom-nay" data-lang={lang}>
   <span id="ngay-duong"></span>
   <span class="chan" aria-hidden="true">·</span>
-  <span id="ngay-am"></span>
+  <span id="ngay-am"><a class="lien-am-lich" href={duongDan(lang, "/am-lich/")}>{t(lang, "amLich")}</a> <span id="ngay-am-gia-tri"></span></span>
 </div>
 
 <script>
@@ -18,7 +18,7 @@ const { lang = "vi" } = Astro.props;
   try {
     const hom = ngayHienTai();
     document.getElementById("ngay-duong").textContent = `${t(lang, "duongLich")} ${dinhDangDuong(hom, lang)}`;
-    document.getElementById("ngay-am").textContent = `${t(lang, "amLich")} ${dinhDangAm(hom, lang)}`;
+    document.getElementById("ngay-am-gia-tri").textContent = dinhDangAm(hom, lang);
   } catch (err) {
     console.error(err);
   }
@@ -37,4 +37,5 @@ const { lang = "vi" } = Astro.props;
     margin-bottom: .5rem;
   }
   .chan { color: var(--phu); }
+  .lien-am-lich { color: var(--nhan); text-decoration: underline dotted; text-underline-offset: 3px; }
 </style>

@@ -13,7 +13,7 @@ export async function GET() {
   const { khuVuc, cho } = await taiDuLieu();
 
   // Danh sách [đường dẫn tiếng Việt, ngày cập nhật]
-  const cacTrang = [["/", ""]];
+  const cacTrang = [["/", ""], ["/am-lich/", ""]];
   for (const k of khuVuc) {
     if (k.cap === "tinh_thanh") cacTrang.push([`/tinh/${k.slug}/`, k]);
     if (k.cap === "xa_phuong") cacTrang.push([`/khu-vuc/${k.slug}/`, k]);

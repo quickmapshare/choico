@@ -1,0 +1,131 @@
+---
+// Trang lịch âm: xem từng tháng dương, mỗi ngày kèm ngày âm. Lưới vẽ bằng JS phía trình duyệt
+// theo múi giờ Việt Nam (như widget hôm nay), nên trang không cần dữ liệu từ PocketBase.
+import Layout from "../layouts/Layout.astro";
+import { t, duongDan } from "../i18n/strings.js";
+const { lang } = Astro.props;
+---
+<Layout lang={lang} tieuDe={t(lang, "tieuDeAmLich")} moTa={t(lang, "moTaAmLich")}>
+  <p><a href={duongDan(lang, "/")}>← {t(lang, "trangChu")}</a></p>
+  <h1>{t(lang, "tieuDeAmLich")}</h1>
+  <p class="phu">{t(lang, "moTaAmLich")}</p>
+
+  <noscript><p class="canh-bao">{t(lang, "amLichCanJs")}</p></noscript>
+  <section class="am-lich" id="am-lich" data-lang={lang} hidden>
+    <div class="am-lich-dau">
+      <button type="button" id="am-lich-truoc" aria-label={t(lang, "thangTruoc")}>‹</button>
+      <div class="am-lich-tieu-de">
+        <h2 id="am-lich-thang-duong"></h2>
+        <p class="phu" id="am-lich-thang-am"></p>
+      </div>
+      <button type="button" id="am-lich-sau" aria-label={t(lang, "thangSau")}>›</button>
+    </div>
+    <div class="am-lich-luoi" id="am-lich-luoi"></div>
+    <p class="am-lich-cuoi">
+      <button type="button" id="am-lich-hom-nay" class="nut-chu">{t(lang, "homNayNut")}</button>
+    </p>
+    <p class="vet">{t(lang, "amLichGhiChu")}</p>
+  </section>
+</Layout>
+
+<script>
+  import { dinhDangAm, luoiThang, ngayHienTai, nhanThangAm } from "../lib/lich-phien.js";
+  import { t } from "../i18n/strings.js";
+
+  const khung = document.getElementById("am-lich");
+  const lang = khung.dataset.lang ?? "vi";
+  const hom = ngayHienTai();
+  let nam = hom.y;
+  let thang = hom.m;
+
+  const hienThi = (id) => document.getElementById(id);
+
+  function ve() {
+    const { thuDau, ngay } = luoiThang(nam, thang);
+    const o = t(lang, "thuNgan").map((th) => `<div class="am-lich-thu">${th}</div>`);
+    for (let i = 0; i < thuDau; i++) o.push(`<div class="am-lich-o trong"></div>`);
+    for (const { duong, am } of ngay) {
+      const classes = ["am-lich-o"];
+      if (duong.y === hom.y && duong.m === hom.m && duong.d === hom.d) classes.push("hom-nay");
+      if (am.ngay === 1) classes.push("dau-thang");
+      const nhanAm = am.ngay === 1 ? `1/${am.thang}${am.nhuan ? "N" : ""}` : String(am.ngay);
+      o.push(
+        `<div class="${classes.join(" ")}" title="${dinhDangAm(duong, lang)}">` +
+        `<span class="am-lich-duong">${duong.d}</span>` +
+        `<span class="am-lich-am">${nhanAm}</span></div>`,
+      );
+    }
+    hienThi("am-lich-luoi").innerHTML = o.join("");
+
+    const dau = ngay[0].am;
+    const cuoi = ngay[ngay.length - 1].am;
+    const khoangAm = dau.thang === cuoi.thang && dau.nhuan === cuoi.nhuan
+      ? nhanThangAm(dau, lang)
+      : t(lang, "thangAmKhoang", nhanThangAm(dau, lang), nhanThangAm(cuoi, lang));
+    hienThi("am-lich-thang-duong").textContent = t(lang, "thangDuongNhan", thang, nam);
+    hienThi("am-lich-thang-am").textContent = khoangAm;
+  }
+
+  function chuyenThang(buoc) {
+    thang += buoc;
+    if (thang === 0) { thang = 12; nam -= 1; }
+    if (thang === 13) { thang = 1; nam += 1; }
+    ve();
+  }
+
+  try {
+    ve();
+    khung.hidden = false;
+    hienThi("am-lich-truoc").addEventListener("click", () => chuyenThang(-1));
+    hienThi("am-lich-sau").addEventListener("click", () => chuyenThang(1));
+    hienThi("am-lich-hom-nay").addEventListener("click", () => {
+      nam = hom.y;
+      thang = hom.m;
+      ve();
+    });
+  } catch (err) {
+    console.error(err);
+  }
+</script>
+
+<style is:global>
+  .am-lich { margin-top: 1rem; }
+  .am-lich[hidden] { display: none; }
+  .am-lich-dau { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
+  .am-lich-tieu-de { text-align: center; }
+  .am-lich-tieu-de h2 { margin: 0; font-size: 1.15rem; }
+  .am-lich-tieu-de p { margin: 0; font-size: .9rem; }
+  .am-lich button {
+    font: inherit;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--vien);
+    background: var(--mat);
+    color: var(--chu);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: var(--bong);
+  }
+  .am-lich .nut-chu { width: auto; height: auto; padding: .4rem 1rem; font-size: .92rem; }
+  .am-lich-luoi { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .am-lich-thu { text-align: center; font-size: .8rem; color: var(--phu); padding: .2rem 0; }
+  .am-lich-o {
+    background: var(--mat);
+    border: 1px solid var(--vien);
+    border-radius: 10px;
+    min-height: 3.4rem;
+    padding: .3rem .35rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .am-lich-o.trong { background: transparent; border-color: transparent; }
+  .am-lich-duong { font-weight: 600; font-size: 1rem; line-height: 1.2; }
+  .am-lich-am { font-size: .75rem; color: var(--phu); line-height: 1.2; }
+  .am-lich-o.dau-thang .am-lich-am { color: var(--nhan); font-weight: 700; }
+  .am-lich-o.hom-nay { border: 2px solid var(--nhan); }
+  .am-lich-cuoi { text-align: center; margin: .9rem 0 0; }
+  .am-lich .vet { margin-top: 1.2rem; }
+</style>
