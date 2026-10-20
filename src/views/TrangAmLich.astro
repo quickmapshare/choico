@@ -3,7 +3,7 @@
 // theo múi giờ Việt Nam (như widget hôm nay), nên trang không cần dữ liệu từ PocketBase.
 import Layout from "../layouts/Layout.astro";
 import { t, duongDan } from "../i18n/strings.js";
-const { lang } = Astro.props;
+const { lang, cho = [] } = Astro.props;
 ---
 <Layout lang={lang} tieuDe={t(lang, "tieuDeAmLich")} moTa={t(lang, "moTaAmLich")}>
   <p><a href={duongDan(lang, "/")}>← {t(lang, "trangChu")}</a></p>
@@ -24,10 +24,13 @@ const { lang } = Astro.props;
     <p class="am-lich-cuoi">
       <button type="button" id="am-lich-hom-nay" class="nut-chu">{t(lang, "homNayNut")}</button>
     </p>
+    <div class="am-lich-ds" id="am-lich-cho-ds"></div>
     <div class="am-lich-ds" id="am-lich-le"></div>
     <div class="am-lich-ds" id="am-lich-tiet-khi"></div>
     <p class="vet">{t(lang, "amLichGhiChu")}</p>
     <p class="vet">{t(lang, "leGhiChu")}</p>
+    <p class="vet">{t(lang, "choChuThich")}</p>
+    <script type="application/json" id="am-lich-cho" set:html={JSON.stringify(cho).replace(/</g, "\\u003c")}></script>
 
     <h2 class="am-lich-doi-tieu-de">{t(lang, "doiNgayTieuDe")}</h2>
     <div class="the am-lich-the">
@@ -55,7 +58,7 @@ const { lang } = Astro.props;
 </Layout>
 
 <script>
-  import { dinhDangAm, dinhDangDuong, leAmCua, luoiThang, ngayAm, ngayDuongTuAm, ngayHienTai, nhanThangAm, tenThangCanChi, tietKhiTrongNam } from "../lib/lich-phien.js";
+  import { coPhienHomNay, dinhDangAm, dinhDangDuong, leAmCua, luoiThang, ngayAm, ngayDuongTuAm, ngayHienTai, nhanThangAm, tenThangCanChi, tietKhiTrongNam } from "../lib/lich-phien.js";
   import { t } from "../i18n/strings.js";
 
   const khung = document.getElementById("am-lich");
@@ -72,6 +75,8 @@ const { lang } = Astro.props;
   }
 
   const pad = (so) => String(so).padStart(2, "0");
+  const danhSachCho = JSON.parse(document.getElementById("am-lich-cho").textContent);
+  const choCoPhien = (ngayDuong) => danhSachCho.filter((c) => coPhienHomNay(c, ngayDuong));
   const hienThi = (id) => document.getElementById(id);
   const tietKhiCache = new Map();
   const tietKhiCuaNam = (y) => {
@@ -88,10 +93,16 @@ const { lang } = Astro.props;
     const o = t(lang, "thuNgan").map((th) => `<div class="am-lich-thu">${th}</div>`);
     for (let i = 0; i < thuDau; i++) o.push(`<div class="am-lich-o trong"></div>`);
     const lePhatSinh = [];
+    const choPhatSinh = [];
     for (const { duong, am } of ngay) {
       const classes = ["am-lich-o"];
       if (duong.y === hom.y && duong.m === hom.m && duong.d === hom.d) classes.push("hom-nay");
       if (am.ngay === 1) classes.push("dau-thang");
+      const coCho = choCoPhien(duong);
+      if (coCho.length) {
+        classes.push("co-cho");
+        choPhatSinh.push(`<li>${duong.d}/${duong.m}: ${coCho.map((c) => `<a href="${c.href}">${c.ten}</a>`).join(", ")}</li>`);
+      }
       const le = leAmCua(am);
       if (le.length) {
         classes.push("co-le");
@@ -117,6 +128,15 @@ const { lang } = Astro.props;
       : t(lang, "thangAmKhoang", nhanThang(thangAmCoMat[0]), nhanThang(thangAmCoMat[thangAmCoMat.length - 1]));
     hienThi("am-lich-thang-duong").textContent = t(lang, "thangDuongNhan", thang, nam);
     hienThi("am-lich-thang-am").textContent = khoangAm;
+
+    const choBlock = hienThi("am-lich-cho-ds");
+    if (!danhSachCho.length) {
+      choBlock.innerHTML = `<p class="phu">${t(lang, "choKhongCoDuLieu")}</p>`;
+    } else if (!choPhatSinh.length) {
+      choBlock.innerHTML = `<p class="phu">${t(lang, "choKhongCoTrongThang")}</p>`;
+    } else {
+      choBlock.innerHTML = `<p class="phu">${t(lang, "choCoPhienTrongThang")}</p><ul>${choPhatSinh.join("")}</ul>`;
+    }
 
     const leBlock = hienThi("am-lich-le");
     leBlock.innerHTML = lePhatSinh.length
@@ -222,6 +242,7 @@ const { lang } = Astro.props;
   .am-lich-o.trong { background: transparent; border-color: transparent; }
   .am-lich-duong { font-weight: 600; font-size: 1rem; line-height: 1.2; }
   .am-lich-o.co-le .am-lich-duong::after { content: " •"; color: var(--nhan); }
+  .am-lich-o.co-cho .am-lich-duong::before { content: "• "; color: var(--xanh); }
   .am-lich-am { font-size: .75rem; color: var(--phu); line-height: 1.2; }
   .am-lich-o.dau-thang .am-lich-am { color: var(--nhan); font-weight: 700; }
   .am-lich-o.hom-nay { border: 2px solid var(--nhan); }

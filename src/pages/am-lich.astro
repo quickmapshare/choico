@@ -1,4 +1,11 @@
 ---
 import TrangAmLich from "../views/TrangAmLich.astro";
+import { taiDuLieu } from "../lib/du-lieu.js";
+import { duongDan } from "../i18n/strings.js";
+// Chỉ đưa ra trình duyệt chợ đã xác minh có lịch, gồm tên, link và quy tắc lịch.
+const { cho } = await taiDuLieu();
+const choCoLich = cho
+  .filter((c) => c.trang_thai_xac_minh === "da_xac_minh" && (c.lich_phien ?? []).length > 0)
+  .map((c) => ({ ten: c.ten, href: duongDan("vi", `/cho/${c.slug}/`), trang_thai_xac_minh: c.trang_thai_xac_minh, lich_phien: c.lich_phien }));
 ---
-<TrangAmLich lang="vi" />
+<TrangAmLich lang="vi" cho={choCoLich} />
