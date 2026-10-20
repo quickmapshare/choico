@@ -119,3 +119,19 @@ describe("phiên tiếp theo", () => {
     expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-01-01", chu_ky: 5 })).toBe("mỗi 5 ngày, tính từ 01/01/2026");
   });
 });
+
+describe("ngôn ngữ tiếng Anh", () => {
+  it("ngày dương tiếng Anh", () => {
+    expect(dinhDangDuong({ y: 2026, m: 10, d: 20 }, "en")).toBe("Tuesday, 20/10/2026");
+  });
+
+  it("ngày âm tiếng Anh có con giáp", () => {
+    expect(dinhDangAm({ y: 2026, m: 10, d: 20 }, "en")).toBe("Lunar day 11, month 9, year Bính Ngọ (Horse)");
+    expect(dinhDangAm({ y: 2025, m: 7, d: 25 }, "en")).toBe("Lunar day 1, month leap 6, year Ất Tỵ (Snake)");
+  });
+
+  it("mô tả quy tắc tiếng Anh", () => {
+    expect(moTaQuy({ loai: "ngay_am", ngay: [5, 10, -1] }, "en")).toBe("day 5, day 10, last day of each lunar month (leap months excluded)");
+    expect(moTaQuy({ loai: "chu_ky", ngay_goc: "2026-01-01", chu_ky: 5 }, "en")).toBe("every 5 days, counting from 01/01/2026");
+  });
+});

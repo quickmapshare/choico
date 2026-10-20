@@ -1,15 +1,21 @@
 ---
+// Khung chung cho mọi trang. lang: "vi" hoặc "en". duongKhac: đường dẫn cùng trang ở ngôn ngữ còn lại.
 import NgayHomNay from "../components/NgayHomNay.astro";
-const { tieuDe, moTa } = Astro.props;
+import { t, duongDan } from "../i18n/strings.js";
+const { tieuDe, moTa, lang = "vi", duongKhac = "/" } = Astro.props;
+const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
+const khac = lang === "en" ? "vi" : "en";
 ---
 <!doctype html>
-<html lang="vi">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tieuDe}</title>
     <meta name="description" content={moTa} />
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <link rel="canonical" href={duongCanhTac} />
+    <link rel="alternate" hreflang="vi" href={new URL(lang === "vi" ? Astro.url.pathname : duongKhac, Astro.site)} />
+    <link rel="alternate" hreflang="en" href={new URL(lang === "en" ? Astro.url.pathname : duongKhac, Astro.site)} />
     <style>
       :root { color-scheme: light dark; --nen: #faf7f2; --chu: #2b2b2b; --phu: #555; --vien: #d9d2c5; }
       @media (prefers-color-scheme: dark) {
@@ -23,12 +29,16 @@ const { tieuDe, moTa } = Astro.props;
       .phu { color: var(--phu); font-size: .95rem; }
       .the { border: 1px solid var(--vien); border-radius: .5rem; padding: .75rem 1rem; margin: .5rem 0; }
       .canh-bao { border-left: 4px solid #c0392b; padding-left: .75rem; }
+      .chuyen-ngu { float: right; font-size: .9rem; }
       ul { padding-left: 1.2rem; }
     </style>
   </head>
   <body>
     <main>
-      <NgayHomNay />
+      <div class="chuyen-ngu">
+        <a href={duongKhac} hreflang={khac} lang={khac}>{t(lang, khac === "en" ? "trangTiengAnh" : "xemBanTiengViet")}</a>
+      </div>
+      <NgayHomNay lang={lang} />
       <slot />
     </main>
   </body>

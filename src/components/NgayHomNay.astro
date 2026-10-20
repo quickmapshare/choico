@@ -1,7 +1,9 @@
 ---
 // Hiện ngày dương và âm hôm nay, tính phía trình duyệt theo múi giờ Việt Nam.
+import { t } from "../i18n/strings.js";
+const { lang = "vi" } = Astro.props;
 ---
-<div class="ngay-hom-nay" aria-live="off">
+<div class="ngay-hom-nay" data-lang={lang}>
   <span id="ngay-duong"></span>
   <span class="chan" aria-hidden="true">·</span>
   <span id="ngay-am"></span>
@@ -9,11 +11,14 @@
 
 <script>
   import { dinhDangAm, dinhDangDuong, ngayHienTai } from "../lib/lich-phien.js";
+  import { t } from "../i18n/strings.js";
 
+  const khung = document.querySelector(".ngay-hom-nay");
+  const lang = khung?.dataset.lang ?? "vi";
   try {
     const hom = ngayHienTai();
-    document.getElementById("ngay-duong").textContent = `Dương lịch: ${dinhDangDuong(hom)}`;
-    document.getElementById("ngay-am").textContent = `Âm lịch: ${dinhDangAm(hom)}`;
+    document.getElementById("ngay-duong").textContent = `${t(lang, "duongLich")} ${dinhDangDuong(hom, lang)}`;
+    document.getElementById("ngay-am").textContent = `${t(lang, "amLich")} ${dinhDangAm(hom, lang)}`;
   } catch (err) {
     console.error(err);
   }

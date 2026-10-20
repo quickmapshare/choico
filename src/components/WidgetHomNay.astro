@@ -1,19 +1,25 @@
 ---
 // Widget "hôm nay có phiên không": tính phía trình duyệt theo múi giờ Asia/Ho_Chi_Minh.
 // Chỉ nhận chợ đã xác minh (lich đã được lọc ở lớp dữ liệu).
-const { chos } = Astro.props;
+import { t } from "../i18n/strings.js";
+const { chos, lang = "vi" } = Astro.props;
 const duLieu = chos.map((c) => ({ ten: c.ten, slug: c.slug, dia_chi: c.dia_chi ?? "", lich: c.lich }));
+const tien = lang === "en" ? "/en" : "";
 ---
-<section class="the" aria-live="polite">
-  <h2>Hôm nay có phiên không?</h2>
-  <p id="widget-tong" class="phu">Đang tính…</p>
+<section class="the" aria-live="polite" data-lang={lang} data-tien={tien}>
+  <h2>{t(lang, "widgetTieuDe")}</h2>
+  <p id="widget-tong" class="phu">{t(lang, "widgetDangTinh")}</p>
   <ul id="widget-ds"></ul>
   <script id="widget-du-lieu" type="application/json" set:html={JSON.stringify(duLieu)}></script>
 </section>
 
 <script>
   import { coPhienHomNay, ngayHienTai } from "../lib/lich-phien.js";
+  import { t } from "../i18n/strings.js";
 
+  const khung = document.querySelector("#widget-tong")?.closest("section");
+  const lang = khung?.dataset.lang ?? "vi";
+  const tien = khung?.dataset.tien ?? "";
   const nhan = document.getElementById("widget-du-lieu");
   const tong = document.getElementById("widget-tong");
   const ds = document.getElementById("widget-ds");
@@ -22,13 +28,11 @@ const duLieu = chos.map((c) => ({ ten: c.ten, slug: c.slug, dia_chi: c.dia_chi ?
     const chos = JSON.parse(nhan.textContent || "[]");
     const hom = ngayHienTai();
     const coPhien = chos.filter((c) => coPhienHomNay(c, hom) === true);
-    tong.textContent = coPhien.length
-      ? `Có ${coPhien.length} chợ có phiên hôm nay.`
-      : "Hôm nay chưa có chợ nào có phiên trong dữ liệu đã xác minh.";
+    tong.textContent = coPhien.length ? t(lang, "widgetCo", coPhien.length) : t(lang, "widgetKhong");
     for (const c of coPhien) {
       const li = document.createElement("li");
       const a = document.createElement("a");
-      a.href = `/cho/${c.slug}/`;
+      a.href = `${tien}/cho/${c.slug}/`;
       a.textContent = c.ten;
       li.append(a);
       if (c.dia_chi) {
@@ -40,7 +44,7 @@ const duLieu = chos.map((c) => ({ ten: c.ten, slug: c.slug, dia_chi: c.dia_chi ?
       ds.append(li);
     }
   } catch (err) {
-    tong.textContent = "Không tải được lịch phiên hôm nay.";
+    tong.textContent = t(lang, "chuaTaiLichHomNay");
     console.error(err);
   }
 </script>

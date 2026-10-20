@@ -8,6 +8,7 @@
 // Múi giờ của phiên là Asia/Ho_Chi_Minh.
 
 import { ngayAmVN } from "./am-lich-vn.js";
+import { t } from "../i18n/strings.js";
 
 export const MUI_GIO = "Asia/Ho_Chi_Minh";
 
@@ -70,39 +71,41 @@ export function coPhienHomNay(cho, ngayDuong = ngayHienTai()) {
 
 const CAN = ["Giáp", "Ất", "Bính", "Đinh", "Mậu", "Kỷ", "Canh", "Tân", "Nhâm", "Quý"];
 const CHI = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
-const THU = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+const CON_GIAP = ["Rat", "Ox", "Tiger", "Cat", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"];
 
 // Tên năm can chi tiếng Việt, ví dụ 2026 -> "Bính Ngọ".
 export function tenNamCanChi(nam) {
   return `${CAN[(((nam - 4) % 10) + 10) % 10]} ${CHI[(((nam - 4) % 12) + 12) % 12]}`;
 }
 
-// "Thứ Ba, 20/10/2026"
-export function dinhDangDuong({ y, m, d }) {
-  const thu = THU[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+// "Thứ Ba, 20/10/2026" hoặc "Tuesday, 20/10/2026"
+export function dinhDangDuong({ y, m, d }, lang = "vi") {
+  const thu = t(lang, "thu")[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
   return `${thu}, ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
 }
 
-// "Ngày 11 tháng 9 năm Bính Ngọ" (có thêm "nhuận" nếu là tháng nhuận)
-export function dinhDangAm(ngayDuong) {
+// "Ngày 11 tháng 9 năm Bính Ngọ" hoặc "Lunar day 11, month 9, year Bính Ngọ"
+export function dinhDangAm(ngayDuong, lang = "vi") {
   const am = ngayAm(ngayDuong);
-  const thang = `${am.nhuan ? "nhuận " : ""}${am.thang}`;
-  return `Ngày ${am.ngay} tháng ${thang} năm ${tenNamCanChi(ngayAmVN(ngayDuong).nam)}`;
+  const namCanChi = tenNamCanChi(ngayAmVN(ngayDuong).nam);
+  const namLoi = lang === "en"
+    ? `${namCanChi} (${CON_GIAP[(((ngayAmVN(ngayDuong).nam - 4) % 12) + 12) % 12]})`
+    : namCanChi;
+  return t(lang, "ngayAm", am.ngay, am.thang, am.nhuan, namLoi);
 }
 
-// Mô tả quy tắc để hiện trên trang chợ, ví dụ "Ngày 5, 10, 15 âm lịch hằng tháng".
-export function moTaQuy(quy) {
+// Mô tả quy tắc để hiện trên trang chợ, ví dụ "ngày 5, ngày 10 âm lịch hằng tháng".
+export function moTaQuy(quy, lang = "vi") {
   if (quy.loai === "ngay_am") {
     const cacNgay = quy.ngay
-      .map((so) => (so === -1 ? "ngày cuối tháng" : `ngày ${so}`))
+      .map((so) => (so === -1 ? t(lang, "quyNgayCuoi") : t(lang, "quyNgay", so)))
       .join(", ");
-    const ghiChu = (quy.thang_nhuan ?? "bo_qua") === "bo_qua" ? " (không tính tháng nhuận)" : "";
-    return `${cacNgay} âm lịch hằng tháng${ghiChu}`;
+    return t(lang, "quyNgayAm", cacNgay, (quy.thang_nhuan ?? "bo_qua") === "bo_qua");
   }
   if (quy.loai === "chu_ky") {
     const { y, m, d } = chuoiThanhNgay(quy.ngay_goc);
     const ngayGoc = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
-    return `mỗi ${quy.chu_ky} ngày, tính từ ${ngayGoc}`;
+    return t(lang, "quyChuKy", quy.chu_ky, ngayGoc);
   }
   return "";
 }
