@@ -97,6 +97,9 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
       .ten-web { font-weight: 700; text-decoration: none; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: .5rem; color: var(--chu); }
       /* :global vì SVG nằm trong component Logo nên không có data-astro-cid của khung này. Thiếu flex: none thì logo bị co và đè lên chữ. */
       .ten-web :global(.logo) { color: var(--nhan); flex: none; }
+      /* Chữ "Chợ" có nón lá đặt trên đầu: khung chữ chừa chỗ phía trên, nón căn giữa theo chữ */
+      .cho-doi-non { position: relative; display: inline-block; margin: .9rem -.25rem 0 0; }
+      .cho-doi-non :global(.logo) { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, .15rem); }
 
       main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
       a { color: var(--nhan); text-decoration: none; }
@@ -133,7 +136,12 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     {!nhung && (
       <header class="thanh-tren">
         <div class="thanh-tren-noi">
-          <a class="ten-web" href={duongDan(lang, "/")}><Logo /><span>{t(lang, "tenTrang")}</span></a>
+          {lang === "en" ? (
+            <a class="ten-web" href={duongDan(lang, "/")}><Logo /><span>{t(lang, "tenTrang")}</span></a>
+          ) : (
+            // Nón lá đội lên chữ "Chợ"
+            <a class="ten-web" href={duongDan(lang, "/")}><span class="cho-doi-non">Chợ<Logo size={18} /></span><span>phiên Việt Nam</span></a>
+          )}
           <CoNgonNgu lang={lang} href={duongKhac} />
         </div>
       </header>
