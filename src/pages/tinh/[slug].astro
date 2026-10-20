@@ -8,7 +8,9 @@ export async function getStaticPaths() {
 }
 
 const { tinh } = Astro.props;
-const { khuVuc } = await taiDuLieu();
+const { khuVuc, cho } = await taiDuLieu();
 const phuong = khuVuc.filter((k) => k.cap === "xa_phuong" && k.cha === tinh.id);
+const idPhuong = new Set(phuong.map((k) => k.id));
+const choTrongTinh = cho.filter((c) => idPhuong.has(c.khu_vuc));
 ---
-<TrangTinh lang="vi" tinh={tinh} phuong={phuong} />
+<TrangTinh lang="vi" tinh={tinh} phuong={phuong} choTrongTinh={choTrongTinh} />
