@@ -66,7 +66,9 @@ async function danhGia(ban) {
   });
   if (!r.ok) throw new Error(`Claude API lỗi: ${r.status} ${await r.text()}`);
   const text = (await r.json()).content.find((c) => c.type === "text")?.text ?? "";
-  const json = JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
+  const khop = text.match(/\{[\s\S]*\}/);
+  if (!khop) throw new Error(`Phản hồi AI không phải JSON: ${text.slice(0, 300)}`);
+  const json = JSON.parse(khop[0]);
   if (!["nen_nhan", "can_xem_lai", "nen_tu_choi"].includes(json.khuyen_nghi)) throw new Error(`Khuyến nghị không hợp lệ: ${json.khuyen_nghi}`);
   return json;
 }
@@ -103,6 +105,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err.message);
+  console.error(err.message, err.cause ? `(${err.cause.code || err.cause.message})` : "");
   process.exit(1);
 });
