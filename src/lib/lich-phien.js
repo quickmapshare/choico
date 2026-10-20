@@ -32,8 +32,8 @@ function chuoiThanhNgay(chuoi) {
 
 // Ngày âm của một ngày dương: { ngay, thang, nhuan }.
 export function ngayAm(ngayDuong) {
-  const { ngay, thang, nhuan } = ngayAmVN(ngayDuong);
-  return { ngay, thang, nhuan };
+  const { ngay, thang, nam, nhuan } = ngayAmVN(ngayDuong);
+  return { ngay, thang, nam, nhuan };
 }
 
 // Ngày dương đó có phải ngày cuối của tháng âm không (ngày hôm sau là mùng 1).

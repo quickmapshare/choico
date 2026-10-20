@@ -1,5 +1,5 @@
 ---
-// Trang lịch âm: xem từng tháng dương, mỗi ngày kèm ngày âm. Lưới vẽ bằng JS phía trình duyệt
+// Trang lịch âm: xem từng tháng dương, mỗi ngày kèm ngày âm, lễ âm và tiết khí. Mọi thứ tính bằng JS phía trình duyệt
 // theo múi giờ Việt Nam (như widget hôm nay), nên trang không cần dữ liệu từ PocketBase.
 import Layout from "../layouts/Layout.astro";
 import { t, duongDan } from "../i18n/strings.js";
@@ -24,12 +24,38 @@ const { lang } = Astro.props;
     <p class="am-lich-cuoi">
       <button type="button" id="am-lich-hom-nay" class="nut-chu">{t(lang, "homNayNut")}</button>
     </p>
+    <div class="am-lich-ds" id="am-lich-le"></div>
+    <div class="am-lich-ds" id="am-lich-tiet-khi"></div>
     <p class="vet">{t(lang, "amLichGhiChu")}</p>
+    <p class="vet">{t(lang, "leGhiChu")}</p>
+
+    <h2 class="am-lich-doi-tieu-de">{t(lang, "doiNgayTieuDe")}</h2>
+    <div class="the am-lich-the">
+      <h3>{t(lang, "doiDuongSangAm")}</h3>
+      <div class="am-lich-hang">
+        <label>{t(lang, "doiNgayDuong")} <input type="date" id="doi-duong" /></label>
+        <button type="button" class="nut-chu" id="doi-duong-xem">{t(lang, "doiXem")}</button>
+      </div>
+      <p class="am-lich-kq" id="doi-duong-kq" aria-live="polite"></p>
+    </div>
+    <div class="the am-lich-the">
+      <h3>{t(lang, "doiAmSangDuong")}</h3>
+      <div class="am-lich-hang">
+        <label>{t(lang, "doiNgayAmNgay")} <input type="number" id="doi-am-ngay" min="1" max="30" inputmode="numeric" /></label>
+        <label>{t(lang, "doiNgayAmThang")} <input type="number" id="doi-am-thang" min="1" max="12" inputmode="numeric" /></label>
+        <label>{t(lang, "doiNgayAmNam")} <input type="number" id="doi-am-nam" inputmode="numeric" /></label>
+      </div>
+      <div class="am-lich-hang">
+        <label class="am-lich-nhuan"><input type="checkbox" id="doi-am-nhuan" /> {t(lang, "doiNhuan")}</label>
+        <button type="button" class="nut-chu" id="doi-am-xem">{t(lang, "doiXem")}</button>
+      </div>
+      <p class="am-lich-kq" id="doi-am-kq" aria-live="polite"></p>
+    </div>
   </section>
 </Layout>
 
 <script>
-  import { dinhDangAm, luoiThang, ngayHienTai, nhanThangAm } from "../lib/lich-phien.js";
+  import { dinhDangAm, dinhDangDuong, leAmCua, luoiThang, ngayAm, ngayDuongTuAm, ngayHienTai, nhanThangAm, tenThangCanChi, tietKhiTrongNam } from "../lib/lich-phien.js";
   import { t } from "../i18n/strings.js";
 
   const khung = document.getElementById("am-lich");
@@ -38,16 +64,39 @@ const { lang } = Astro.props;
   let nam = hom.y;
   let thang = hom.m;
 
+  // Mở đúng tháng nếu đường dẫn có dạng #2026-10
+  const khopHash = location.hash.match(/^#(\d{4})-(\d{1,2})$/);
+  if (khopHash && Number(khopHash[2]) >= 1 && Number(khopHash[2]) <= 12) {
+    nam = Number(khopHash[1]);
+    thang = Number(khopHash[2]);
+  }
+
+  const pad = (so) => String(so).padStart(2, "0");
   const hienThi = (id) => document.getElementById(id);
+  const tietKhiCache = new Map();
+  const tietKhiCuaNam = (y) => {
+    if (!tietKhiCache.has(y)) tietKhiCache.set(y, tietKhiTrongNam(y));
+    return tietKhiCache.get(y);
+  };
+
+  function capNhatDuongDan() {
+    history.replaceState(null, "", `#${nam}-${pad(thang)}`);
+  }
 
   function ve() {
     const { thuDau, ngay } = luoiThang(nam, thang);
     const o = t(lang, "thuNgan").map((th) => `<div class="am-lich-thu">${th}</div>`);
     for (let i = 0; i < thuDau; i++) o.push(`<div class="am-lich-o trong"></div>`);
+    const lePhatSinh = [];
     for (const { duong, am } of ngay) {
       const classes = ["am-lich-o"];
       if (duong.y === hom.y && duong.m === hom.m && duong.d === hom.d) classes.push("hom-nay");
       if (am.ngay === 1) classes.push("dau-thang");
+      const le = leAmCua(am);
+      if (le.length) {
+        classes.push("co-le");
+        lePhatSinh.push(`<li>${duong.d}/${duong.m}: ${le.map((khoa) => t(lang, "le")[khoa]).join(", ")}</li>`);
+      }
       const nhanAm = am.ngay === 1 ? `1/${am.thang}${am.nhuan ? "N" : ""}` : String(am.ngay);
       o.push(
         `<div class="${classes.join(" ")}" title="${dinhDangAm(duong, lang)}">` +
@@ -57,13 +106,30 @@ const { lang } = Astro.props;
     }
     hienThi("am-lich-luoi").innerHTML = o.join("");
 
-    const dau = ngay[0].am;
-    const cuoi = ngay[ngay.length - 1].am;
-    const khoangAm = dau.thang === cuoi.thang && dau.nhuan === cuoi.nhuan
-      ? nhanThangAm(dau, lang)
-      : t(lang, "thangAmKhoang", nhanThangAm(dau, lang), nhanThangAm(cuoi, lang));
+    // Tháng âm có trong lưới, kèm can chi (tháng nhuận không có can chi riêng)
+    const thangAmCoMat = [];
+    for (const { am } of ngay) {
+      if (!thangAmCoMat.some((x) => x.thang === am.thang && x.nhuan === am.nhuan)) thangAmCoMat.push(am);
+    }
+    const nhanThang = (am) => (am.nhuan ? nhanThangAm(am, lang) : `${nhanThangAm(am, lang)} (${tenThangCanChi(am.nam, am.thang)})`);
+    const khoangAm = thangAmCoMat.length === 1
+      ? nhanThang(thangAmCoMat[0])
+      : t(lang, "thangAmKhoang", nhanThang(thangAmCoMat[0]), nhanThang(thangAmCoMat[thangAmCoMat.length - 1]));
     hienThi("am-lich-thang-duong").textContent = t(lang, "thangDuongNhan", thang, nam);
     hienThi("am-lich-thang-am").textContent = khoangAm;
+
+    const leBlock = hienThi("am-lich-le");
+    leBlock.innerHTML = lePhatSinh.length
+      ? `<p class="phu">${t(lang, "leTrongThang")}</p><ul>${lePhatSinh.join("")}</ul>`
+      : "";
+
+    const tietKhiTrongThang = tietKhiCuaNam(nam).filter((tk) => tk.ngay.m === thang);
+    hienThi("am-lich-tiet-khi").innerHTML =
+      `<p class="phu">${t(lang, "tietKhiTrongThang")}</p><ul>` +
+      tietKhiTrongThang.map((tk) => `<li>${tk.ngay.d}/${tk.ngay.m}: ${t(lang, "tietKhi")[tk.so]}</li>`).join("") +
+      "</ul>";
+
+    capNhatDuongDan();
   }
 
   function chuyenThang(buoc) {
@@ -73,9 +139,39 @@ const { lang } = Astro.props;
     ve();
   }
 
+  function doiDuongSangAm() {
+    const gia = hienThi("doi-duong").value;
+    if (!gia) return;
+    const [y, m, d] = gia.split("-").map(Number);
+    hienThi("doi-duong-kq").textContent = t(lang, "doiKetQuaAm", dinhDangAm({ y, m, d }, lang));
+  }
+
+  function doiAmSangDuong() {
+    const ngay = Number(hienThi("doi-am-ngay").value);
+    const thangAm = Number(hienThi("doi-am-thang").value);
+    const namAm = Number(hienThi("doi-am-nam").value);
+    const nhuan = hienThi("doi-am-nhuan").checked;
+    const kq = hienThi("doi-am-kq");
+    if (!ngay || !thangAm || !namAm) {
+      kq.textContent = t(lang, "doiNhapDay");
+      return;
+    }
+    const duong = ngayDuongTuAm({ ngay, thang: thangAm, nam: namAm, nhuan });
+    kq.textContent = duong ? t(lang, "doiKetQuaDuong", dinhDangDuong(duong, lang)) : t(lang, "doiKhongCo");
+  }
+
   try {
     ve();
     khung.hidden = false;
+
+    // Điền sẵn ô đổi ngày theo hôm nay
+    const amHom = ngayAm(hom);
+    hienThi("doi-duong").value = `${hom.y}-${pad(hom.m)}-${pad(hom.d)}`;
+    hienThi("doi-am-ngay").value = amHom.ngay;
+    hienThi("doi-am-thang").value = amHom.thang;
+    hienThi("doi-am-nam").value = amHom.nam;
+    hienThi("doi-am-nhuan").checked = amHom.nhuan;
+
     hienThi("am-lich-truoc").addEventListener("click", () => chuyenThang(-1));
     hienThi("am-lich-sau").addEventListener("click", () => chuyenThang(1));
     hienThi("am-lich-hom-nay").addEventListener("click", () => {
@@ -83,6 +179,8 @@ const { lang } = Astro.props;
       thang = hom.m;
       ve();
     });
+    hienThi("doi-duong-xem").addEventListener("click", doiDuongSangAm);
+    hienThi("doi-am-xem").addEventListener("click", doiAmSangDuong);
   } catch (err) {
     console.error(err);
   }
@@ -123,9 +221,30 @@ const { lang } = Astro.props;
   }
   .am-lich-o.trong { background: transparent; border-color: transparent; }
   .am-lich-duong { font-weight: 600; font-size: 1rem; line-height: 1.2; }
+  .am-lich-o.co-le .am-lich-duong::after { content: " •"; color: var(--nhan); }
   .am-lich-am { font-size: .75rem; color: var(--phu); line-height: 1.2; }
   .am-lich-o.dau-thang .am-lich-am { color: var(--nhan); font-weight: 700; }
   .am-lich-o.hom-nay { border: 2px solid var(--nhan); }
   .am-lich-cuoi { text-align: center; margin: .9rem 0 0; }
-  .am-lich .vet { margin-top: 1.2rem; }
+  .am-lich-ds { margin-top: 1rem; }
+  .am-lich-ds p { margin: 0 0 .2rem; font-weight: 600; font-size: .95rem; }
+  .am-lich-ds ul { margin: 0; font-size: .92rem; }
+  .am-lich .vet { margin-top: 1rem; }
+  .am-lich-doi-tieu-de { margin-top: 2.2rem; }
+  .am-lich-the h3 { margin: 0 0 .5rem; font-size: 1rem; }
+  .am-lich-hang { display: flex; flex-wrap: wrap; align-items: end; gap: .5rem .9rem; margin-bottom: .5rem; }
+  .am-lich-hang label { display: flex; flex-direction: column; gap: .2rem; font-size: .9rem; color: var(--phu); }
+  .am-lich-nhuan { flex-direction: row !important; align-items: center; gap: .4rem !important; }
+  .am-lich input:not([type="checkbox"]) {
+    font: inherit;
+    color: var(--chu);
+    background: var(--mat);
+    border: 1px solid var(--vien);
+    border-radius: 8px;
+    padding: .4rem .5rem;
+    width: 6rem;
+    max-width: 100%;
+  }
+  .am-lich input[type="date"] { width: 11rem; }
+  .am-lich-kq { min-height: 1.6em; font-weight: 600; margin: .2rem 0 0; }
 </style>
