@@ -11,6 +11,7 @@ const tinhs = khuVuc.filter((k) => k.cap === "tinh_thanh");
 <Layout lang={lang} tieuDe={t(lang, "tieuDeChu")} moTa={t(lang, "moTaChu")}>
   <h1>{t(lang, "tenTrang")}</h1>
   <p class="phu">{t(lang, "ghiChuChu")}</p>
+  <GopY loai="them_cho" lang={lang} />
 
   <WidgetHomNay chos={choDaXacMinh} lang={lang} />
   <MaNhung lang={lang} />
@@ -32,5 +33,4 @@ const tinhs = khuVuc.filter((k) => k.cap === "tinh_thanh");
   .luoi-tinh li { border-bottom: 1px dotted var(--vien); padding: .25rem 0; }
 </style>
 
-  <GopY loai="them_cho" lang={lang} />
 </Layout>

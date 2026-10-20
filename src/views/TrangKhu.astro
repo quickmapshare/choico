@@ -14,6 +14,7 @@ const choDaXacMinh = dsCho.filter((c) => c.trang_thai_xac_minh === "da_xac_minh"
   </p>
   <h1>{t(lang, "tieuDeKhu", khu.ten)}</h1>
   {khu.ghi_chu && <p class="phu">{khu.ghi_chu}</p>}
+  <GopY loai="them_cho" khuId={khu.id} lang={lang} />
   <WidgetHomNay chos={choDaXacMinh} lang={lang} />
   <MaNhung loc={{ khu: khu.slug }} lang={lang} />
   {dsCho.length === 0 && <p class="phu">{t(lang, "chuaCoCho")}</p>}
@@ -24,5 +25,4 @@ const choDaXacMinh = dsCho.filter((c) => c.trang_thai_xac_minh === "da_xac_minh"
       <div class="phu">{c.trang_thai_xac_minh === "da_xac_minh" ? t(lang, "lichDaXacMinh") : t(lang, "lichChuaXacMinh")}</div>
     </div>
   ))}
-  <GopY loai="them_cho" khuId={khu.id} lang={lang} />
 </Layout>
