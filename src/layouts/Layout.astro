@@ -95,7 +95,8 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
         gap: 1rem;
       }
       .ten-web { font-weight: 700; text-decoration: none; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: .5rem; color: var(--chu); }
-      .ten-web .logo { color: var(--nhan); flex: none; }
+      /* :global vì SVG nằm trong component Logo nên không có data-astro-cid của khung này. Thiếu flex: none thì logo bị co và đè lên chữ. */
+      .ten-web :global(.logo) { color: var(--nhan); flex: none; }
 
       main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
       a { color: var(--nhan); text-decoration: none; }
