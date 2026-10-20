@@ -97,13 +97,13 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
       }
       .ten-web { font-weight: 700; text-decoration: none; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: .5rem; color: var(--chu); }
       /* :global vì SVG nằm trong component Logo nên không có data-astro-cid của khung này. Thiếu flex: none thì logo bị co và đè lên chữ. */
-      .ten-web :global(.logo) { color: var(--nhan); flex: none; }
+      .ten-web .logo { color: var(--nhan); flex: none; }
       /* Chữ "Chợ" có nón lá đặt trên đầu: khung chữ chừa chỗ phía trên, nón căn giữa theo chữ */
       /* Tiếng Việt: căn theo đường đáy chữ nên "Chợ" và "phiên Việt Nam" thẳng hàng đáy. Nón đội lên giữa "Ch", mép nón chạm đỉnh chữ */
       .ten-web-vi { align-items: baseline; gap: 0; }
       .ten-web-vi .phien { margin-left: .3em; }
       .chu-ch { position: relative; }
-      .chu-ch :global(.logo) { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, calc(.65em + 5px)); }
+      .chu-ch .logo { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, calc(.65em + 5px)); }
 
       main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
       a { color: var(--nhan); text-decoration: none; }
