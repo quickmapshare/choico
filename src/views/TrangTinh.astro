@@ -14,7 +14,7 @@ const choDaXacMinh = choTrongTinh.filter((c) => c.trang_thai_xac_minh === "da_xa
     <GopY loai="them_cho" lang={lang} tinhMacDinh={tinh.ten} />
   </div>
   {tinh.ghi_chu && <p class="phu">{tinh.ghi_chu}</p>}
-  <WidgetHomNay chos={choDaXacMinh} lang={lang} />
+  <WidgetHomNay chos={choDaXacMinh} lang={lang} tieuDe={t(lang, "widgetTieuDeTinh", tinh.ten)} />
   <MaNhung loc={{ tinh: tinh.slug }} lang={lang} />
   {phuong.length === 0 && <p class="phu">{t(lang, "chuaCoPhuong")}</p>}
   <ul>

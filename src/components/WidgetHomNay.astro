@@ -3,7 +3,8 @@
 // Chỉ nhận chợ đã xác minh (lich đã được lọc ở lớp dữ liệu).
 import { t } from "../i18n/strings.js";
 // nhung: bản để nhúng, lọc theo ?tinh= hoặc ?khu= trên URL (chỉ dùng ở trang /nhung/)
-const { chos, lang = "vi", nhung = false } = Astro.props;
+// tieuDe: tiêu đề tùy trang (cả nước, tỉnh, xã/phường); mặc định là tiêu đề chung
+const { chos, lang = "vi", nhung = false, tieuDe = t(lang, "widgetTieuDe") } = Astro.props;
 // Tên trường khớp với coPhienHomNay (trang_thai_xac_minh, lich_phien). Chợ đã được lọc là đã xác minh.
 const duLieu = chos.map((c) => ({
   ten: c.ten,
@@ -19,7 +20,7 @@ const duLieu = chos.map((c) => ({
 const tien = lang === "en" ? "/en" : "";
 ---
 <section class="the widget-hom-nay" aria-live="polite" data-lang={lang} data-tien={tien} data-nhung={String(nhung)}>
-  <h2>{t(lang, "widgetTieuDe")}</h2>
+  <h2>{tieuDe}</h2>
   <p id="widget-tong" class="phu">{t(lang, "widgetDangTinh")}</p>
   <ul id="widget-ds"></ul>
   <script id="widget-du-lieu" type="application/json" set:html={JSON.stringify(duLieu)}></script>
