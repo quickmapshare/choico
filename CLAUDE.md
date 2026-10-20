@@ -45,6 +45,8 @@ Chỉ mở rộng sang quận khác khi đã có tín hiệu nhu cầu (lượt 
 - Đã có engine lịch phiên `src/lib/lich-phien.js` (ngày âm, ngày cuối tháng âm, chu kỳ), 11 test Vitest (`npm test`) gồm tháng nhuận 2025 và Tết 2026.
 - Đã có Astro (`npm run build`): trang chủ có widget "hôm nay có phiên", trang khu vực `/khu-vuc/[slug]/`, trang chợ `/cho/[slug]/`. Build lấy dữ liệu từ PocketBase bằng `PB_URL`, `PB_ADMIN_EMAIL`, `PB_ADMIN_PASSWORD`. Đã kiểm tra build với PocketBase thật (chưa có chợ nào nên trang còn trống). Widget chưa kiểm thử trên trình duyệt.
 - Cần làm trên Cloudflare Pages: build command `npm run build`, output directory `dist`, thêm 3 biến môi trường trên. Trước khi đổi, `index.html` tạm ở root vẫn được giữ để trang không hỏng.
+- Đã có hàng chờ góp ý `cho_phien_gop_y` (báo sai, đề xuất chợ mới), ai cũng gửi được, không đọc được công khai. Form ở trang chợ và trang khu vực.
+- AI sơ duyệt: `scripts/ai-duyet-gop-y.mjs` gắn nhãn `ai_khuyen_nghi` và `ai_ly_do`. Không đổi trạng thái, không đưa lên web. Cần `ANTHROPIC_API_KEY` và chạy thủ công hoặc theo lịch. Chưa chạy được thực tế vì chưa có khóa.
 - Chưa làm: nhập chợ thật (cần nguồn đã xác minh).
 
 ## Lưu ý khi làm việc
