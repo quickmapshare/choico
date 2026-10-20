@@ -1,0 +1,60 @@
+---
+// Nút chọn giao diện: tự động theo máy, sáng hoặc tối. Lựa chọn lưu trong trình duyệt của người dùng.
+const { lang = "vi" } = Astro.props;
+---
+<button type="button" class="chuyen-theme" id="chuyen-theme" data-lang={lang}></button>
+
+<script>
+  import { t } from "../i18n/strings.js";
+
+  const KHOA = "chophien-theme";
+  const THU_TU = ["auto", "light", "dark"];
+  const nut = document.getElementById("chuyen-theme");
+  const lang = nut.dataset.lang ?? "vi";
+
+  // Đọc lựa chọn đã lưu; localStorage có thể bị chặn nên luôn bọc try/catch
+  function docLuaChon() {
+    try {
+      const luu = localStorage.getItem(KHOA);
+      return THU_TU.includes(luu) ? luu : "auto";
+    } catch {
+      return "auto";
+    }
+  }
+
+  function apDung(che) {
+    const html = document.documentElement;
+    if (che === "auto") html.removeAttribute("data-theme");
+    else html.setAttribute("data-theme", che);
+    html.style.colorScheme = che === "auto" ? "light dark" : che;
+    nut.textContent = t(lang, "theme")[che];
+    nut.title = `${t(lang, "themeTieuDe")}: ${t(lang, "theme")[che]}`;
+  }
+
+  let che = docLuaChon();
+  apDung(che);
+
+  nut.addEventListener("click", () => {
+    che = THU_TU[(THU_TU.indexOf(che) + 1) % THU_TU.length];
+    try {
+      localStorage.setItem(KHOA, che);
+    } catch {
+      // Không lưu được thì vẫn đổi giao diện cho lần xem này
+    }
+    apDung(che);
+  });
+</script>
+
+<style>
+  .chuyen-theme {
+    font: inherit;
+    font-size: .9rem;
+    color: var(--chu);
+    background: var(--mat);
+    border: 1px solid var(--vien);
+    border-radius: .3rem;
+    padding: .15rem .5rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+</style>

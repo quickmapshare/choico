@@ -2,6 +2,7 @@
 // Khung chung cho mọi trang. lang: "vi" hoặc "en".
 import NgayHomNay from "../components/NgayHomNay.astro";
 import CoNgonNgu from "../components/CoNgonNgu.astro";
+import ChuyenTheme from "../components/ChuyenTheme.astro";
 import Logo from "../components/Logo.astro";
 import { t, duongDan } from "../i18n/strings.js";
 // nhung: trang con để nhúng vào web khác (iframe), không có thanh tiêu đề, không lập chỉ mục.
@@ -26,6 +27,15 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#f7f5f0" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#14161a" media="(prefers-color-scheme: dark)" />
+    <script is:inline>
+      // Áp giao diện đã chọn trước khi vẽ trang để không bị chớp sáng sang tối
+      try {
+        const luu = localStorage.getItem("chophien-theme");
+        if (luu === "light" || luu === "dark") document.documentElement.setAttribute("data-theme", luu);
+      } catch (err) {
+        // localStorage bị chặn thì theo giao diện của máy
+      }
+    </script>
     <!-- is:global: các view nằm trong slot nên style có phạm vi của Layout không áp dụng cho link, chữ và nút trong view -->
     <style is:global>
       :root {
@@ -138,6 +148,7 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     <!-- Dùng is:global vì khung này nằm trong view, không nằm trong Layout nên style có phạm vi sẽ không áp dụng -->
     <style is:global>
       /* Tiêu đề và nút góp ý nằm cùng một dòng; form mở ra thì chiếm cả dòng dưới */
+      .dieu-khien { display: flex; align-items: center; gap: .5rem; }
       .tieu-de-hang { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; }
       .tieu-de-hang h1 { flex: 1 1 12rem; }
       .tieu-de-hang > .gop-y-khung { margin-left: auto; }
@@ -154,7 +165,10 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
             // Nón lá đội lên chữ "Chợ"
             <a class="ten-web ten-web-vi" href={duongDan(lang, "/")}><span class="cho-doi-non"><span class="chu-ch">Ch<Logo size={26} /></span>ợ</span><span class="phien">phiên Việt Nam</span></a>
           )}
-          <CoNgonNgu lang={lang} href={duongKhac} />
+          <div class="dieu-khien">
+            <ChuyenTheme lang={lang} />
+            <CoNgonNgu lang={lang} href={duongKhac} />
+          </div>
         </div>
       </header>
     )}
