@@ -3,7 +3,7 @@ export const NGON_NGU = ["vi", "en"];
 
 // Tên chợ có thể đã bắt đầu bằng "Chợ" (ví dụ "Chợ Ú"), bỏ đi để khỏi lặp "Chợ Chợ Ú".
 function boChuChoDau(ten) {
-  return String(ten).replace(/^chợs+/i, "");
+  return String(ten).replace(/^chợ\s+/i, "");
 }
 
 const CHU = {
