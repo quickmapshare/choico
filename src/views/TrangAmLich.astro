@@ -33,26 +33,38 @@ const { lang, cho = [] } = Astro.props;
     <script type="application/json" id="am-lich-cho" set:html={JSON.stringify(cho).replace(/</g, "\\u003c")}></script>
 
     <h2 class="am-lich-doi-tieu-de">{t(lang, "doiNgayTieuDe")}</h2>
-    <div class="the am-lich-the">
-      <h3>{t(lang, "doiDuongSangAm")}</h3>
-      <div class="am-lich-hang">
-        <label>{t(lang, "doiNgayDuong")} <input type="date" id="doi-duong" /></label>
-        <button type="button" class="nut-chu" id="doi-duong-xem">{t(lang, "doiXem")}</button>
-      </div>
-      <p class="am-lich-kq" id="doi-duong-kq" aria-live="polite"></p>
-    </div>
-    <div class="the am-lich-the">
-      <h3>{t(lang, "doiAmSangDuong")}</h3>
-      <div class="am-lich-hang">
-        <label>{t(lang, "doiNgayAmNgay")} <input type="number" id="doi-am-ngay" min="1" max="30" inputmode="numeric" /></label>
-        <label>{t(lang, "doiNgayAmThang")} <input type="number" id="doi-am-thang" min="1" max="12" inputmode="numeric" /></label>
-        <label>{t(lang, "doiNgayAmNam")} <input type="number" id="doi-am-nam" inputmode="numeric" /></label>
-      </div>
-      <div class="am-lich-hang">
+    <div class="am-lich-doi-luoi">
+      <form class="the am-lich-doi-the" id="form-duong">
+        <h3>{t(lang, "doiDuongSangAm")}</h3>
+        <p class="phu">{t(lang, "doiDuongMoTa")}</p>
+        <div class="am-lich-truong">
+          <label for="doi-duong">{t(lang, "doiNgayDuong")}</label>
+          <input type="date" id="doi-duong" />
+        </div>
+        <button type="submit" class="nut-chu nut-chinh">{t(lang, "doiXem")}</button>
+        <p class="am-lich-kq" id="doi-duong-kq" aria-live="polite"></p>
+      </form>
+      <form class="the am-lich-doi-the" id="form-am">
+        <h3>{t(lang, "doiAmSangDuong")}</h3>
+        <p class="phu">{t(lang, "doiAmMoTa")}</p>
+        <div class="am-lich-3o">
+          <div class="am-lich-truong">
+            <label for="doi-am-ngay">{t(lang, "doiNgayAmNgay")}</label>
+            <input type="number" id="doi-am-ngay" min="1" max="30" inputmode="numeric" />
+          </div>
+          <div class="am-lich-truong">
+            <label for="doi-am-thang">{t(lang, "doiNgayAmThang")}</label>
+            <input type="number" id="doi-am-thang" min="1" max="12" inputmode="numeric" />
+          </div>
+          <div class="am-lich-truong">
+            <label for="doi-am-nam">{t(lang, "doiNgayAmNam")}</label>
+            <input type="number" id="doi-am-nam" inputmode="numeric" />
+          </div>
+        </div>
         <label class="am-lich-nhuan"><input type="checkbox" id="doi-am-nhuan" /> {t(lang, "doiNhuan")}</label>
-        <button type="button" class="nut-chu" id="doi-am-xem">{t(lang, "doiXem")}</button>
-      </div>
-      <p class="am-lich-kq" id="doi-am-kq" aria-live="polite"></p>
+        <button type="submit" class="nut-chu nut-chinh">{t(lang, "doiXem")}</button>
+        <p class="am-lich-kq" id="doi-am-kq" aria-live="polite"></p>
+      </form>
     </div>
   </section>
 </Layout>
@@ -199,8 +211,14 @@ const { lang, cho = [] } = Astro.props;
       thang = hom.m;
       ve();
     });
-    hienThi("doi-duong-xem").addEventListener("click", doiDuongSangAm);
-    hienThi("doi-am-xem").addEventListener("click", doiAmSangDuong);
+    hienThi("form-duong").addEventListener("submit", (e) => {
+      e.preventDefault();
+      doiDuongSangAm();
+    });
+    hienThi("form-am").addEventListener("submit", (e) => {
+      e.preventDefault();
+      doiAmSangDuong();
+    });
   } catch (err) {
     console.error(err);
   }
@@ -252,10 +270,17 @@ const { lang, cho = [] } = Astro.props;
   .am-lich-ds ul { margin: 0; font-size: .92rem; }
   .am-lich .vet { margin-top: 1rem; }
   .am-lich-doi-tieu-de { margin-top: 2.2rem; }
-  .am-lich-the h3 { margin: 0 0 .5rem; font-size: 1rem; }
-  .am-lich-hang { display: flex; flex-wrap: wrap; align-items: end; gap: .5rem .9rem; margin-bottom: .5rem; }
-  .am-lich-hang label { display: flex; flex-direction: column; gap: .2rem; font-size: .9rem; color: var(--phu); }
-  .am-lich-nhuan { flex-direction: row !important; align-items: center; gap: .4rem !important; }
+  .am-lich-doi-luoi { display: grid; gap: .9rem; }
+  @media (min-width: 40rem) { .am-lich-doi-luoi { grid-template-columns: 1fr 1fr; } }
+  .am-lich-doi-the { display: flex; flex-direction: column; gap: .6rem; margin: 0; }
+  .am-lich-doi-the h3 { margin: 0; font-size: 1.02rem; }
+  .am-lich-doi-the > .phu { margin: 0; font-size: .9rem; }
+  .am-lich-truong { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+  .am-lich-truong label { font-size: .85rem; color: var(--phu); }
+  .am-lich-3o { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+  .am-lich .am-lich-truong input, .am-lich .am-lich-3o input { width: 100%; }
+  .am-lich .nut-chu.nut-chinh { width: 100%; padding: .55rem 1rem; }
+  .am-lich-nhuan { display: flex; align-items: center; gap: .4rem; font-size: .9rem; color: var(--chu); }
   .am-lich input:not([type="checkbox"]) {
     font: inherit;
     color: var(--chu);
@@ -267,5 +292,6 @@ const { lang, cho = [] } = Astro.props;
     max-width: 100%;
   }
   .am-lich input[type="date"] { width: 11rem; }
-  .am-lich-kq { min-height: 1.6em; font-weight: 600; margin: .2rem 0 0; }
+  .am-lich-kq { margin: 0; padding: .55rem .75rem; border-radius: 10px; background: var(--nhan-nhe); color: var(--chu); font-weight: 600; }
+  .am-lich-kq:empty { display: none; }
 </style>
