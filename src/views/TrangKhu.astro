@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import GopY from "../components/GopY.astro";
 import WidgetHomNay from "../components/WidgetHomNay.astro";
+import MaNhung from "../components/MaNhung.astro";
 import { t, duongDan } from "../i18n/strings.js";
 const { lang, khu, dsCho } = Astro.props;
 const choDaXacMinh = dsCho.filter((c) => c.trang_thai_xac_minh === "da_xac_minh");
@@ -14,6 +15,7 @@ const choDaXacMinh = dsCho.filter((c) => c.trang_thai_xac_minh === "da_xac_minh"
   <h1>{t(lang, "tieuDeKhu", khu.ten)}</h1>
   {khu.ghi_chu && <p class="phu">{khu.ghi_chu}</p>}
   <WidgetHomNay chos={choDaXacMinh} lang={lang} />
+  <MaNhung loc={{ khu: khu.slug }} lang={lang} />
   {dsCho.length === 0 && <p class="phu">{t(lang, "chuaCoCho")}</p>}
   {dsCho.map((c) => (
     <div class="the">

@@ -2,19 +2,23 @@
 // Widget "hôm nay có phiên không": tính phía trình duyệt theo múi giờ Asia/Ho_Chi_Minh.
 // Chỉ nhận chợ đã xác minh (lich đã được lọc ở lớp dữ liệu).
 import { t } from "../i18n/strings.js";
-const { chos, lang = "vi" } = Astro.props;
+// nhung: bản để nhúng, lọc theo ?tinh= hoặc ?khu= trên URL (chỉ dùng ở trang /nhung/)
+const { chos, lang = "vi", nhung = false } = Astro.props;
 // Tên trường khớp với coPhienHomNay (trang_thai_xac_minh, lich_phien). Chợ đã được lọc là đã xác minh.
 const duLieu = chos.map((c) => ({
   ten: c.ten,
   slug: c.slug,
   // Nơi hiển thị: "Xã/phường, Tỉnh/thành"
   noi: [c.khu?.ten, c.khu?.tinh?.ten].filter(Boolean).join(", "),
+  // Slug để lọc trên trang nhúng
+  khu_slug: c.khu?.slug ?? "",
+  tinh_slug: c.khu?.tinh?.slug ?? "",
   trang_thai_xac_minh: "da_xac_minh",
   lich_phien: c.lich ?? [],
 }));
 const tien = lang === "en" ? "/en" : "";
 ---
-<section class="the widget-hom-nay" aria-live="polite" data-lang={lang} data-tien={tien}>
+<section class="the widget-hom-nay" aria-live="polite" data-lang={lang} data-tien={tien} data-nhung={String(nhung)}>
   <h2>{t(lang, "widgetTieuDe")}</h2>
   <p id="widget-tong" class="phu">{t(lang, "widgetDangTinh")}</p>
   <ul id="widget-ds"></ul>
@@ -44,7 +48,14 @@ const tien = lang === "en" ? "/en" : "";
   try {
     const chos = JSON.parse(nhan.textContent || "[]");
     const hom = ngayHienTai();
-    const coPhien = chos.filter((c) => coPhienHomNay(c, hom) === true);
+    // Trang nhúng: chỉ lấy chợ của xã/phường hoặc tỉnh/thành trên URL
+    let pool = chos;
+    if (khung.dataset.nhung === "true") {
+      const tham = new URLSearchParams(location.search);
+      if (tham.get("khu")) pool = chos.filter((c) => c.khu_slug === tham.get("khu"));
+      else if (tham.get("tinh")) pool = chos.filter((c) => c.tinh_slug === tham.get("tinh"));
+    }
+    const coPhien = pool.filter((c) => coPhienHomNay(c, hom) === true);
     tong.textContent = coPhien.length ? t(lang, "widgetCo", coPhien.length) : t(lang, "widgetKhong");
     for (const c of coPhien) {
       const li = document.createElement("li");

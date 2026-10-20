@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import WidgetHomNay from "../components/WidgetHomNay.astro";
+import MaNhung from "../components/MaNhung.astro";
 import GopY from "../components/GopY.astro";
 import { t, duongDan } from "../i18n/strings.js";
 const { lang, khuVuc, cho } = Astro.props;
@@ -12,6 +13,7 @@ const tinhs = khuVuc.filter((k) => k.cap === "tinh_thanh");
   <p class="phu">{t(lang, "ghiChuChu")}</p>
 
   <WidgetHomNay chos={choDaXacMinh} lang={lang} />
+  <MaNhung lang={lang} />
 
   <h2>{t(lang, "tinhThanh")}</h2>
   {tinhs.length === 0 && <p class="phu">{t(lang, "chuaCoTinh")}</p>}

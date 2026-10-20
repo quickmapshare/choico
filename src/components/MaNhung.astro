@@ -1,0 +1,69 @@
+---
+// Khung mã nhúng ngay dưới widget. loc: { tinh } hoặc { khu } (slug) để nhúng đúng phạm vi; không có thì là cả nước.
+import { t } from "../i18n/strings.js";
+const { loc = {}, lang = "vi" } = Astro.props;
+
+const src = new URL("/nhung/", Astro.site);
+if (loc.khu) src.searchParams.set("khu", loc.khu);
+else if (loc.tinh) src.searchParams.set("tinh", loc.tinh);
+
+// Mã nhúng: một iframe và một đoạn script nhỏ để khung tự cao theo nội dung
+const ma = [
+  `<iframe src="${src.href}" title="Hôm nay có phiên không?" style="width:100%;border:0;height:300px" loading="lazy"></iframe>`,
+  `<script>`,
+  `addEventListener("message", (e) => {`,
+  `  if (e.origin !== "${src.origin}" || !e.data?.chophienCao) return;`,
+  `  for (const f of document.querySelectorAll("iframe")) if (f.contentWindow === e.source) f.style.height = e.data.chophienCao + "px";`,
+  `});`,
+  `</script>`,
+].join("\n");
+---
+<details class="ma-nhung-khung" open>
+  <summary>{t(lang, "nhungTieuDe")}</summary>
+  <p class="phu">{t(lang, "nhungMoTa")}</p>
+  <textarea readonly rows="9" class="ma-nhung-o">{ma}</textarea>
+  <p><button type="button" class="ma-nhung-nut" data-nhan-chep={t(lang, "nhungSaoChep")} data-nhan-da-chep={t(lang, "nhungDaChep")} data-nhan-chon-tay={t(lang, "nhungChonTay")}>{t(lang, "nhungSaoChep")}</button></p>
+</details>
+
+<style>
+  .ma-nhung-khung { margin: .75rem 0 1.25rem; }
+  .ma-nhung-khung summary { cursor: pointer; color: var(--nhan); font-weight: 600; }
+  .ma-nhung-o {
+    width: 100%;
+    font: .8rem/1.5 ui-monospace, Consolas, monospace;
+    background: var(--nen);
+    color: var(--chu);
+    border: 1px solid var(--vien);
+    border-radius: 8px;
+    padding: .6rem .7rem;
+    resize: vertical;
+  }
+  .ma-nhung-nut {
+    font: inherit;
+    padding: .4rem .9rem;
+    border-radius: 8px;
+    border: 1px solid var(--nhan);
+    background: var(--mat);
+    color: var(--nhan);
+    cursor: pointer;
+  }
+  .ma-nhung-nut:hover { background: var(--nhan-nhe); }
+</style>
+
+<script>
+  for (const nut of document.querySelectorAll(".ma-nhung-nut")) {
+    nut.addEventListener("click", async () => {
+      const khung = nut.closest(".ma-nhung-khung");
+      const o = khung?.querySelector("textarea");
+      if (!o) return;
+      try {
+        await navigator.clipboard.writeText(o.value);
+        nut.textContent = nut.dataset.nhanDaChep;
+      } catch {
+        o.select();
+        nut.textContent = nut.dataset.nhanChonTay;
+      }
+      setTimeout(() => (nut.textContent = nut.dataset.nhanChep), 2000);
+    });
+  }
+</script>
