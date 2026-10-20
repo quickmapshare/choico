@@ -2,7 +2,7 @@
 // Form góp ý: "bao_sai" (báo thông tin sai ở một chợ) hoặc "them_cho" (đề xuất chợ mới ở một khu vực).
 // Góp ý đi vào hàng chờ, không hiện lên web cho đến khi được duyệt.
 import { t } from "../i18n/strings.js";
-const { loai, choId = "", khuId = "", lang = "vi" } = Astro.props;
+const { loai, choId = "", khuId = "", lang = "vi", tinhMacDinh = "" } = Astro.props;
 const tieuDe = loai === "bao_sai" ? t(lang, "gopYBaoSai") : t(lang, "gopYThemCho");
 const idForm = `gop-y-${loai}`;
 ---
@@ -14,6 +14,12 @@ const idForm = `gop-y-${loai}`;
         <>
           <label>{t(lang, "gopYTenCho")} <input name="ten_cho" maxlength="200" required /></label>
           <label>{t(lang, "gopYDiaChi")} <input name="dia_chi" maxlength="500" /></label>
+          {!khuId && (
+            <>
+              <label>{t(lang, "gopYTinh")} <input name="tinh_goi_y" maxlength="100" value={tinhMacDinh} /></label>
+              <label>{t(lang, "gopYXa")} <input name="xa_goi_y" maxlength="100" /></label>
+            </>
+          )}
         </>
       )}
       <label>{loai === "bao_sai" ? t(lang, "gopYNoiDungSai") : t(lang, "gopYNoiDungThem")}
@@ -60,6 +66,8 @@ const idForm = `gop-y-${loai}`;
         body.ten_cho = String(fd.get("ten_cho") || "").trim();
         body.dia_chi = String(fd.get("dia_chi") || "").trim();
         if (form.dataset.khu) body.khu_vuc = form.dataset.khu;
+        body.tinh_goi_y = String(fd.get("tinh_goi_y") || "").trim();
+        body.xa_goi_y = String(fd.get("xa_goi_y") || "").trim();
       } else if (form.dataset.cho) {
         body.cho = form.dataset.cho;
       }

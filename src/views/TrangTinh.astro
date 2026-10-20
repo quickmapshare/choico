@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { t, duongDan } from "../i18n/strings.js";
+import GopY from "../components/GopY.astro";
 const { lang, tinh, phuong } = Astro.props;
 ---
 <Layout lang={lang} tieuDe={t(lang, "tieuDeTinh", tinh.ten)} moTa={t(lang, "moTaTinh", tinh.ten)}>
@@ -11,4 +12,5 @@ const { lang, tinh, phuong } = Astro.props;
   <ul>
     {phuong.map((k) => <li><a href={duongDan(lang, `/khu-vuc/${k.slug}/`)}>{k.ten}</a></li>)}
   </ul>
+  <GopY loai="them_cho" lang={lang} tinhMacDinh={tinh.ten} />
 </Layout>

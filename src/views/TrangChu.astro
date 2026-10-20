@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import WidgetHomNay from "../components/WidgetHomNay.astro";
+import GopY from "../components/GopY.astro";
 import { t, duongDan } from "../i18n/strings.js";
 const { lang, khuVuc, cho } = Astro.props;
 const choDaXacMinh = cho.filter((c) => c.trang_thai_xac_minh === "da_xac_minh");
@@ -17,4 +18,6 @@ const tinhs = khuVuc.filter((k) => k.cap === "tinh_thanh");
   <ul>
     {tinhs.map((k) => <li><a href={duongDan(lang, `/tinh/${k.slug}/`)}>{k.ten}</a></li>)}
   </ul>
+
+  <GopY loai="them_cho" lang={lang} />
 </Layout>
