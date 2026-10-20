@@ -1,0 +1,13 @@
+# Worker AI sơ duyệt góp ý. Secret đặt bằng:
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put PB_ADMIN_EMAIL
+#   npx wrangler secret put PB_ADMIN_PASSWORD
+name = "chophien-ai-duyet"
+main = "worker/ai-duyet.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+PB_URL = "https://api.botgap.dev"
+
+[triggers]
+crons = ["17 * * * *"]

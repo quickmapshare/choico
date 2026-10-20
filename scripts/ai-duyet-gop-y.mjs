@@ -78,7 +78,7 @@ async function danhGia(ban) {
       "x-api-key": env("ANTHROPIC_API_KEY"),
       "anthropic-version": "2023-06-01",
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: 300, messages: [{ role: "user", content: noiDung }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 600, messages: [{ role: "user", content: noiDung }] }),
   });
   if (!r.ok) throw new Error(`Claude API lỗi: ${r.status} ${await r.text()}`);
   const phanHoi = await r.json();
