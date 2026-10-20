@@ -69,3 +69,25 @@ export function coPhienHomNay(cho, ngayDuong = ngayHienTai()) {
   if (cho.trang_thai_xac_minh !== "da_xac_minh") return null;
   return (cho.lich_phien ?? []).some((quy) => coPhienTheoQuy(quy, ngayDuong));
 }
+
+const CAN = ["Giáp", "Ất", "Bính", "Đinh", "Mậu", "Kỷ", "Canh", "Tân", "Nhâm", "Quý"];
+const CHI = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
+const THU = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+
+// Tên năm can chi tiếng Việt, ví dụ 2026 -> "Bính Ngọ".
+export function tenNamCanChi(nam) {
+  return `${CAN[(((nam - 4) % 10) + 10) % 10]} ${CHI[(((nam - 4) % 12) + 12) % 12]}`;
+}
+
+// "Thứ Ba, 20/10/2026"
+export function dinhDangDuong({ y, m, d }) {
+  const thu = THU[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  return `${thu}, ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+}
+
+// "Ngày 11 tháng 9 năm Bính Ngọ" (có thêm "nhuận" nếu là tháng nhuận)
+export function dinhDangAm(ngayDuong) {
+  const am = ngayAm(ngayDuong);
+  const thang = `${am.nhuan ? "nhuận " : ""}${am.thang}`;
+  return `Ngày ${am.ngay} tháng ${thang} năm ${tenNamCanChi(Solar.fromYmd(ngayDuong.y, ngayDuong.m, ngayDuong.d).getLunar().getYear())}`;
+}

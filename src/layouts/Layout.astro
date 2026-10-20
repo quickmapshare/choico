@@ -1,4 +1,5 @@
 ---
+import NgayHomNay from "../components/NgayHomNay.astro";
 const { tieuDe, moTa } = Astro.props;
 ---
 <!doctype html>
@@ -27,6 +28,7 @@ const { tieuDe, moTa } = Astro.props;
   </head>
   <body>
     <main>
+      <NgayHomNay />
       <slot />
     </main>
   </body>

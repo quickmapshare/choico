@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { coPhienTheoQuy, coPhienHomNay, ngayHienTai } from "../src/lib/lich-phien.js";
+import { coPhienTheoQuy, coPhienHomNay, ngayHienTai, dinhDangDuong, dinhDangAm, tenNamCanChi } from "../src/lib/lich-phien.js";
 
 const ngay = (s) => { const [y, m, d] = s.split("-").map(Number); return { y, m, d }; };
 
@@ -69,5 +69,27 @@ describe("coPhienHomNay", () => {
   it("ngayHienTai trả về ngày theo giờ Việt Nam", () => {
     // 2026-02-16 17:30 UTC = 2026-02-17 00:30 giờ Việt Nam
     expect(ngayHienTai(new Date("2026-02-16T17:30:00Z"))).toEqual({ y: 2026, m: 2, d: 17 });
+  });
+});
+
+describe("định dạng ngày hiển thị", () => {
+  it("ngày dương có thứ trong tuần", () => {
+    expect(dinhDangDuong({ y: 2026, m: 10, d: 20 })).toBe("Thứ Ba, 20/10/2026");
+    expect(dinhDangDuong({ y: 2026, m: 2, d: 17 })).toBe("Thứ Ba, 17/02/2026");
+  });
+
+  it("năm can chi tiếng Việt", () => {
+    expect(tenNamCanChi(2026)).toBe("Bính Ngọ");
+    expect(tenNamCanChi(2025)).toBe("Ất Tỵ");
+    expect(tenNamCanChi(2024)).toBe("Giáp Thìn");
+  });
+
+  it("ngày âm có năm can chi", () => {
+    expect(dinhDangAm({ y: 2026, m: 10, d: 20 })).toBe("Ngày 11 tháng 9 năm Bính Ngọ");
+    expect(dinhDangAm({ y: 2026, m: 2, d: 17 })).toBe("Ngày 1 tháng 1 năm Bính Ngọ");
+  });
+
+  it("tháng nhuận được ghi rõ", () => {
+    expect(dinhDangAm({ y: 2025, m: 7, d: 25 })).toBe("Ngày 1 tháng nhuận 6 năm Ất Tỵ");
   });
 });

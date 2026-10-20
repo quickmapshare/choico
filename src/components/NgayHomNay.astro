@@ -1,0 +1,35 @@
+---
+// Hiện ngày dương và âm hôm nay, tính phía trình duyệt theo múi giờ Việt Nam.
+---
+<div class="ngay-hom-nay" aria-live="off">
+  <span id="ngay-duong"></span>
+  <span class="chan" aria-hidden="true">·</span>
+  <span id="ngay-am"></span>
+</div>
+
+<script>
+  import { dinhDangAm, dinhDangDuong, ngayHienTai } from "../lib/lich-phien.js";
+
+  try {
+    const hom = ngayHienTai();
+    document.getElementById("ngay-duong").textContent = `Dương lịch: ${dinhDangDuong(hom)}`;
+    document.getElementById("ngay-am").textContent = `Âm lịch: ${dinhDangAm(hom)}`;
+  } catch (err) {
+    console.error(err);
+  }
+</script>
+
+<style>
+  .ngay-hom-nay {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem .6rem;
+    align-items: baseline;
+    font-size: .95rem;
+    color: var(--chu);
+    border-bottom: 1px solid var(--vien);
+    padding-bottom: .5rem;
+    margin-bottom: .5rem;
+  }
+  .chan { color: var(--phu); }
+</style>
