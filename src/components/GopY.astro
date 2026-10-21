@@ -65,9 +65,11 @@ const idForm = `gop-y-${loai}`;
   .nut-gop-y:hover { text-decoration: none; opacity: .92; }
   .gop-y-khung details[open] > .nut-gop-y { margin-bottom: .75rem; }
   /* Widget "Thêm chợ": thẻ có lời mời và nút, nằm cùng dòng tiêu đề */
-  .gop-y-widget { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; padding: .8rem 1rem; background: var(--mat); border: 1px solid var(--vien); border-radius: 14px; box-shadow: var(--bong); }
-  .gop-y-widget .gop-y-gioi-thieu { margin: 0; font-size: .95rem; }
-  .gop-y-widget details { width: 100%; }
+  .gop-y-widget { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; padding: .8rem 1rem; background: var(--mat); border: 1px solid var(--vien); border-radius: 14px; box-shadow: var(--bong); }
+  .gop-y-widget .gop-y-gioi-thieu { flex: 1 1 auto; margin: 0; font-size: .95rem; }
+  .gop-y-widget details { margin-left: auto; }
+  /* Khi mở form, form chiếm cả dòng dưới nút */
+  .gop-y-widget details[open] { flex-basis: 100%; margin-left: 0; }
   .gop-y-widget .gop-y { box-shadow: none; background: var(--nen); }
   .gop-y-khung .gop-y { background: var(--mat); border: 1px solid var(--vien); border-radius: 14px; padding: .9rem 1.1rem; box-shadow: var(--bong); }
   .gop-y-khung .gop-y button { background: var(--nhan); color: var(--nen); border-color: var(--nhan); font-weight: 600; }
