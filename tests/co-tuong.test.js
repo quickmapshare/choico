@@ -1,8 +1,36 @@
 import { describe, it, expect } from "vitest";
 import {
   khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu,
-  timNuoc, nuocTot, xepHangNuoc, banVanBan,
+  timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe,
 } from "../src/lib/co-tuong.js";
+
+describe("tên người chơi", () => {
+  it("chấp nhận chữ cái, có dấu tiếng Việt và khoảng trắng giữa các từ", () => {
+    expect(tenHopLe("Nguyễn Văn An")).toBe(true);
+    expect(tenHopLe("Đỗ")).toBe(true);
+  });
+
+  it("từ chối số, ký tự đặc biệt, khoảng trắng đầu hoặc cuối, chuỗi rỗng", () => {
+    expect(tenHopLe("An2")).toBe(false);
+    expect(tenHopLe("An!")).toBe(false);
+    expect(tenHopLe(" An")).toBe(false);
+    expect(tenHopLe("An ")).toBe(false);
+    expect(tenHopLe("")).toBe(false);
+  });
+
+  it("giới hạn 20 ký tự", () => {
+    expect(tenHopLe("a".repeat(20))).toBe(true);
+    expect(tenHopLe("a".repeat(21))).toBe(false);
+  });
+
+  it("làm sạch khi gõ: bỏ số và ký tự đặc biệt, gộp khoảng trắng, cắt 20 ký tự", () => {
+    expect(lamSachTen("An2!3")).toBe("An");
+    expect(lamSachTen("  Lê   Hoài")).toBe("Lê Hoài");
+    expect(lamSachTen("Lê ")).toBe("Lê "); // giữ khoảng trắng cuối khi đang gõ, cắt khi lưu
+    expect(lamSachTen("a".repeat(30))).toHaveLength(20);
+    expect(tenHopLe(lamSachTen("Trần #1 Bình 99").trim())).toBe(true); // trang cắt khoảng trắng cuối khi lưu
+  });
+});
 
 // Bàn trống, dùng để dựng từng tình huống
 function banTrong() {

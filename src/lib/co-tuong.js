@@ -1,4 +1,21 @@
 // Luật cờ tướng và AI minimax (alpha-beta).
+// Tên người chơi: tối đa 20 ký tự, chỉ gồm chữ cái (kể cả tiếng Việt có dấu) và khoảng trắng giữa các từ.
+export const TEN_TOI_DA = 20;
+const MAU_TEN = /^\p{L}+( \p{L}+)*$/u;
+
+// Làm sạch khi gõ: bỏ mọi ký tự không phải chữ cái hoặc khoảng trắng, gộp khoảng trắng, cắt độ dài.
+export function lamSachTen(s) {
+  return String(s)
+    .replace(/[^\p{L} ]/gu, "")
+    .replace(/ {2,}/g, " ")
+    .replace(/^ +/, "")
+    .slice(0, TEN_TOI_DA);
+}
+
+export function tenHopLe(s) {
+  return s.length > 0 && s.length <= TEN_TOI_DA && MAU_TEN.test(s);
+}
+
 // Bàn 10 hàng x 9 cột. Hàng 0 là phía đen (trên), hàng 9 là phía đỏ (dưới). Đỏ đi trước.
 // Quân là chuỗi 2 ký tự: bên ("r" đỏ, "b" đen) + loại ("K" tướng, "A" sĩ, "E" tượng, "H" mã, "R" xe, "C" pháo, "P" tốt).
 // Ký hiệu nước đi: cột a-i rồi hàng 0-9, ví dụ "h2e2" là từ cột h hàng 2 sang cột e hàng 2.

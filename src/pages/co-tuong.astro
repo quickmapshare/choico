@@ -6,6 +6,9 @@ import Layout from "../layouts/Layout.astro";
   <p class="phu">Bạn cầm quân đỏ và đi trước. Bắt đầu ở mức 1/5: thắng thì lên một mức, hòa giữ nguyên, thua thì xuống một mức. Mức 4 và 5 có Haiku 5.5 chọn nước trong các nước máy đã phân tích. Ván hòa khi đi quá 120 nước.</p>
 
   <div class="co-dieu-khien">
+    <label class="co-ten">Tên của bạn
+      <input id="co-ten" type="text" maxlength="20" autocomplete="nickname" placeholder="Tối đa 20 chữ cái" />
+    </label>
     <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
     <button type="button" id="co-moi">Ván mới</button>
   </div>
@@ -22,6 +25,7 @@ import Layout from "../layouts/Layout.astro";
     background: var(--nhan); color: var(--nen); font-weight: 600; cursor: pointer;
   }
   .co-muc-hien-tai { font-weight: 600; }
+  .co-ten input { font: inherit; padding: .35rem .5rem; border: 1px solid var(--vien); border-radius: .3rem; background: var(--nen); color: var(--chu); width: 12rem; }
   .co-trang-thai { min-height: 1.5em; font-weight: 600; }
   .co-ban { width: 100%; max-width: 460px; margin: .5rem 0 1.5rem; }
   .co-svg { width: 100%; height: auto; display: block; user-select: none; }
@@ -31,7 +35,7 @@ import Layout from "../layouts/Layout.astro";
 </style>
 
 <script>
-  import { khoiTao, nuocHopLe, apDung, kyHieu, xepHangNuoc, nuocTot, banVanBan } from "../lib/co-tuong.js";
+  import { khoiTao, nuocHopLe, apDung, kyHieu, xepHangNuoc, nuocTot, banVanBan, lamSachTen, tenHopLe } from "../lib/co-tuong.js";
 
   // Tên quân theo cách gọi thường thấy ở Việt Nam: quân đỏ có Tốt, quân đen có Chốt
   const TEN = { K: "Tướng", A: "Sĩ", E: "Tượng", H: "Mã", R: "Xe", C: "Pháo", P: "Tốt" };
@@ -62,6 +66,7 @@ import Layout from "../layouts/Layout.astro";
   const trangThai = document.getElementById("co-trang-thai") as HTMLElement;
   const mucHienTai = document.getElementById("co-muc-hien-tai") as HTMLElement;
   const moiEl = document.getElementById("co-moi") as HTMLButtonElement;
+  const tenEl = document.getElementById("co-ten") as HTMLInputElement;
 
   let b: (string | null)[][];
   let chon: [number, number] | null = null;
@@ -71,6 +76,30 @@ import Layout from "../layouts/Layout.astro";
   let ketThuc = false;
   let capDo = 1; // mức hiện tại, 1 đến 5
   let soNuoc = 0; // số nước đã đi trong ván (cả hai bên)
+  // Tên người chơi, lưu trong localStorage. Chưa nhập thì hiện "Bạn".
+  const KHOA_TEN = "co-tuong-ten";
+  let ten = "";
+
+  function docTen() {
+    try {
+      const t = localStorage.getItem(KHOA_TEN) || "";
+      return tenHopLe(t) ? t : "";
+    } catch {
+      return "";
+    }
+  }
+
+  function luuTen(t) {
+    try {
+      localStorage.setItem(KHOA_TEN, t);
+    } catch {
+      // Không lưu được tên thì vẫn dùng trong phiên hiện tại
+    }
+  }
+
+  function tenHienThi() {
+    return ten || "Bạn";
+  }
 
   function luuTrangThai(luot) {
     try {
@@ -169,8 +198,8 @@ import Layout from "../layouts/Layout.astro";
     ketThuc = true;
     if (ketQua === "thang") capDo = Math.min(MUC_TOI_DA, capDo + 1);
     if (ketQua === "thua") capDo = Math.max(1, capDo - 1);
-    if (ketQua === "thang") hienTrangThai(`Bạn thắng! Lên mức ${capDo}/${MUC_TOI_DA}.`);
-    if (ketQua === "thua") hienTrangThai(`Bạn thua. Xuống mức ${capDo}/${MUC_TOI_DA}.`);
+    if (ketQua === "thang") hienTrangThai(`${tenHienThi()} thắng! Lên mức ${capDo}/${MUC_TOI_DA}.`);
+    if (ketQua === "thua") hienTrangThai(`${tenHienThi()} thua. Xuống mức ${capDo}/${MUC_TOI_DA}.`);
     if (ketQua === "hoa") hienTrangThai(`Ván hòa. Giữ nguyên mức ${capDo}/${MUC_TOI_DA}.`);
   }
 
@@ -225,7 +254,7 @@ import Layout from "../layouts/Layout.astro";
       luuTrangThai("r");
       return ve();
     }
-    hienTrangThai(`Máy đi ${chonNuoc ? chonNuoc.nuoc : ""}. Đến lượt bạn.`);
+    hienTrangThai(`Máy đi ${chonNuoc ? chonNuoc.nuoc : ""}. Đến lượt ${tenHienThi()}.`);
     luuTrangThai("r");
     ve();
   }
@@ -278,12 +307,30 @@ import Layout from "../layouts/Layout.astro";
     ketThuc = false;
     dangChoMay = false;
     soNuoc = 0;
-    hienTrangThai("Bạn đi trước (quân đỏ).");
+    hienTrangThai(`${tenHienThi()} đi trước (quân đỏ).`);
     luuTrangThai("r");
     ve();
   }
 
   moiEl.addEventListener("click", vanMoi);
+
+  // Gõ tên: bỏ ký tự không phải chữ cái, khi rời ô thì kiểm tra và lưu
+  tenEl.addEventListener("input", () => {
+    tenEl.value = lamSachTen(tenEl.value);
+  });
+  tenEl.addEventListener("change", () => {
+    const t = tenEl.value.trim();
+    if (t && !tenHopLe(t)) {
+      hienTrangThai("Tên chỉ gồm chữ cái, tối đa 20 ký tự.");
+      return;
+    }
+    ten = t;
+    tenEl.value = t;
+    luuTen(t);
+  });
+
+  ten = docTen();
+  tenEl.value = ten;
 
   // Khôi phục ván đang dở (nếu có), không thì bắt đầu ván mới
   const d = docTrangThai();
