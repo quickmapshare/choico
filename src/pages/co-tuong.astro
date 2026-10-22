@@ -17,6 +17,7 @@ import Layout from "../layouts/Layout.astro";
   <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
   <p id="co-ghi-diem" class="phu" aria-live="polite"></p>
   <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
+  <button type="button" id="co-thu-nho" class="co-thu-nho" hidden>Thu nhỏ</button>
 
   <section class="co-bang-diem" aria-labelledby="co-bang-diem-tieu-de">
     <h2 id="co-bang-diem-tieu-de">Bảng điểm</h2>
@@ -47,6 +48,12 @@ import Layout from "../layouts/Layout.astro";
     display: flex; align-items: center; justify-content: center;
   }
   .co-ban.co-phong-to-css .co-svg { width: auto; height: 100%; max-width: 100%; }
+  /* Nút thu nhỏ nằm ngoài bàn cờ, luôn trên lớp phủ, chỉ hiện khi bàn đang phóng to bằng CSS */
+  .co-thu-nho {
+    position: fixed; top: .6rem; right: .6rem; z-index: 1001; padding: .4rem .8rem; border-radius: .3rem;
+    font: inherit; font-weight: 600; cursor: pointer; background: var(--nhan); color: var(--nen); border: 1px solid var(--nhan);
+  }
+  .co-thu-nho[hidden] { display: none; }
   .co-svg { width: 100%; height: auto; display: block; user-select: none; }
   /* Quân đặt trên giao điểm đường kẻ, bấm vào giao điểm để chọn hoặc đi */
   .co-o { cursor: pointer; }
@@ -441,8 +448,15 @@ import Layout from "../layouts/Layout.astro";
   // Phóng to: chỉ bàn cờ chiếm toàn màn hình. Trình duyệt hỗ trợ Fullscreen API (máy tính, Android) thì dùng nó,
   // còn iPhone Safari thì phủ kín màn hình bằng CSS.
   const phongEl = document.getElementById("co-phong-to") as HTMLButtonElement;
+  const thuNhoEl = document.getElementById("co-thu-nho") as HTMLButtonElement;
   const coFullscreen = !!banEl.requestFullscreen;
   const nhanPhong = () => (document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css") ? "Thu nhỏ" : "Phóng to bàn cờ");
+  // Đổi trạng thái phóng to bằng CSS (iPhone): cập nhật nút và nút thu nhỏ cố định
+  const datPhongCss = (bat) => {
+    banEl.classList.toggle("co-phong-to-css", bat);
+    thuNhoEl.hidden = !bat;
+    phongEl.textContent = nhanPhong();
+  };
   phongEl.addEventListener("click", () => {
     if (coFullscreen) {
       if (document.fullscreenElement === banEl) {
@@ -451,10 +465,10 @@ import Layout from "../layouts/Layout.astro";
         void banEl.requestFullscreen().catch(() => {});
       }
     } else {
-      banEl.classList.toggle("co-phong-to-css");
-      phongEl.textContent = nhanPhong();
+      datPhongCss(!banEl.classList.contains("co-phong-to-css"));
     }
   });
+  thuNhoEl.addEventListener("click", () => datPhongCss(false));
   if (coFullscreen) {
     document.addEventListener("fullscreenchange", () => {
       phongEl.textContent = nhanPhong();
