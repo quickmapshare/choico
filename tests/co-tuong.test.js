@@ -2,8 +2,23 @@ import { describe, it, expect } from "vitest";
 import {
   khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu,
   timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe,
-  xacMinhVan, xepHangTheoThoiGian, quanBiAn, biChieu, diemCongVan, HOAN_TOI_DA,
+  xacMinhVan, xepHangTheoThoiGian, quanBiAn, biChieu, diemCongVan, HOAN_TOI_DA, taoTenTam,
 } from "../src/lib/co-tuong.js";
+
+describe("tên tạm", () => {
+  it("tên tạm luôn hợp lệ và có dạng Cờ thủ + 4 chữ cái", () => {
+    for (let i = 0; i < 50; i++) {
+      const t = taoTenTam();
+      expect(tenHopLe(t)).toBe(true);
+      expect(t).toMatch(/^Kỳ thủ [A-Z]{4}$/);
+    }
+  });
+
+  it("chọn đúng chữ cái theo số ngẫu nhiên", () => {
+    expect(taoTenTam(() => 0)).toBe("Kỳ thủ AAAA");
+    expect(taoTenTam(() => 0.999999)).toBe("Kỳ thủ ZZZZ");
+  });
+});
 
 describe("quân đã bị ăn", () => {
   it("thế mở đầu chưa có quân nào bị ăn", () => {

@@ -101,7 +101,7 @@ import Layout from "../layouts/Layout.astro";
 <script>
   import {
     khoiTao, nuocHopLe, apDung, kyHieu, chonTrongDinh, banVanBan, lamSachTen, tenHopLe, quanBiAn, biChieu,
-    NUOC_TOI_DA, HOAN_TOI_DA, timNuoc,
+    NUOC_TOI_DA, HOAN_TOI_DA, timNuoc, taoTenTam,
   } from "../lib/co-tuong.js";
   import { timNuocMay } from "../lib/co-tuong-may.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
@@ -195,17 +195,20 @@ import Layout from "../layouts/Layout.astro";
   let ketThuc = false;
   let capDo = 1; // mức hiện tại, 1 đến 5
   let soNuoc = 0; // số nước đã đi trong ván (cả hai bên)
-  // Tên người chơi, lưu trong localStorage. Chưa nhập thì hiện "Bạn".
+  // Tên người chơi, lưu trong localStorage. Chưa có tên thì tạo tên tạm "Kỳ thủ XXXX".
   const KHOA_TEN = "co-tuong-ten";
   let ten = "";
 
   function docTen() {
     try {
       const t = localStorage.getItem(KHOA_TEN) || "";
-      return tenHopLe(t) ? t : "";
+      if (tenHopLe(t)) return t;
     } catch {
-      return "";
+      // Không đọc được localStorage thì vẫn tạo tên tạm cho phiên này
     }
+    const tam = taoTenTam();
+    luuTen(tam);
+    return tam;
   }
 
   function luuTen(t) {
@@ -801,16 +804,45 @@ import Layout from "../layouts/Layout.astro";
   tenEl.addEventListener("input", () => {
     tenEl.value = lamSachTen(tenEl.value);
   });
-  tenEl.addEventListener("change", () => {
+  // Đổi tên trên server: cập nhật bảng điểm và các ván đã tính điểm. Trả về thông báo lỗi nếu không đổi được.
+  async function doiTenTrenServer(tenCu: string, tenMoi: string): Promise<string | null> {
+    try {
+      const r = await fetch("/api/co-tuong-ten", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ten_cu: tenCu, ten_moi: tenMoi }),
+      });
+      if (r.status === 409) return "Tên này đã có người dùng. Hãy chọn tên khác.";
+      if (!r.ok) return "Chưa đổi được tên trên bảng điểm. Thử lại sau.";
+      return null;
+    } catch {
+      return "Chưa đổi được tên: không kết nối được máy chủ.";
+    }
+  }
+
+  tenEl.addEventListener("change", async () => {
     const t = tenEl.value.trim();
-    if (t && !tenHopLe(t)) {
+    // Xóa trắng ô thì giữ tên đang dùng
+    if (!t) {
+      tenEl.value = ten;
+      return;
+    }
+    if (!tenHopLe(t)) {
       hienTrangThai("Tên chỉ gồm chữ cái, tối đa 20 ký tự.");
+      return;
+    }
+    if (t === ten) return;
+    const tenCu = ten;
+    const loi = await doiTenTrenServer(tenCu, t);
+    if (loi) {
+      hienTrangThai(loi);
+      tenEl.value = tenCu;
       return;
     }
     ten = t;
     tenEl.value = t;
     luuTen(t);
-    // Ván đã kết thúc nhưng chưa ghi điểm vì thiếu tên: ghi ngay bây giờ
+    // Ván đã kết thúc nhưng chưa ghi điểm: ghi ngay bây giờ bằng tên mới
     if (ketThuc && !daNop) void nopDiem();
     void taiBangDiem();
   });

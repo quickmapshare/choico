@@ -2,27 +2,11 @@
 // Điểm chỉ được tính khi cả ván hợp lệ. Mỗi ván (ma_van) chỉ được tính một lần.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { xacMinhVan, tenHopLe, diemCongVan, NUOC_TOI_DA, HOAN_TOI_DA } from "../../src/lib/co-tuong.js";
+import { tra, dangNhap } from "../_lib/pocketbase.js";
 
 const NGUON_CHO_PHEP = ["https://chophien.pages.dev"];
 const MAU_MA_VAN = /^[A-Za-z0-9-]{16,64}$/;
 const MAU_NUOC = /^[a-i][0-9][a-i][0-9]$/;
-
-function tra(status, data) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
-}
-
-async function dangNhap(pb, email, password) {
-  const r = await fetch(`${pb}/api/collections/_superusers/auth-with-password`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ identity: email, password }),
-  });
-  if (!r.ok) throw new Error("dang_nhap_loi");
-  return (await r.json()).token;
-}
 
 export async function onRequestPost({ request, env }) {
   const nguon = request.headers.get("origin") || "";

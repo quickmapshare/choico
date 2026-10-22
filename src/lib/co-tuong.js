@@ -16,6 +16,14 @@ export function tenHopLe(s) {
   return s.length > 0 && s.length <= TEN_TOI_DA && MAU_TEN.test(s);
 }
 
+// Tên tạm cho người chơi chưa đặt tên: "Kỳ thủ" kèm 4 chữ cái ngẫu nhiên, ví dụ "Kỳ thủ KQMA".
+export function taoTenTam(ngauNhien = Math.random) {
+  const chu = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let ma = "";
+  for (let i = 0; i < 4; i++) ma += chu[Math.floor(ngauNhien() * chu.length)];
+  return "Kỳ thủ " + ma;
+}
+
 // Bàn 10 hàng x 9 cột. Hàng 0 là phía đen (trên), hàng 9 là phía đỏ (dưới). Đỏ đi trước.
 // Quân là chuỗi 2 ký tự: bên ("r" đỏ, "b" đen) + loại ("K" tướng, "A" sĩ, "E" tượng, "H" mã, "R" xe, "C" pháo, "P" tốt).
 // Ký hiệu nước đi: cột a-i rồi hàng 0-9, ví dụ "h2e2" là từ cột h hàng 2 sang cột e hàng 2.
