@@ -15,7 +15,8 @@ migrate((app) => {
     updateRule: null,
     deleteRule: null,
     fields: [
-      { type: "text", name: "ten", required: true, min: 1, max: 20, pattern: "^\\p{L}+( \\p{L}+)*$" },
+      // Tên được kiểm tra trong Pages Function (tenHopLe). PocketBase không chấp nhận pattern \p{L} ở đây.
+      { type: "text", name: "ten", required: true, min: 1, max: 20 },
       { type: "number", name: "diem", required: true },
       { type: "number", name: "so_van", min: 0 },
       { type: "number", name: "thang", min: 0 },

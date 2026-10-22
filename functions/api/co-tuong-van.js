@@ -67,6 +67,9 @@ export async function onRequestPost({ request, env }) {
     body: JSON.stringify({ ma_van, ten, ket_qua: kq.ket_qua, diem_cong: diemCong }),
   });
   if (!ghiVan.ok) return tra(502, { loi: "khong_ghi_duoc_van" });
+  const idVan = (await ghiVan.json()).id;
+  // Nếu không cộng được điểm thì xóa nhật ký ván, để lần gửi lại sau còn tính được
+  const boVan = () => fetch(`${pb}/api/collections/cho_phien_co_van/records/${idVan}`, { method: "DELETE", headers: H });
 
   // Cộng dồn vào bảng điểm của tên này
   const timTen = await fetch(`${pb}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`ten="${ten}"`)}`, { headers: H });
@@ -95,7 +98,10 @@ export async function onRequestPost({ request, env }) {
         thua: kq.ket_qua === "thua" ? 1 : 0,
       }),
     });
-  if (!ghiDiem.ok) return tra(502, { loi: "khong_cong_duoc_diem" });
+  if (!ghiDiem.ok) {
+    await boVan();
+    return tra(502, { loi: "khong_cong_duoc_diem" });
+  }
   const tong = (await ghiDiem.json()).diem;
   return tra(200, { ket_qua: kq.ket_qua, diem_cong: diemCong, tong_diem: tong });
 }
