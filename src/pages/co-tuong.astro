@@ -40,6 +40,13 @@ import Layout from "../layouts/Layout.astro";
   /* Chế độ toàn màn hình: chỉ bàn cờ, căn giữa, cao bằng màn hình */
   .co-ban:fullscreen { max-width: none; margin: 0; padding: 1rem; box-sizing: border-box; background: var(--nen); display: flex; align-items: center; justify-content: center; }
   .co-ban:fullscreen .co-svg { width: auto; height: 100%; max-width: 100%; max-height: 100vh; }
+  /* Phương án cho iPhone Safari (không hỗ trợ Fullscreen API cho phần tử): phủ kín màn hình bằng CSS */
+  .co-ban.co-phong-to-css {
+    position: fixed; inset: 0; z-index: 1000; width: 100%; max-width: none; height: 100vh; height: 100dvh;
+    margin: 0; padding: .5rem; box-sizing: border-box; background: var(--nen); border-radius: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .co-ban.co-phong-to-css .co-svg { width: auto; height: 100%; max-width: 100%; }
   .co-svg { width: 100%; height: auto; display: block; user-select: none; }
   /* Quân đặt trên giao điểm đường kẻ, bấm vào giao điểm để chọn hoặc đi */
   .co-o { cursor: pointer; }
@@ -431,20 +438,26 @@ import Layout from "../layouts/Layout.astro";
 
   moiEl.addEventListener("click", vanMoi);
 
-  // Phóng to: chỉ bàn cờ chiếm toàn màn hình. Trình duyệt không hỗ trợ thì ẩn nút.
+  // Phóng to: chỉ bàn cờ chiếm toàn màn hình. Trình duyệt hỗ trợ Fullscreen API (máy tính, Android) thì dùng nó,
+  // còn iPhone Safari thì phủ kín màn hình bằng CSS.
   const phongEl = document.getElementById("co-phong-to") as HTMLButtonElement;
-  if (!banEl.requestFullscreen) {
-    phongEl.hidden = true;
-  } else {
-    phongEl.addEventListener("click", () => {
+  const coFullscreen = !!banEl.requestFullscreen;
+  const nhanPhong = () => (document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css") ? "Thu nhỏ" : "Phóng to bàn cờ");
+  phongEl.addEventListener("click", () => {
+    if (coFullscreen) {
       if (document.fullscreenElement === banEl) {
         void document.exitFullscreen();
       } else {
         void banEl.requestFullscreen().catch(() => {});
       }
-    });
+    } else {
+      banEl.classList.toggle("co-phong-to-css");
+      phongEl.textContent = nhanPhong();
+    }
+  });
+  if (coFullscreen) {
     document.addEventListener("fullscreenchange", () => {
-      phongEl.textContent = document.fullscreenElement === banEl ? "Thu nhỏ" : "Phóng to bàn cờ";
+      phongEl.textContent = nhanPhong();
     });
   }
 
