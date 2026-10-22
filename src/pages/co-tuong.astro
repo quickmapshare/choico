@@ -11,6 +11,7 @@ import Layout from "../layouts/Layout.astro";
     </label>
     <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
     <button type="button" id="co-moi">Ván mới</button>
+    <button type="button" id="co-hoan">Hoãn nước (còn 3)</button>
     <button type="button" id="co-phong-to">Phóng to bàn cờ</button>
     <button type="button" id="co-tieng" aria-pressed="false">Tiếng: tắt</button>
   </div>
@@ -33,7 +34,7 @@ import Layout from "../layouts/Layout.astro";
 
   <section class="co-bang-diem" aria-labelledby="co-bang-diem-tieu-de">
     <h2 id="co-bang-diem-tieu-de">Bảng điểm</h2>
-    <p class="phu">Thắng +3 điểm, hòa +1 điểm, thua -1 điểm. Ván được tính khi kết thúc.</p>
+    <p class="phu">Thắng +3 điểm, hòa +1 điểm, thua -1 điểm. Mỗi nước hoãn trừ 0,5 điểm, tối đa 3 nước hoãn mỗi ván. Ván được tính khi kết thúc.</p>
     <p id="co-vi-tri" class="co-vi-tri"></p>
     <ol id="co-top10" class="co-top10"></ol>
   </section>
@@ -99,7 +100,7 @@ import Layout from "../layouts/Layout.astro";
 <script>
   import {
     khoiTao, nuocHopLe, apDung, kyHieu, chonTrongDinh, banVanBan, lamSachTen, tenHopLe, quanBiAn, biChieu,
-    NUOC_TOI_DA,
+    NUOC_TOI_DA, HOAN_TOI_DA, timNuoc,
   } from "../lib/co-tuong.js";
   import { timNuocMay } from "../lib/co-tuong-may.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
@@ -217,6 +218,10 @@ import Layout from "../layouts/Layout.astro";
   let maVan = "";
   let nuocDaDi: string[] = []; // nhật ký nước đi của ván, gửi lên server khi kết thúc
   let daNop = false; // ván đã được ghi điểm chưa
+  let soHoan = 0; // số nước đã hoãn trong ván, mỗi nước trừ 0,5 điểm
+
+  // Điểm có thể là số lẻ 0,5: dùng dấu phẩy theo cách viết tiếng Việt
+  const soDiem = (x: number) => String(x).replace(".", ",");
 
   function taoMaVan() {
     if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -232,7 +237,7 @@ import Layout from "../layouts/Layout.astro";
       const a = document.createElement("span");
       a.textContent = `${it.ten}`;
       const bb = document.createElement("span");
-      bb.textContent = `${it.diem} điểm`;
+      bb.textContent = `${soDiem(it.diem)} điểm`;
       li.append(a, bb);
       ds.appendChild(li);
     }
@@ -255,7 +260,7 @@ import Layout from "../layouts/Layout.astro";
         return;
       }
       const hon = await (await fetch(`${PB_CONG_KHAI}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`diem>${dong.diem}`)}`)).json();
-      viEl.textContent = `${ten} đang ở vị trí #${(hon.totalItems || 0) + 1} với ${dong.diem} điểm.`;
+      viEl.textContent = `${ten} đang ở vị trí #${(hon.totalItems || 0) + 1} với ${soDiem(dong.diem)} điểm.`;
     } catch {
       viEl.textContent = "Chưa tải được bảng điểm. Thử tải lại trang sau.";
     }
@@ -277,7 +282,7 @@ import Layout from "../layouts/Layout.astro";
       const r = await fetch("/api/co-tuong-van", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ma_van: maVan, ten, nuoc: nuocDaDi }),
+        body: JSON.stringify({ ma_van: maVan, ten, nuoc: nuocDaDi, so_hoan: soHoan }),
       });
       if (r.status === 409) {
         daNop = true; // ván đã được tính trước đó
@@ -285,7 +290,7 @@ import Layout from "../layouts/Layout.astro";
         const { diem_cong, tong_diem } = await r.json();
         daNop = true;
         const dau = diem_cong > 0 ? "+" : "";
-        thongBaoDiem(`Điểm ván này: ${dau}${diem_cong}. Tổng điểm: ${tong_diem}.`);
+        thongBaoDiem(`Điểm ván này: ${dau}${soDiem(diem_cong)}. Tổng điểm: ${soDiem(tong_diem)}.`);
       } else {
         thongBaoDiem("Chưa ghi được điểm, sẽ thử lại khi tải lại trang.");
       }
@@ -300,7 +305,7 @@ import Layout from "../layouts/Layout.astro";
     try {
       localStorage.setItem(KHOA_LUU, JSON.stringify({
         b, luot, capDo, soNuoc, ketThuc, nuocCuoi, thongBao: trangThai.textContent,
-        maVan, nuocDaDi, daNop,
+        maVan, nuocDaDi, daNop, soHoan,
       }));
     } catch {
       // Trình duyệt chặn localStorage: vẫn chơi bình thường, chỉ không nhớ được ván
@@ -353,6 +358,7 @@ import Layout from "../layouts/Layout.astro";
     veQuanAn();
     banEl.classList.toggle("khoa", ketThuc || dangChoMay);
     hienMuc();
+    capNhatHoan();
     const s = svgEl("svg", { viewBox: `0 0 ${RONG} ${CAO}`, class: "co-svg", role: "img", "aria-label": "Bàn cờ tướng" }, banEl);
     const net = { stroke: "#7a4b1e", "stroke-width": 1.5, fill: "none" };
 
@@ -682,6 +688,38 @@ import Layout from "../layouts/Layout.astro";
     ve();
   });
 
+  const hoanEl = document.getElementById("co-hoan") as HTMLButtonElement;
+  // Được hoãn khi đến lượt người chơi, ván chưa kết thúc, còn lượt hoãn và đã có nước của cả hai bên
+  const hoanDuocDung = () => !ketThuc && !dangChoMay && soHoan < HOAN_TOI_DA && nuocDaDi.length >= 2;
+
+  function capNhatHoan() {
+    hoanEl.disabled = !hoanDuocDung();
+    hoanEl.textContent = `Hoãn nước (còn ${HOAN_TOI_DA - soHoan})`;
+  }
+
+  // Lùi lại nước cuối của người chơi và nước đáp của máy. Bàn được dựng lại từ nhật ký còn lại (đỏ đi trước).
+  function hoanNuoc() {
+    if (!hoanDuocDung()) return;
+    nuocDaDi.splice(-2, 2);
+    b = khoiTao();
+    let s = "r";
+    nuocCuoi = null;
+    for (const ky of nuocDaDi) {
+      const m = timNuoc(b, s, ky);
+      apDung(b, m);
+      nuocCuoi = [m.tu, m.den];
+      s = s === "r" ? "b" : "r";
+    }
+    soNuoc = nuocDaDi.length;
+    soHoan++;
+    chon = null;
+    gioDi = [];
+    hieuUng = null;
+    hienTrangThai(`Đã hoãn 2 nước (còn ${HOAN_TOI_DA - soHoan} lượt, mỗi lượt trừ 0,5 điểm). Đến lượt ${tenHienThi()}.`);
+    luuTrangThai("r");
+    ve();
+  }
+
   function vanMoi() {
     huyTinh(); // bỏ lượt máy đang nghĩ (nếu có)
     b = khoiTao();
@@ -695,6 +733,7 @@ import Layout from "../layouts/Layout.astro";
     maVan = taoMaVan();
     nuocDaDi = [];
     daNop = false;
+    soHoan = 0;
     thongBaoDiem("");
     hienTrangThai(`${tenHienThi()} đi trước (quân đỏ).`);
     luuTrangThai("r");
@@ -702,6 +741,7 @@ import Layout from "../layouts/Layout.astro";
   }
 
   moiEl.addEventListener("click", vanMoi);
+  hoanEl.addEventListener("click", hoanNuoc);
 
   // Phóng to: chỉ bàn cờ chiếm toàn màn hình. Trình duyệt hỗ trợ Fullscreen API (máy tính, Android) thì dùng nó,
   // còn iPhone Safari thì phủ kín màn hình bằng CSS.
@@ -769,6 +809,7 @@ import Layout from "../layouts/Layout.astro";
     maVan = typeof d.maVan === "string" && d.maVan ? d.maVan : taoMaVan();
     nuocDaDi = Array.isArray(d.nuocDaDi) ? d.nuocDaDi : [];
     daNop = !!d.daNop;
+    soHoan = Number.isInteger(d.soHoan) && d.soHoan >= 0 && d.soHoan <= HOAN_TOI_DA ? d.soHoan : 0;
     chon = null;
     gioDi = [];
     hienTrangThai(d.thongBao || "");

@@ -277,6 +277,13 @@ export function timNuoc(b, s, ky) {
 
 export const NUOC_TOI_DA = 120; // đi quá số nước này (cả hai bên) thì ván hòa
 export const DIEM_THEO_KET_QUA = { thang: 3, hoa: 1, thua: -1 };
+export const HOAN_TOI_DA = 3; // mỗi ván tối đa số nước hoãn
+export const TRU_DIEM_MOI_HOAN = 0.5; // mỗi nước hoãn trừ điểm của ván
+
+// Điểm cộng của một ván: kết quả trừ đi số nước hoãn đã dùng
+export function diemCongVan(ketQua, soHoan) {
+  return DIEM_THEO_KET_QUA[ketQua] - TRU_DIEM_MOI_HOAN * soHoan;
+}
 
 // Chạy lại cả ván từ thế cờ mở đầu để kiểm tra. Đỏ (người chơi) đi trước, các nước xen kẽ.
 // Trả về { hop_le, ket_qua } với ket_qua là "thang" hoặc "thua" (theo người chơi là đỏ) hoặc "hoa".

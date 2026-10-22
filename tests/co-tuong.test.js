@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu,
   timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe,
-  xacMinhVan, xepHangTheoThoiGian, quanBiAn, biChieu,
+  xacMinhVan, xepHangTheoThoiGian, quanBiAn, biChieu, diemCongVan, HOAN_TOI_DA,
 } from "../src/lib/co-tuong.js";
 
 describe("quân đã bị ăn", () => {
@@ -70,6 +70,21 @@ describe("xác minh ván để tính điểm", () => {
     expect(xacMinhVan(["a3a4"])).toEqual({ hop_le: false });
     // Ván chưa kết thúc (mới 1 nước)
     expect(xacMinhVan(["a6a5"])).toEqual({ hop_le: false });
+  });
+});
+
+describe("điểm và nước hoãn", () => {
+  it("không hoãn thì giữ nguyên điểm theo kết quả", () => {
+    expect(diemCongVan("thang", 0)).toBe(3);
+    expect(diemCongVan("hoa", 0)).toBe(1);
+    expect(diemCongVan("thua", 0)).toBe(-1);
+  });
+
+  it("mỗi nước hoãn trừ 0,5 điểm, tối đa 3 nước", () => {
+    expect(diemCongVan("thang", 1)).toBe(2.5);
+    expect(diemCongVan("thang", 3)).toBe(1.5);
+    expect(diemCongVan("thua", 3)).toBe(-2.5);
+    expect(HOAN_TOI_DA).toBe(3);
   });
 });
 

@@ -1,7 +1,7 @@
 // Cloudflare Pages Function: nhận nhật ký một ván cờ tướng đã kết thúc, chạy lại ván để kiểm tra, rồi cộng điểm.
 // Điểm chỉ được tính khi cả ván hợp lệ. Mỗi ván (ma_van) chỉ được tính một lần.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
-import { xacMinhVan, tenHopLe, DIEM_THEO_KET_QUA, NUOC_TOI_DA } from "../../src/lib/co-tuong.js";
+import { xacMinhVan, tenHopLe, diemCongVan, NUOC_TOI_DA, HOAN_TOI_DA } from "../../src/lib/co-tuong.js";
 
 const NGUON_CHO_PHEP = ["https://chophien.pages.dev"];
 const MAU_MA_VAN = /^[A-Za-z0-9-]{16,64}$/;
@@ -36,16 +36,17 @@ export async function onRequestPost({ request, env }) {
   } catch {
     return tra(400, { loi: "json_khong_hop_le" });
   }
-  const { ma_van, ten, nuoc } = body ?? {};
+  const { ma_van, ten, nuoc, so_hoan = 0 } = body ?? {};
   if (typeof ma_van !== "string" || !MAU_MA_VAN.test(ma_van)) return tra(400, { loi: "ma_van_khong_hop_le" });
   if (typeof ten !== "string" || !tenHopLe(ten)) return tra(400, { loi: "ten_khong_hop_le" });
   if (!Array.isArray(nuoc) || nuoc.length === 0 || nuoc.length > NUOC_TOI_DA) return tra(400, { loi: "nuoc_khong_hop_le" });
   if (!nuoc.every((x) => typeof x === "string" && MAU_NUOC.test(x))) return tra(400, { loi: "nuoc_khong_hop_le" });
+  if (!Number.isInteger(so_hoan) || so_hoan < 0 || so_hoan > HOAN_TOI_DA) return tra(400, { loi: "so_hoan_khong_hop_le" });
 
   // Chạy lại ván: nếu nhật ký sai hoặc ván chưa kết thúc thì không tính điểm
   const kq = xacMinhVan(nuoc);
   if (!kq.hop_le) return tra(422, { loi: "van_khong_hop_le" });
-  const diemCong = DIEM_THEO_KET_QUA[kq.ket_qua];
+  const diemCong = diemCongVan(kq.ket_qua, so_hoan); // mỗi nước hoãn trừ điểm
 
   const pb = env.PB_URL;
   let token;
