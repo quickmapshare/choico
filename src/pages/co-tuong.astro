@@ -92,9 +92,10 @@ import Layout from "../layouts/Layout.astro";
 
 <script>
   import {
-    khoiTao, nuocHopLe, apDung, kyHieu, chonTrongDinh, xepHangTheoThoiGian, banVanBan, lamSachTen, tenHopLe, quanBiAn,
+    khoiTao, nuocHopLe, apDung, kyHieu, chonTrongDinh, banVanBan, lamSachTen, tenHopLe, quanBiAn,
     NUOC_TOI_DA,
   } from "../lib/co-tuong.js";
+  import { timNuocMay } from "../lib/co-tuong-may.js";
   // Địa chỉ PocketBase công khai: chỉ đọc bảng điểm, ghi điểm đi qua /api/co-tuong-van
   const PB_CONG_KHAI = "https://api.botgap.dev";
 
@@ -111,13 +112,15 @@ import Layout from "../layouts/Layout.astro";
   const toaDoY = (r) => LE + r * KC;
 
   // Năm mức chơi. doSauToiDa: giới hạn độ sâu tìm kiếm. haiku: số nước đầu để Haiku chọn (0 = không dùng).
+  // tt: bảng băm vị trí, q: tìm kiếm tĩnh (xem co-tuong-may.js). Mức 1 đến 3 giữ cách tìm cũ (chỉ nhanh hơn).
   // Thời gian nghĩ tối đa của máy là số mức tính theo giây: mức n nghĩ tối đa n giây (xem thoiGianNghi).
+  // Mức 5 không giới hạn độ sâu, tìm sâu dần đến hết giờ.
   const MUC = {
     1: { doSauToiDa: 1, haiku: 0 },
     2: { doSauToiDa: 2, haiku: 0 },
     3: { doSauToiDa: 3, haiku: 0 },
-    4: { doSauToiDa: 4, haiku: 0 },
-    5: { doSauToiDa: 6, haiku: 0 },
+    4: { doSauToiDa: 4, tt: true, q: true, haiku: 0 },
+    5: { doSauToiDa: 30, tt: true, q: true, haiku: 0 },
   };
   const thoiGianNghi = (muc) => muc * 1000; // ms
   const MUC_TOI_DA = 5;
@@ -382,7 +385,9 @@ import Layout from "../layouts/Layout.astro";
     await new Promise((r) => setTimeout(r, 30));
     const cap = MUC[capDo];
     let chonNuoc;
-    const { xep: bangXep } = xepHangTheoThoiGian(b, "b", { doSauToiDa: cap.doSauToiDa, thoiGianMs: thoiGianNghi(capDo) });
+    const { xep: bangXep } = timNuocMay(b, "b", {
+      doSauToiDa: cap.doSauToiDa, thoiGianMs: thoiGianNghi(capDo), soNuoc: Math.max(1, cap.haiku), tt: cap.tt, q: cap.q,
+    });
     if (cap.haiku > 0) {
       const xep = bangXep.slice(0, cap.haiku);
       chonNuoc = xep[0];
