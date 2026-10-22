@@ -67,15 +67,16 @@ import Layout from "../layouts/Layout.astro";
   const toaDoX = (c) => LE + c * KC;
   const toaDoY = (r) => LE + r * KC;
 
-  // Năm mức chơi. doSauToiDa: độ sâu minimax tối đa. thoiGian: ms tối đa để nghĩ một nước, 0 là không giới hạn
-  // (đi đúng doSauToiDa). Ở mức có thời gian, máy tìm sâu dần và dừng khi hết giờ. haiku: số nước đầu để Haiku chọn (0 = không dùng).
+  // Năm mức chơi. doSauToiDa: giới hạn độ sâu tìm kiếm. haiku: số nước đầu để Haiku chọn (0 = không dùng).
+  // Thời gian nghĩ tối đa của máy là số mức tính theo giây: mức n nghĩ tối đa n giây (xem thoiGianNghi).
   const MUC = {
-    1: { doSauToiDa: 1, thoiGian: 0, haiku: 0 },
-    2: { doSauToiDa: 2, thoiGian: 0, haiku: 0 },
-    3: { doSauToiDa: 3, thoiGian: 0, haiku: 0 },
-    4: { doSauToiDa: 4, thoiGian: 5000, haiku: 3 },
-    5: { doSauToiDa: 6, thoiGian: 5000, haiku: 3 },
+    1: { doSauToiDa: 1, haiku: 0 },
+    2: { doSauToiDa: 2, haiku: 0 },
+    3: { doSauToiDa: 3, haiku: 0 },
+    4: { doSauToiDa: 4, haiku: 3 },
+    5: { doSauToiDa: 6, haiku: 3 },
   };
+  const thoiGianNghi = (muc) => muc * 1000; // ms
   const MUC_TOI_DA = 5;
   const PB_CHO_PHEP = 2500; // ms: thời gian tối đa chờ Haiku trước khi dùng nước của máy
   const KHOA_LUU = "co-tuong-van-v2";
@@ -320,7 +321,7 @@ import Layout from "../layouts/Layout.astro";
     await new Promise((r) => setTimeout(r, 30));
     const cap = MUC[capDo];
     let chonNuoc;
-    const { xep: bangXep } = xepHangTheoThoiGian(b, "b", { doSauToiDa: cap.doSauToiDa, thoiGianMs: cap.thoiGian });
+    const { xep: bangXep } = xepHangTheoThoiGian(b, "b", { doSauToiDa: cap.doSauToiDa, thoiGianMs: thoiGianNghi(capDo) });
     if (cap.haiku > 0) {
       const xep = bangXep.slice(0, cap.haiku);
       chonNuoc = xep[0];
