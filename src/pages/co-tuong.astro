@@ -109,8 +109,9 @@ import Layout from "../layouts/Layout.astro";
   const PB_CONG_KHAI = "https://api.botgap.dev";
 
   // Tên quân theo cách gọi thường thấy ở Việt Nam: quân đỏ có Tốt, quân đen có Chốt
-  const TEN = { K: "Tướng", A: "Sĩ", E: "Tượng", H: "Mã", R: "Xe", C: "Pháo", P: "Tốt" };
-  const TEN_DEN = { K: "Tướng", A: "Sĩ", E: "Tượng", H: "Mã", R: "Xe", C: "Pháo", P: "Chốt" };
+  // Quân dùng chữ Hán như bàn cờ truyền thống: bên đỏ và bên đen khác nhau
+  const TEN = { K: "帥", A: "仕", E: "相", H: "傌", R: "俥", C: "炮", P: "兵" };
+  const TEN_DEN = { K: "將", A: "士", E: "象", H: "馬", R: "車", C: "砲", P: "卒" };
   // Kích thước bàn SVG: 9 đường dọc, 10 đường ngang, khoảng cách 50, lề 30
   const KC = 50;
   const LE = 30;
@@ -431,7 +432,7 @@ import Layout from "../layouts/Layout.astro";
     const q = svgEl("g", { class: "co-quan" }, cha);
     svgEl("circle", { cx: x, cy: y, r: 20, fill: "#fbf6e6", stroke: mau, "stroke-width": 2 }, q);
     svgEl("text", {
-      x, y: y + 4, "text-anchor": "middle", "font-size": 11, "font-weight": "bold", fill: mau,
+      x, y: y + 8, "text-anchor": "middle", "font-size": 24, "font-weight": "bold", fill: mau,
     }, q).textContent = laDo ? TEN[p[1]] : TEN_DEN[p[1]];
     return q;
   }
