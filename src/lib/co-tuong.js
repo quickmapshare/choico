@@ -169,13 +169,57 @@ export function vuaDoiMat(b) {
 export function biChieu(b, s) {
   const v = timVua(b, s);
   if (!v) return true;
+  return dangBiTan(b, s, v[0], v[1]);
+}
+
+// Ô (r, c) có bị quân đối phương của s ăn được không. Dò từ ô đó ra ngoài, không tạo danh sách nước đi.
+function dangBiTan(b, s, r, c) {
   const dich = doiBen(s);
-  for (let r = 0; r < 10; r++) {
-    for (let c = 0; c < 9; c++) {
-      if (b[r][c] && b[r][c][0] === dich) {
-        if (nuocThuVi(b, r, c).some(([a, z]) => a === v[0] && z === v[1])) return true;
+  // Tướng và sĩ chỉ đi trong cung của đối phương, tượng không qua sông
+  for (const [dr, dc] of DIR4) {
+    if (!ngoaiBien(r + dr, c + dc) && b[r + dr][c + dc] === dich + "K" && trongCung(dich, r, c)) return true;
+  }
+  for (const [dr, dc] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+    if (!ngoaiBien(r + dr, c + dc) && b[r + dr][c + dc] === dich + "A" && trongCung(dich, r, c)) return true;
+  }
+  for (const [dr, dc] of [[2, 2], [2, -2], [-2, 2], [-2, -2]]) {
+    const hr = r - dr;
+    const hc = c - dc;
+    if (ngoaiBien(hr, hc) || b[hr][hc] !== dich + "E" || !trongLanhTho(dich, r)) continue;
+    if (!b[r - dr / 2][c - dc / 2]) return true; // mắt tượng không bị chặn
+  }
+  // Xe và pháo: dò 4 hướng, quân đầu tiên gặp là xe (hoặc ngòi của pháo), quân thứ hai là pháo
+  for (const [dr, dc] of DIR4) {
+    let nr = r + dr;
+    let nc = c + dc;
+    let coNgoi = false;
+    while (!ngoaiBien(nr, nc)) {
+      const p = b[nr][nc];
+      if (p) {
+        if (p[0] === dich) {
+          if (!coNgoi && p[1] === "R") return true;
+          if (coNgoi && p[1] === "C") return true;
+        }
+        if (coNgoi) break;
+        coNgoi = true;
       }
+      nr += dr;
+      nc += dc;
     }
+  }
+  // Mã: đi từ ô đích về phía mã, chân mã không được bị chặn
+  for (const [dr, dc, lr, lc] of NHAY_MA) {
+    const hr = r - dr;
+    const hc = c - dc;
+    if (ngoaiBien(hr, hc) || b[hr][hc] !== dich + "H") continue;
+    if (ngoaiBien(hr + lr, hc + lc) || b[hr + lr][hc + lc]) continue; // chân mã bị chặn
+    return true;
+  }
+  // Tốt: tốt thẳng phía trước, và tốt ngang nếu đã qua sông
+  const tien = dich === "r" ? -1 : 1;
+  if (!ngoaiBien(r - tien, c) && b[r - tien][c] === dich + "P") return true;
+  for (const dc of [-1, 1]) {
+    if (!ngoaiBien(r, c + dc) && b[r][c + dc] === dich + "P" && !trongLanhTho(dich, r)) return true;
   }
   return false;
 }
@@ -200,13 +244,15 @@ function hoanTac(b, m, an) {
 // Các nước đi hợp lệ của bên s (không để tướng mình bị chiếu, không đối mặt tướng).
 export function nuocHopLe(b, s) {
   const out = [];
+  const vua = timVua(b, s); // vị trí tướng của s trước khi đi, tướng tự đi thì cập nhật theo nước đi
   for (let r = 0; r < 10; r++) {
     for (let c = 0; c < 9; c++) {
       if (!b[r][c] || b[r][c][0] !== s) continue;
       for (const [r2, c2] of nuocThuVi(b, r, c)) {
         const m = { tu: [r, c], den: [r2, c2] };
         const an = thucHien(b, m);
-        const hop = !biChieu(b, s) && !vuaDoiMat(b);
+        const kp = b[r2][c2] === s + "K" ? [r2, c2] : vua;
+        const hop = kp !== null && !dangBiTan(b, s, kp[0], kp[1]) && !vuaDoiMat(b);
         hoanTac(b, m, an);
         if (hop) out.push({ ...m, an });
       }

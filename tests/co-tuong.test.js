@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu,
   timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe,
-  xacMinhVan, xepHangTheoThoiGian, quanBiAn,
+  xacMinhVan, xepHangTheoThoiGian, quanBiAn, biChieu,
 } from "../src/lib/co-tuong.js";
 
 describe("quân đã bị ăn", () => {
@@ -215,5 +215,39 @@ describe("cờ tướng: minimax", () => {
 
   it("banVanBan có 10 hàng", () => {
     expect(banVanBan(khoiTao()).split("\n")).toHaveLength(10);
+  });
+});
+
+describe("kiểm tra chiếu", () => {
+  // Bàn trống với tướng đỏ ở (9,4), tướng đen ở (0,3) (không đối mặt)
+  const banTrong = () => {
+    const b = Array.from({ length: 10 }, () => Array(9).fill(null));
+    b[9][4] = "rK";
+    b[0][3] = "bK";
+    return b;
+  };
+
+  it("mã chiếu khi chân mã trống, không chiếu khi bị chặn", () => {
+    const b = banTrong();
+    b[7][3] = "bH"; // mã đen ở (7,3) đi tới (9,4), chân mã ở (8,3)
+    expect(biChieu(b, "r")).toBe(true);
+    b[8][3] = "rA"; // chân mã bị chặn
+    expect(biChieu(b, "r")).toBe(false);
+  });
+
+  it("pháo chiếu khi có đúng một ngòi trên đường", () => {
+    const b = banTrong();
+    b[0][4] = "bC";
+    expect(biChieu(b, "r")).toBe(false); // không có ngòi
+    b[5][4] = "rP"; // ngòi
+    expect(biChieu(b, "r")).toBe(true);
+  });
+
+  it("tốt đen đã qua sông chiếu ngang", () => {
+    const b = banTrong();
+    b[9][4] = null;
+    b[7][4] = "rK"; // tướng đỏ trong cung ở (7,4)
+    b[7][3] = "bP"; // tốt đen ở hàng 7 đã qua sông, đứng cạnh tướng
+    expect(biChieu(b, "r")).toBe(true);
   });
 });
