@@ -16,7 +16,20 @@ import Layout from "../layouts/Layout.astro";
 
   <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
   <p id="co-ghi-diem" class="phu" aria-live="polite"></p>
-  <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
+  <div class="co-khung">
+    <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
+    <!-- Hai nửa khớp với hai nửa bàn: trên là quân đen bị ăn, dưới là quân đỏ bị ăn -->
+    <div class="co-quan-an" aria-label="Quân đã bị ăn">
+      <div class="co-an-nua">
+        <h3>Quân đen bị ăn</h3>
+        <div id="co-an-den"></div>
+      </div>
+      <div class="co-an-nua">
+        <h3>Quân đỏ bị ăn</h3>
+        <div id="co-an-do"></div>
+      </div>
+    </div>
+  </div>
   <button type="button" id="co-thu-nho" class="co-thu-nho" hidden>Thu nhỏ</button>
 
   <section class="co-bang-diem" aria-labelledby="co-bang-diem-tieu-de">
@@ -38,6 +51,18 @@ import Layout from "../layouts/Layout.astro";
   .co-ten input { font: inherit; padding: .35rem .5rem; border: 1px solid var(--vien); border-radius: .3rem; background: var(--nen); color: var(--chu); width: 12rem; }
   .co-trang-thai { min-height: 1.5em; font-weight: 600; }
   .co-ban { width: 100%; max-width: 460px; margin: .5rem 0 1.5rem; }
+  .co-khung { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+  .co-khung .co-ban { flex: 1 1 260px; min-width: 0; }
+  .co-quan-an { flex: 0 1 9.5rem; display: flex; flex-direction: column; gap: .75rem; margin-top: .5rem; }
+  .co-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .5rem; background: var(--mat); min-height: 6rem; }
+  .co-an-nua h3 { font-size: .85rem; margin: 0 0 .4rem; color: var(--phu); font-weight: 600; }
+  .co-an-nua > div { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .co-chip {
+    width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 2px solid currentColor; background: #fbf6e6;
+    font-size: .7rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+  }
+  .co-chip-r { color: #b3261e; }
+  .co-chip-b { color: #1f1f1f; }
   /* Chế độ toàn màn hình: chỉ bàn cờ, căn giữa, cao bằng màn hình */
   .co-ban:fullscreen { max-width: none; margin: 0; padding: 1rem; box-sizing: border-box; background: var(--nen); display: flex; align-items: center; justify-content: center; }
   .co-ban:fullscreen .co-svg { width: auto; height: 100%; max-width: 100%; max-height: 100vh; }
@@ -70,7 +95,7 @@ import Layout from "../layouts/Layout.astro";
 
 <script>
   import {
-    khoiTao, nuocHopLe, apDung, kyHieu, chonTrongDinh, xepHangTheoThoiGian, banVanBan, lamSachTen, tenHopLe,
+    khoiTao, nuocHopLe, apDung, kyHieu, chonTrongDinh, xepHangTheoThoiGian, banVanBan, lamSachTen, tenHopLe, quanBiAn,
     NUOC_TOI_DA,
   } from "../lib/co-tuong.js";
   // Địa chỉ PocketBase công khai: chỉ đọc bảng điểm, ghi điểm đi qua /api/co-tuong-van
@@ -258,9 +283,27 @@ import Layout from "../layouts/Layout.astro";
     mucHienTai.textContent = `Mức ${capDo}/${MUC_TOI_DA}`;
   }
 
+  // Vẽ khung quân đã bị ăn: quân đen bị ăn ở nửa trên, quân đỏ bị ăn ở nửa dưới
+  function veQuanAn() {
+    const ket = quanBiAn(b);
+    const dien = (id, list, s) => {
+      const el = document.getElementById(id) as HTMLElement;
+      el.replaceChildren();
+      for (const t of list) {
+        const chip = document.createElement("span");
+        chip.className = "co-chip co-chip-" + s;
+        chip.textContent = s === "r" ? TEN[t] : TEN_DEN[t];
+        el.appendChild(chip);
+      }
+    };
+    dien("co-an-den", ket.b, "b");
+    dien("co-an-do", ket.r, "r");
+  }
+
   // Vẽ bàn theo kiểu Việt Nam: hàng 0 ở trên (phía đen), hàng 9 ở dưới (phía đỏ), có khoảng sông ở giữa
   function ve() {
     banEl.replaceChildren();
+    veQuanAn();
     banEl.classList.toggle("khoa", ketThuc || dangChoMay);
     hienMuc();
     const s = svgEl("svg", { viewBox: `0 0 ${RONG} ${CAO}`, class: "co-svg", role: "img", "aria-label": "Bàn cờ tướng" }, banEl);

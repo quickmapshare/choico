@@ -344,6 +344,31 @@ export function xepHangTheoThoiGian(b, s, { doSauToiDa, thoiGianMs }) {
   return { xep, doSau };
 }
 
+// Số quân mỗi loại của mỗi bên khi bắt đầu ván
+const SO_QUAN_BAN_DAU = { K: 1, A: 2, E: 2, H: 2, R: 2, C: 2, P: 5 };
+// Thứ tự quan trọng từ cao xuống thấp, dùng để sắp quân đã bị ăn
+export const THU_TU_QUAN = ["K", "R", "C", "H", "E", "A", "P"];
+
+// Quân đã bị ăn của mỗi bên, suy ra từ số quân còn lại trên bàn. ket.r là quân đỏ đã bị ăn, ket.b là quân đen đã bị ăn.
+export function quanBiAn(b) {
+  const dem = { r: {}, b: {} };
+  for (const s of ["r", "b"]) for (const t of THU_TU_QUAN) dem[s][t] = 0;
+  for (let r = 0; r < 10; r++) {
+    for (let c = 0; c < 9; c++) {
+      const p = b[r][c];
+      if (p) dem[p[0]][p[1]]++;
+    }
+  }
+  const ket = { r: [], b: [] };
+  for (const s of ["r", "b"]) {
+    for (const t of THU_TU_QUAN) {
+      const thieu = SO_QUAN_BAN_DAU[t] - dem[s][t];
+      for (let i = 0; i < thieu; i++) ket[s].push(t);
+    }
+  }
+  return ket;
+}
+
 // Bàn dạng chữ để gửi cho AI: mỗi hàng là 9 ô, ".." là ô trống.
 export function banVanBan(b) {
   return b

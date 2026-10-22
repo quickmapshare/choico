@@ -2,8 +2,23 @@ import { describe, it, expect } from "vitest";
 import {
   khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu,
   timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe,
-  xacMinhVan, xepHangTheoThoiGian,
+  xacMinhVan, xepHangTheoThoiGian, quanBiAn,
 } from "../src/lib/co-tuong.js";
+
+describe("quân đã bị ăn", () => {
+  it("thế mở đầu chưa có quân nào bị ăn", () => {
+    expect(quanBiAn(khoiTao())).toEqual({ r: [], b: [] });
+  });
+
+  it("sắp theo mức quan trọng và đúng bên", () => {
+    const b = khoiTao();
+    b[0][1] = null; // mất mã đen
+    b[0][7] = null; // mất mã đen
+    b[9][8] = null; // mất xe đỏ
+    b[3][0] = null; // mất tốt đen
+    expect(quanBiAn(b)).toEqual({ r: ["R"], b: ["H", "H", "P"] });
+  });
+});
 
 describe("tìm nước theo thời gian", () => {
   it("không giới hạn thời gian thì đi đúng độ sâu yêu cầu", () => {
