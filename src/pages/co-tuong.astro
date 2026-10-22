@@ -82,6 +82,8 @@ import Layout from "../layouts/Layout.astro";
   .co-svg { width: 100%; height: auto; display: block; user-select: none; }
   /* Quân đặt trên giao điểm đường kẻ, bấm vào giao điểm để chọn hoặc đi */
   .co-o { cursor: pointer; }
+  /* Quân không nhận nhấp chuột để nhấp xuyên xuống vùng bấm của ô, kể cả khi quân đang trượt ở lớp trên */
+  .co-quan { pointer-events: none; }
   .co-ban.khoa .co-o { cursor: default; }
   .co-bang-diem { margin-top: 1rem; }
   .co-vi-tri { font-weight: 600; min-height: 1.5em; }
@@ -137,6 +139,12 @@ import Layout from "../layouts/Layout.astro";
   let chon: [number, number] | null = null;
   let gioDi: ReturnType<typeof nuocHopLe> = [];
   let nuocCuoi: [number, number][] | null = null;
+  // Hiệu ứng nước vừa đi (quân trượt, vòng sáng, quân bị ăn mờ dần). Không lưu khi tải lại trang.
+  // batDau: thời điểm nước đi, để vẽ lại giữa chừng (ve() được gọi nhiều lần) vẫn chạy tiếp đúng tiến độ.
+  let hieuUng: { batDau: number; quanBiAn: string | null } | null = null;
+  const THOI_GIAN_DI = 200; // ms quân trượt từ ô cũ sang ô mới
+  const THOI_GIAN_AN = 360; // ms quân bị ăn mờ dần và vòng sáng lan ra (sau khi quân đã đến nơi)
+  const giamChuyenDong = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let dangChoMay = false;
   let ketThuc = false;
   let capDo = 1; // mức hiện tại, 1 đến 5
@@ -332,27 +340,89 @@ import Layout from "../layouts/Layout.astro";
     }, s).textContent = "SÔNG";
 
     const dich = new Set(gioDi.filter((m) => chon && m.tu[0] === chon[0] && m.tu[1] === chon[1]).map((m) => m.den.join(",")));
-    const coNuocCuoi = (r, c) => nuocCuoi && nuocCuoi.some(([a, z]) => a === r && z === c);
+    const laO = (o, r, c) => o && o[0] === r && o[1] === c;
+    const oDi = nuocCuoi ? nuocCuoi[0] : null; // ô quân vừa rời
+    const oDen = nuocCuoi ? nuocCuoi[1] : null; // ô quân vừa đến
     for (let r = 0; r < 10; r++) {
       for (let c = 0; c < 9; c++) {
         const x = toaDoX(c);
         const y = toaDoY(r);
         const p = b[r][c];
         const g = svgEl("g", { class: "co-o", "data-r": r, "data-c": c }, s);
-        if (coNuocCuoi(r, c)) svgEl("circle", { cx: x, cy: y, r: 22, fill: "none", stroke: "#e0a100", "stroke-width": 2, "stroke-dasharray": "4 3" }, g);
+        // Ô quân vừa rời: vòng nét đứt, nền vàng nhạt. Ô quân vừa đến: vòng liền đậm hơn, nền vàng.
+        if (laO(oDi, r, c)) svgEl("circle", { cx: x, cy: y, r: 22, fill: "rgba(224,161,0,.22)", stroke: "#e0a100", "stroke-width": 2, "stroke-dasharray": "4 3" }, g);
+        if (laO(oDen, r, c)) svgEl("circle", { cx: x, cy: y, r: 24, fill: "rgba(224,161,0,.35)", stroke: "#e0a100", "stroke-width": 3.5 }, g);
         if (chon && chon[0] === r && chon[1] === c) svgEl("circle", { cx: x, cy: y, r: 22, fill: "none", stroke: "#1e88e5", "stroke-width": 3 }, g);
         if (dich.has(`${r},${c}`)) svgEl("circle", { cx: x, cy: y, r: 7, fill: "rgba(30,136,229,.65)" }, g);
-        if (p) {
-          const laDo = p[0] === "r";
-          const mau = laDo ? "#b3261e" : "#1f1f1f";
-          svgEl("circle", { cx: x, cy: y, r: 20, fill: "#fbf6e6", stroke: mau, "stroke-width": 2 }, g);
-          svgEl("text", {
-            x, y: y + 4, "text-anchor": "middle", "font-size": 11, "font-weight": "bold", fill: mau,
-          }, g).textContent = laDo ? TEN[p[1]] : TEN_DEN[p[1]];
-        }
+        if (p) vePhanQuan(g, p, x, y);
         // Vùng bấm trong suốt phủ lên trên để nhận nhấp chuột
         svgEl("circle", { cx: x, cy: y, r: KC / 2 - 2, fill: "transparent" }, g);
       }
+    }
+    chayHieuUng(s);
+  }
+
+  // Vẽ một quân trong nhóm .co-quan để có thể làm hoạt ảnh riêng
+  function vePhanQuan(cha, p: string, x: number, y: number) {
+    const laDo = p[0] === "r";
+    const mau = laDo ? "#b3261e" : "#1f1f1f";
+    const q = svgEl("g", { class: "co-quan" }, cha);
+    svgEl("circle", { cx: x, cy: y, r: 20, fill: "#fbf6e6", stroke: mau, "stroke-width": 2 }, q);
+    svgEl("text", {
+      x, y: y + 4, "text-anchor": "middle", "font-size": 11, "font-weight": "bold", fill: mau,
+    }, q).textContent = laDo ? TEN[p[1]] : TEN_DEN[p[1]];
+    return q;
+  }
+
+  // Hiệu ứng nước vừa đi: quân trượt từ ô cũ sang ô mới, nếu ăn quân thì quân bị ăn mờ dần và vòng sáng lan ra.
+  // ve() dựng lại toàn bộ bàn nên hiệu ứng được bắt đầu lại ở đúng tiến độ theo thời gian đã trôi qua.
+  function chayHieuUng(s) {
+    if (!hieuUng || !nuocCuoi || giamChuyenDong || !s.animate) return;
+    const troi = Date.now() - hieuUng.batDau;
+    if (troi >= THOI_GIAN_DI + THOI_GIAN_AN) {
+      hieuUng = null;
+      return;
+    }
+    const [tu, den] = nuocCuoi;
+    const x = toaDoX(den[1]);
+    const y = toaDoY(den[0]);
+    const GIUA = "transform-box: fill-box; transform-origin: center;";
+
+    // Quân bị ăn nằm yên ở ô đến cho đến khi quân đi tới, rồi mờ dần
+    if (hieuUng.quanBiAn) {
+      const ma = svgEl("g", { style: GIUA, "pointer-events": "none" }, s);
+      vePhanQuan(ma, hieuUng.quanBiAn, x, y);
+      ma.animate(
+        [
+          { opacity: 1, transform: "scale(1)", offset: 0 },
+          { opacity: 1, transform: "scale(1)", offset: THOI_GIAN_DI / (THOI_GIAN_DI + THOI_GIAN_AN) },
+          { opacity: 0, transform: "scale(1.5)", offset: 1 },
+        ],
+        { duration: THOI_GIAN_DI + THOI_GIAN_AN, delay: -troi, fill: "forwards" },
+      );
+    }
+
+    // Vòng sáng lan ra khi quân đến nơi: đỏ nếu ăn quân, vàng nếu chỉ đi
+    const vong = svgEl("circle", {
+      cx: x, cy: y, r: 22, fill: "none", stroke: hieuUng.quanBiAn ? "#e53935" : "#e0a100", "stroke-width": 4,
+      opacity: 0, style: GIUA, "pointer-events": "none",
+    }, s);
+    vong.animate(
+      [{ opacity: 0.95, transform: "scale(1)" }, { opacity: 0, transform: "scale(2)" }],
+      { duration: THOI_GIAN_AN, delay: THOI_GIAN_DI - troi, easing: "ease-out", fill: "forwards" },
+    );
+
+    // Quân vừa đi trượt từ ô cũ, đưa lên lớp trên cùng để không bị quân khác che
+    const quan = banEl.querySelector(`g.co-o[data-r="${den[0]}"][data-c="${den[1]}"] .co-quan`);
+    if (quan && THOI_GIAN_DI > troi) {
+      s.appendChild(quan);
+      quan.animate(
+        [
+          { transform: `translate(${(tu[1] - den[1]) * KC}px, ${(tu[0] - den[0]) * KC}px)` },
+          { transform: "translate(0px, 0px)" },
+        ],
+        { duration: THOI_GIAN_DI, delay: -troi, easing: "ease-out", fill: "backwards" },
+      );
     }
   }
 
@@ -381,8 +451,10 @@ import Layout from "../layouts/Layout.astro";
     dangChoMay = true;
     hienTrangThai("Máy đang nghĩ…");
     ve();
-    // Nhường lượt để trình duyệt vẽ dòng "đang nghĩ" trước khi máy tính toán
-    await new Promise((r) => setTimeout(r, 30));
+    // Nhường lượt để trình duyệt vẽ dòng "đang nghĩ", và chờ hiệu ứng nước vừa đi chạy xong
+    // (khi máy tính toán trình duyệt không vẽ được nên hiệu ứng sẽ đứng giữa chừng)
+    const conLai = hieuUng && !giamChuyenDong ? THOI_GIAN_DI + THOI_GIAN_AN - (Date.now() - hieuUng.batDau) : 0;
+    await new Promise((r) => setTimeout(r, Math.max(30, conLai)));
     const cap = MUC[capDo];
     let chonNuoc;
     const { xep: bangXep } = timNuocMay(b, "b", {
@@ -415,6 +487,7 @@ import Layout from "../layouts/Layout.astro";
     if (chonNuoc) {
       apDung(b, chonNuoc.m);
       nuocCuoi = [chonNuoc.m.tu, chonNuoc.m.den];
+      hieuUng = { batDau: Date.now(), quanBiAn: chonNuoc.m.an || null };
       soNuoc++;
       nuocDaDi.push(chonNuoc.nuoc);
     }
@@ -445,6 +518,7 @@ import Layout from "../layouts/Layout.astro";
       if (m) {
         apDung(b, m);
         nuocCuoi = [m.tu, m.den];
+        hieuUng = { batDau: Date.now(), quanBiAn: m.an || null };
         soNuoc++;
         nuocDaDi.push(kyHieu(m));
         chon = null;
@@ -479,6 +553,7 @@ import Layout from "../layouts/Layout.astro";
     chon = null;
     gioDi = nuocHopLe(b, "r");
     nuocCuoi = null;
+    hieuUng = null;
     ketThuc = false;
     dangChoMay = false;
     soNuoc = 0;
