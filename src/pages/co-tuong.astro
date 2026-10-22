@@ -1,0 +1,250 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+<Layout lang="vi" tieuDe="Cờ tướng với máy" moTa="Chơi cờ tướng với máy. Bạn cầm quân đỏ, máy đi quân đen.">
+  <h1>Cờ tướng với máy</h1>
+  <p class="phu">Bạn cầm quân đỏ và đi trước. Mức "Khó" dùng Haiku 5.5 để chọn nước trong các nước máy đã phân tích, nhưng chỉ khi bạn thắng 2 ván liên tiếp trở lên. Thua một ván thì máy trở lại minimax thuần.</p>
+
+  <div class="co-dieu-khien">
+    <label>Mức chơi
+      <select id="co-muc">
+        <option value="de">Dễ</option>
+        <option value="vua" selected>Vừa</option>
+        <option value="kho">Khó (Haiku khi bạn thắng 2 ván liên tiếp)</option>
+      </select>
+    </label>
+    <button type="button" id="co-moi">Ván mới</button>
+  </div>
+
+  <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
+  <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
+</Layout>
+
+<!-- is:global vì ô và quân cờ được JavaScript tạo ra, CSS có phạm vi sẽ không áp dụng cho chúng -->
+<style is:global>
+  .co-dieu-khien { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1rem 0; }
+  .co-dieu-khien select, .co-dieu-khien button {
+    font: inherit; padding: .4rem .6rem; border-radius: .3rem; border: 1px solid var(--vien);
+    background: var(--nen); color: var(--chu);
+  }
+  .co-dieu-khien button { background: var(--nhan); color: var(--nen); border-color: var(--nhan); font-weight: 600; cursor: pointer; }
+  .co-trang-thai { min-height: 1.5em; font-weight: 600; }
+  .co-ban {
+    position: relative; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(10, 1fr);
+    width: 100%; max-width: 460px; aspect-ratio: 9 / 10; margin: .5rem 0 1.5rem;
+    background: #f1dca8; border: 2px solid #7a4b1e; border-radius: 10px; box-sizing: border-box; padding: 4%;
+  }
+  /* Mỗi ô vẽ đường kẻ bên trong để tạo lưới bàn cờ */
+  .co-o { position: relative; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; background: transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(122,75,30,.7); }
+  .co-o:disabled { cursor: default; }
+  .co-quan {
+    width: 88%; aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: #fbf6e6; border: 2px solid #7a4b1e; font-weight: 700; font-size: clamp(.7rem, 3.2vw, 1.05rem);
+    box-shadow: 0 1px 2px rgba(0,0,0,.25); line-height: 1;
+  }
+  .co-quan.do { color: #b3261e; }
+  .co-quan.den { color: #1f1f1f; }
+  .co-o.chon .co-quan { outline: 3px solid #1e88e5; outline-offset: 1px; }
+  .co-o.nuoc-duoc-di::after { content: ""; width: 26%; aspect-ratio: 1; border-radius: 50%; background: rgba(30,136,229,.55); position: absolute; }
+  .co-o.nuoc-cuoi .co-quan { outline: 2px dashed #e0a100; outline-offset: 1px; }
+</style>
+
+<script>
+  import { khoiTao, nuocHopLe, apDung, kyHieu, xepHangNuoc, nuocTot, banVanBan } from "../lib/co-tuong.js";
+
+  const TEN = { K: "帥", A: "仕", E: "相", H: "傌", R: "俥", C: "炮", P: "兵" };
+  const TEN_DEN = { K: "將", A: "士", E: "象", H: "馬", R: "車", C: "砲", P: "卒" };
+  const PB_CHO_PHEP = 2500; // ms: thời gian tối đa chờ Haiku trước khi dùng nước của máy
+
+  const banEl = document.getElementById("co-ban") as HTMLElement;
+  const trangThai = document.getElementById("co-trang-thai") as HTMLElement;
+  const mucEl = document.getElementById("co-muc") as HTMLSelectElement;
+  const moiEl = document.getElementById("co-moi") as HTMLButtonElement;
+
+  let b: (string | null)[][];
+  let chon: [number, number] | null = null;
+  let gioDi: ReturnType<typeof nuocHopLe> = [];
+  let nuocCuoi: [number, number][] | null = null;
+  let dangChoMay = false;
+  let ketThuc = false;
+  // Số ván thắng liên tiếp của người chơi. Mức Khó chỉ gọi Haiku khi chuỗi này từ 2 trở lên.
+  let thangLienTiep = 0;
+  const NGUONG_HAIKU = 2;
+  // Lưu ván trong localStorage của trình duyệt (chỉ người chơi này thấy, không gửi lên máy chủ)
+  const KHOA_LUU = "co-tuong-van";
+  const MUC_HOP_LE = ["de", "vua", "kho"];
+
+  function luuTrangThai(luot) {
+    try {
+      localStorage.setItem(KHOA_LUU, JSON.stringify({
+        b, luot, thangLienTiep, muc: mucEl.value, ketThuc, nuocCuoi, thongBao: trangThai.textContent,
+      }));
+    } catch {
+      // Trình duyệt chặn localStorage: vẫn chơi bình thường, chỉ không nhớ được ván
+    }
+  }
+
+  function docTrangThai() {
+    try {
+      const d = JSON.parse(localStorage.getItem(KHOA_LUU) || "null");
+      const hopLe = d && Array.isArray(d.b) && d.b.length === 10 && d.b.every((h) => Array.isArray(h) && h.length === 9);
+      return hopLe ? d : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Tọa độ hiển thị: cột trái sang phải, hàng 0 ở trên (phía đen)
+  function ve() {
+    banEl.replaceChildren();
+    const dich = new Set(gioDi.filter((m) => chon && m.tu[0] === chon[0] && m.tu[1] === chon[1]).map((m) => m.den.join(",")));
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 9; c++) {
+        const p = b[r][c];
+        const o = document.createElement("button");
+        o.type = "button";
+        o.className = "co-o";
+        o.dataset.r = String(r);
+        o.dataset.c = String(c);
+        o.style.gridRow = String(r + 1);
+        o.style.gridColumn = String(c + 1);
+        if (chon && chon[0] === r && chon[1] === c) o.classList.add("chon");
+        if (dich.has(`${r},${c}`)) o.classList.add("nuoc-duoc-di");
+        if (nuocCuoi && nuocCuoi.some(([a, z]) => a === r && z === c)) o.classList.add("nuoc-cuoi");
+        if (p) {
+          const q = document.createElement("span");
+          q.className = "co-quan " + (p[0] === "r" ? "do" : "den");
+          q.textContent = p[0] === "r" ? TEN[p[1]] : TEN_DEN[p[1]];
+          o.appendChild(q);
+        }
+        o.disabled = ketThuc || dangChoMay;
+        banEl.appendChild(o);
+      }
+    }
+  }
+
+  function hienTrangThai(text) {
+    trangThai.textContent = text;
+  }
+
+  function kiemKetThuc(s) {
+    if (nuocHopLe(b, s).length === 0) {
+      ketThuc = true;
+      hienTrangThai(s === "r" ? "Bạn thua. Máy thắng." : "Bạn thắng!");
+      return true;
+    }
+    return false;
+  }
+
+  // Máy chọn nước. Mức Khó khi người chơi đang thắng liên tiếp: Haiku chọn một trong năm nước minimax xếp đầu,
+  // nếu lỗi thì dùng nước đầu. Các trường hợp khác chỉ dùng minimax.
+  async function mayDi() {
+    dangChoMay = true;
+    hienTrangThai("Máy đang nghĩ…");
+    ve();
+    const doSau = mucEl.value === "de" ? 1 : mucEl.value === "vua" ? 2 : 3;
+    let chonNuoc;
+    if (mucEl.value === "kho" && thangLienTiep >= NGUONG_HAIKU) {
+      const xep = xepHangNuoc(b, "b", doSau).slice(0, 5);
+      chonNuoc = xep[0];
+      try {
+        const ctrl = new AbortController();
+        const hen = setTimeout(() => ctrl.abort(), PB_CHO_PHEP);
+        const r = await fetch("/api/co-tuong", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ban: banVanBan(b), nuoc: xep.map((x) => x.nuoc) }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(hen);
+        if (r.ok) {
+          const { nuoc } = await r.json();
+          chonNuoc = xep.find((x) => x.nuoc === nuoc) || chonNuoc;
+        }
+      } catch {
+        // Lỗi mạng hoặc hết giờ: giữ nước tốt nhất của minimax
+      }
+    } else {
+      chonNuoc = nuocTot(b, "b", doSau);
+    }
+    if (chonNuoc) {
+      apDung(b, chonNuoc.m);
+      nuocCuoi = [chonNuoc.m.tu, chonNuoc.m.den];
+    }
+    dangChoMay = false;
+    if (kiemKetThuc("r")) {
+      thangLienTiep = 0; // thua thì dừng dùng Haiku cho đến khi thắng liên tiếp lại
+      luuTrangThai("r");
+      return ve();
+    }
+    hienTrangThai(`Máy đi ${chonNuoc ? chonNuoc.nuoc : ""}. Đến lượt bạn.`);
+    luuTrangThai("r");
+    ve();
+  }
+
+  banEl.addEventListener("click", (e) => {
+    const o = (e.target as HTMLElement).closest("button.co-o") as HTMLButtonElement | null;
+    if (!o || ketThuc || dangChoMay) return;
+    const r = Number(o.dataset.r);
+    const c = Number(o.dataset.c);
+    const p = b[r][c];
+
+    if (chon) {
+      const m = gioDi.find((x) => x.tu[0] === chon![0] && x.tu[1] === chon![1] && x.den[0] === r && x.den[1] === c);
+      if (m) {
+        apDung(b, m);
+        nuocCuoi = [m.tu, m.den];
+        chon = null;
+        gioDi = [];
+        if (kiemKetThuc("b")) {
+          thangLienTiep++;
+          luuTrangThai("r");
+          return ve();
+        }
+        luuTrangThai("b"); // đã đến lượt máy: nếu tải lại trang thì máy sẽ đi tiếp
+        ve();
+        return void mayDi();
+      }
+    }
+    if (p && p[0] === "r") {
+      chon = [r, c];
+      gioDi = nuocHopLe(b, "r");
+    } else {
+      chon = null;
+      gioDi = [];
+    }
+    ve();
+  });
+
+  function vanMoi() {
+    b = khoiTao();
+    chon = null;
+    gioDi = nuocHopLe(b, "r");
+    nuocCuoi = null;
+    ketThuc = false;
+    dangChoMay = false;
+    hienTrangThai("Bạn đi trước (quân đỏ).");
+    luuTrangThai("r");
+    ve();
+  }
+
+  moiEl.addEventListener("click", vanMoi);
+  mucEl.addEventListener("change", vanMoi);
+
+  // Khôi phục ván đang dở (nếu có), không thì bắt đầu ván mới
+  const d = docTrangThai();
+  if (d) {
+    b = d.b;
+    thangLienTiep = Number(d.thangLienTiep) || 0;
+    if (MUC_HOP_LE.includes(d.muc)) mucEl.value = d.muc;
+    ketThuc = !!d.ketThuc;
+    nuocCuoi = Array.isArray(d.nuocCuoi) ? d.nuocCuoi : null;
+    chon = null;
+    gioDi = [];
+    hienTrangThai(d.thongBao || "");
+    ve();
+    if (d.luot === "b" && !ketThuc) void mayDi();
+  } else {
+    vanMoi();
+  }
+</script>
