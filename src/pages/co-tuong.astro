@@ -17,17 +17,15 @@ import Layout from "../layouts/Layout.astro";
   <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
   <p id="co-ghi-diem" class="phu" aria-live="polite"></p>
   <div class="co-khung">
+    <!-- Phía trên bàn là quân đen bị ăn, phía dưới bàn là quân đỏ bị ăn (đúng phía của mỗi bên) -->
+    <div class="co-an-nua" aria-label="Quân đen bị ăn">
+      <h3>Quân đen bị ăn</h3>
+      <div id="co-an-den"></div>
+    </div>
     <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
-    <!-- Hai nửa khớp với hai nửa bàn: trên là quân đen bị ăn, dưới là quân đỏ bị ăn -->
-    <div class="co-quan-an" aria-label="Quân đã bị ăn">
-      <div class="co-an-nua">
-        <h3>Quân đen bị ăn</h3>
-        <div id="co-an-den"></div>
-      </div>
-      <div class="co-an-nua">
-        <h3>Quân đỏ bị ăn</h3>
-        <div id="co-an-do"></div>
-      </div>
+    <div class="co-an-nua" aria-label="Quân đỏ bị ăn">
+      <h3>Quân đỏ bị ăn</h3>
+      <div id="co-an-do"></div>
     </div>
   </div>
   <button type="button" id="co-thu-nho" class="co-thu-nho" hidden>Thu nhỏ</button>
@@ -51,11 +49,10 @@ import Layout from "../layouts/Layout.astro";
   .co-ten input { font: inherit; padding: .35rem .5rem; border: 1px solid var(--vien); border-radius: .3rem; background: var(--nen); color: var(--chu); width: 12rem; }
   .co-trang-thai { min-height: 1.5em; font-weight: 600; }
   .co-ban { width: 100%; max-width: 460px; margin: .5rem 0 1.5rem; }
-  .co-khung { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
-  .co-khung .co-ban { flex: 1 1 260px; min-width: 0; }
-  .co-quan-an { flex: 0 1 9.5rem; display: flex; flex-direction: column; gap: .75rem; margin-top: .5rem; }
-  .co-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .5rem; background: var(--mat); min-height: 6rem; }
-  .co-an-nua h3 { font-size: .85rem; margin: 0 0 .4rem; color: var(--phu); font-weight: 600; }
+  .co-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; }
+  .co-khung .co-ban { max-width: none; margin: .4rem 0; }
+  .co-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .4rem .6rem; background: var(--mat); min-height: 3.2rem; }
+  .co-an-nua h3 { font-size: .85rem; margin: 0 0 .3rem; color: var(--phu); font-weight: 600; }
   .co-an-nua > div { display: flex; flex-wrap: wrap; gap: .3rem; }
   .co-chip {
     width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 2px solid currentColor; background: #fbf6e6;
