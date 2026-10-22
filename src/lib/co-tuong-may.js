@@ -114,6 +114,9 @@ const kingSq = new Int32Array(2);
 const MV = new Int32Array(MAXPLY * MAXM);
 const SC = new Int32Array(MAXPLY * MAXM);
 const KIL = new Int32Array(MAXPLY * 2);
+// Lịch sử: nước yên tĩnh (không ăn quân) nào hay cắt tỉa thì được xếp lên trước ở các nhánh khác
+const LICH_SU = new Int32Array(90 * 90); // [từ * 90 + đến]
+const LICH_SU_MAX = 8000; // dưới điểm của nước giết (9000) để không vượt lên trên
 const TT_BITS = 19;
 const TT_MASK = (1 << TT_BITS) - 1;
 const ttKey = new Int32Array(1 << TT_BITS);
@@ -302,6 +305,7 @@ function nega(bn, depth, alpha, beta, ply) {
     const m = MV[base + i];
     if (m === nuocTT) SC[base + i] = 2000000;
     else if (m === k1 || m === k2) SC[base + i] = 9000;
+    else if (((m >> 14) & 15) === 0) SC[base + i] = LICH_SU[(m & 127) * 90 + ((m >> 7) & 127)];
   }
   const alpha0 = alpha;
   let tot = -VO_CUC, tot_m = 0, hopLe = 0;
@@ -316,7 +320,11 @@ function nega(bn, depth, alpha, beta, ply) {
       tot = v; tot_m = m;
       if (v > alpha) alpha = v;
       if (alpha >= beta) {
-        if (((m >> 14) & 15) === 0 && m !== k1) { KIL[ply * 2 + 1] = k1; KIL[ply * 2] = m; }
+        if (((m >> 14) & 15) === 0) {
+          const li = (m & 127) * 90 + ((m >> 7) & 127);
+          LICH_SU[li] = Math.min(LICH_SU_MAX, LICH_SU[li] + depth * depth);
+          if (m !== k1) { KIL[ply * 2 + 1] = k1; KIL[ply * 2] = m; }
+        }
         break;
       }
     }
@@ -392,6 +400,7 @@ export function timNuocMay(b, s, { doSauToiDa = 20, thoiGianMs = 0, soNuoc = 1, 
   if (!napBan(b, bn, pst)) return { xep: [], doSau: 0, nodes: 0 };
   if (dungTT) ttInfo.fill(0);
   KIL.fill(0);
+  LICH_SU.fill(0);
 
   // Nước gốc: chỉ lấy nước hợp lệ thật (tướng không bị chiếu, không đối mặt)
   const nGoc = sinh(bn, 0, false);

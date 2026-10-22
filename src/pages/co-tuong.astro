@@ -593,6 +593,7 @@ import Layout from "../layouts/Layout.astro";
     let chonNuoc;
     const kq = await tinhNuoc({
       doSauToiDa: cap.doSauToiDa, thoiGianMs: thoiGianNghi(capDo), soNuoc: Math.max(1, cap.haiku), tt: cap.tt, q: cap.q,
+      pst: true, // điểm theo vị trí quân: máy đánh đều hơn ở mọi mức (đấu thử thắng 145-6, hòa 49 trên 200 ván)
     });
     if (!kq || luot !== demMay) return;
     const bangXep = kq.xep;
