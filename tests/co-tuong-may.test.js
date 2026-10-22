@@ -105,10 +105,24 @@ describe("máy tìm nước (mảng số): chơi cờ", () => {
       for (const opts of [
         {}, { tt: true }, { tt: true, q: true }, { tt: true, q: true, pst: true },
         { tt: true, q: true, pst: true, cat: true, giaHan: true },
+        { tt: true, q: true, pst: true, cat: true, giaHan: true, ld: true },
       ]) {
         const kq = timNuocMay(b, s, { doSauToiDa: 4, ...opts });
         expect(hopLe.has(kq.xep[0].nuoc)).toBe(true);
       }
+    }
+  });
+
+  it("điểm linh hoạt đối xứng: lật bàn 180 độ và đổi màu thì điểm của bên đi không đổi", () => {
+    const lat = (b) => b.map((_, r) => b[9 - r].map((_, c) => {
+      const x = b[9 - r][8 - c];
+      return x ? (x[0] === "r" ? "b" : "r") + x[1] : null;
+    }));
+    for (const { b, s } of theCoMau(4)) {
+      const opts = { doSauToiDa: 2, soNuoc: 1000, q: true, pst: true, ld: true };
+      const goc = timNuocMay(b, s, opts).xep.map((x) => x.diem).sort((x, y) => x - y);
+      const latLai = timNuocMay(lat(b), doiBen(s), opts).xep.map((x) => x.diem).sort((x, y) => x - y);
+      expect(latLai).toEqual(goc);
     }
   });
 

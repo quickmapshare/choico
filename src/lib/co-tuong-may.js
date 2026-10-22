@@ -3,7 +3,7 @@
 // điểm, hash và vị trí tướng cập nhật tăng dần khi đi, tìm trên nước giả hợp lệ (bắt tướng = thắng).
 // Có tìm sâu dần, bảng băm vị trí (tt), tìm kiếm tĩnh (q) và điểm vị trí quân (pst), mỗi thứ bật tắt riêng.
 // Luôn dùng PVS và nhận ra thế lặp, luật hòa 120 nước (khi có lichSu). Null-move và LMR (cat), gia hạn khi bị chiếu
-// (giaHan) làm điểm khác minimax đúng nên chỉ bật khi chọn.
+// (giaHan) làm điểm khác minimax đúng nên chỉ bật khi chọn. Điểm linh hoạt của xe, mã, pháo (ld) cũng bật khi chọn.
 import { khoiTao, NUOC_TOI_DA } from "./co-tuong.js";
 
 // Quân = bên * 8 + loại. Bên 0 là đỏ (phía dưới, đi lên), bên 1 là đen. Loại 1..7. Ô = hàng * 9 + cột.
@@ -128,6 +128,7 @@ const ttSc = new Int32Array(1 << TT_BITS);
 const ttMv = new Int32Array(1 << TT_BITS);
 let h1 = 0, h2 = 0, ev = 0, nodes = 0, het = 0, bangDiem = DIEM_THUONG, dungQ = false, dungTT = false;
 let dungCat = false, dungGiaHan = false, dungDG = false, gioiHanNut = 0; // dg: thêm điểm an toàn tướng
+let dungLD = false; // ld: thêm điểm độ linh hoạt của xe, mã, pháo
 let cauHinhTT = -1; // cách tính điểm (pst, q) của các điểm đang nằm trong bảng băm
 // Số quân mỗi loại theo mã quân, cập nhật khi ăn quân
 const DEM = new Int32Array(16);
@@ -270,10 +271,79 @@ function anToanTuong() {
   return v;
 }
 
+// Độ linh hoạt: số nước đi được của xe, mã, pháo (kể cả nước ăn quân). Mã bị kẹt (ít hơn 2 nước) bị phạt thêm.
+// Điểm nhìn từ đỏ. Quét cả bàn mỗi lần gọi nên chỉ dùng khi bật tùy chọn ld.
+const LD_XE = 3, LD_MA = 6, LD_PHAO = 2, LD_MA_KET = 15;
+// Bộ đệm theo hash vị trí (bỏ phần bên đi vì điểm không phụ thuộc bên đi): cùng thế thì không quét lại
+const LD_BITS = 16;
+const ldKey1 = new Int32Array(1 << LD_BITS);
+const ldKey2 = new Int32Array(1 << LD_BITS);
+const ldVal = new Int32Array(1 << LD_BITS);
+function linhDong(bn) {
+  const k1 = bn ? h1 ^ ZS1 : h1, k2 = bn ? h2 ^ ZS2 : h2;
+  const idx = k1 & ((1 << LD_BITS) - 1);
+  if (ldKey1[idx] === k1 && ldKey2[idx] === k2) return ldVal[idx];
+  const v = tinhLinhDong();
+  ldKey1[idx] = k1; ldKey2[idx] = k2; ldVal[idx] = v;
+  return v;
+}
+function tinhLinhDong() {
+  let v = 0;
+  for (let o = 0; o < 90; o++) {
+    const p = bd[o];
+    if (p === 0) continue;
+    const t = p & 7;
+    if (t !== TR && t !== TH && t !== TC) continue;
+    const bn = p >> 3;
+    let d = 0;
+    if (t === TH) {
+      const l = NS[p][o];
+      let n = 0;
+      for (let i = 0; i < l.length; i += 2) {
+        if (bd[l[i + 1]] !== 0) continue;
+        const q = bd[l[i]];
+        if (q === 0 || (q >> 3) !== bn) n++;
+      }
+      d = n * LD_MA - (n < 2 ? LD_MA_KET : 0);
+    } else {
+      const rays = RAYS[o];
+      let n = 0;
+      for (let k = 0; k < 4; k++) {
+        const ray = rays[k];
+        let i = 0;
+        while (i < ray.length && bd[ray[i]] === 0) { i++; n++; }
+        if (i >= ray.length) continue;
+        if (t === TR) { if ((bd[ray[i]] >> 3) !== bn) n++; continue; }
+        // Pháo: tìm quân thứ hai sau ngòi
+        for (i++; i < ray.length; i++) {
+          const q = bd[ray[i]];
+          if (q !== 0) { if ((q >> 3) !== bn) n++; break; }
+        }
+      }
+      d = n * (t === TR ? LD_XE : LD_PHAO);
+    }
+    v += bn === 0 ? d : -d;
+  }
+  return v;
+}
+
 const diemBen = (bn) => {
-  const v = dungDG ? ev + anToanTuong() : ev;
+  let v = ev;
+  if (dungDG) v += anToanTuong();
+  if (dungLD) v += linhDong(bn);
   return bn === 0 ? v : -v;
 };
+
+// Như diemBen nhưng lười: điểm chưa tính linh hoạt đã cách cửa sổ (alpha, beta) quá BIEN_LD thì bỏ qua phần linh hoạt
+const BIEN_LD = 150;
+function diemBenCuaSo(bn, alpha, beta) {
+  let v = ev;
+  if (dungDG) v += anToanTuong();
+  if (bn !== 0) v = -v;
+  if (!dungLD || v - BIEN_LD >= beta || v + BIEN_LD <= alpha) return v;
+  const l = linhDong(bn);
+  return bn === 0 ? v + l : v - l;
+}
 
 function kiemGio() {
   if ((++nodes & 2047) === 0 && ((het !== 0 && Date.now() > het) || (gioiHanNut !== 0 && nodes > gioiHanNut))) throw HET_GIO;
@@ -298,7 +368,7 @@ function la(bn, ply) {
 function tinhTinh(bn, alpha, beta, ply, qd) {
   kiemGio();
   if (damBat(kingSq[bn ^ 1], bn)) return MAT - ply;
-  let tot = diemBen(bn);
+  let tot = diemBenCuaSo(bn, alpha, beta);
   if (tot >= beta || qd <= 0 || ply >= MAXPLY - 2) return tot;
   if (tot > alpha) alpha = tot;
   const base = ply * MAXM;
@@ -346,7 +416,7 @@ function nega(bn, depth, alpha, beta, ply, moc, choNull) {
     }
   }
   // Null-move: bỏ lượt mà đối phương tìm nông vẫn không gỡ được thì nhánh này gần như chắc chắn bị cắt
-  if (dungCat && choNull && beta - alpha === 1 && !biChieu && depth >= 3 && conQuanManh(bn) && diemBen(bn) >= beta) {
+  if (dungCat && choNull && beta - alpha === 1 && !biChieu && depth >= 3 && conQuanManh(bn) && diemBenCuaSo(bn, beta - 1, beta) >= beta) {
     const R = depth >= 6 ? 3 : 2;
     h1 ^= ZS1; h2 ^= ZS2;
     const v = -nega(bn ^ 1, depth - 1 - R, -beta, -beta + 1, ply + 1, i + 1, false);
@@ -498,15 +568,15 @@ export function nuocGiaMay(b, s) {
 // nutToiDa: dừng sau khoảng số nút này (độ sâu 1 luôn xong), dùng để đấu thử không phụ thuộc tốc độ máy.
 export function timNuocMay(b, s, {
   doSauToiDa = 20, thoiGianMs = 0, soNuoc = 1, q = false, tt = false, pst = false,
-  cat = false, giaHan = false, dg = false, nutToiDa = 0, lichSu = null,
+  cat = false, giaHan = false, dg = false, ld = false, nutToiDa = 0, lichSu = null,
 } = {}) {
   const bn = s === "r" ? 0 : 1;
-  dungQ = q; dungTT = tt; dungCat = cat; dungGiaHan = giaHan; dungDG = dg;
+  dungQ = q; dungTT = tt; dungCat = cat; dungGiaHan = giaHan; dungDG = dg; dungLD = ld;
   if (!napBan(b, bn, pst)) return { xep: [], doSau: 0, nodes: 0 };
   napLichSu(lichSu, b, bn, pst);
   DUONG1[iGoc] = h1; DUONG2[iGoc] = h2;
   // Giữ bảng băm giữa các nước để lượt sau không tính lại từ đầu. Xóa khi đổi cách tính điểm.
-  const cauHinh = (pst ? 1 : 0) | (q ? 2 : 0) | (dg ? 4 : 0);
+  const cauHinh = (pst ? 1 : 0) | (q ? 2 : 0) | (dg ? 4 : 0) | (ld ? 8 : 0);
   if (dungTT && cauHinh !== cauHinhTT) { ttInfo.fill(0); cauHinhTT = cauHinh; }
   KIL.fill(0);
   LICH_SU.fill(0);
