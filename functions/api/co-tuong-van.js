@@ -61,25 +61,30 @@ export async function onRequestPost({ request, env }) {
   if (!daCo.ok) return tra(502, { loi: "khong_doc_duoc_van" });
   if ((await daCo.json()).totalItems > 0) return tra(409, { loi: "van_da_tinh_diem" });
 
+  // Đọc điểm hiện tại của tên này trước, để điểm không xuống dưới 0
+  const timTen = await fetch(`${pb}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`ten="${ten}"`)}`, { headers: H });
+  if (!timTen.ok) return tra(502, { loi: "khong_doc_duoc_diem" });
+  const dong = (await timTen.json()).items?.[0] ?? null;
+  const diemCu = dong ? dong.diem : 0;
+  const diemMoi = Math.max(0, diemCu + diemCong); // điểm tối thiểu là 0
+  const thayDoi = diemMoi - diemCu; // phần điểm thực tế được cộng hoặc trừ
+
   const ghiVan = await fetch(`${pb}/api/collections/cho_phien_co_van/records`, {
     method: "POST",
     headers: H,
-    body: JSON.stringify({ ma_van, ten, ket_qua: kq.ket_qua, diem_cong: diemCong }),
+    body: JSON.stringify({ ma_van, ten, ket_qua: kq.ket_qua, diem_cong: thayDoi }),
   });
   if (!ghiVan.ok) return tra(502, { loi: "khong_ghi_duoc_van" });
   const idVan = (await ghiVan.json()).id;
   // Nếu không cộng được điểm thì xóa nhật ký ván, để lần gửi lại sau còn tính được
   const boVan = () => fetch(`${pb}/api/collections/cho_phien_co_van/records/${idVan}`, { method: "DELETE", headers: H });
 
-  // Cộng dồn vào bảng điểm của tên này
-  const timTen = await fetch(`${pb}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`ten="${ten}"`)}`, { headers: H });
-  const dong = timTen.ok ? (await timTen.json()).items?.[0] : null;
   const ghiDiem = dong
     ? await fetch(`${pb}/api/collections/cho_phien_co_diem/records/${dong.id}`, {
       method: "PATCH",
       headers: H,
       body: JSON.stringify({
-        diem: dong.diem + diemCong,
+        diem: diemMoi,
         so_van: dong.so_van + 1,
         thang: dong.thang + (kq.ket_qua === "thang" ? 1 : 0),
         hoa: dong.hoa + (kq.ket_qua === "hoa" ? 1 : 0),
@@ -91,7 +96,7 @@ export async function onRequestPost({ request, env }) {
       headers: H,
       body: JSON.stringify({
         ten,
-        diem: diemCong,
+        diem: diemMoi,
         so_van: 1,
         thang: kq.ket_qua === "thang" ? 1 : 0,
         hoa: kq.ket_qua === "hoa" ? 1 : 0,
@@ -102,6 +107,5 @@ export async function onRequestPost({ request, env }) {
     await boVan();
     return tra(502, { loi: "khong_cong_duoc_diem" });
   }
-  const tong = (await ghiDiem.json()).diem;
-  return tra(200, { ket_qua: kq.ket_qua, diem_cong: diemCong, tong_diem: tong });
+  return tra(200, { ket_qua: kq.ket_qua, diem_cong: thayDoi, tong_diem: diemMoi });
 }

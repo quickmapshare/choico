@@ -17,7 +17,7 @@ migrate((app) => {
     fields: [
       // Tên được kiểm tra trong Pages Function (tenHopLe). PocketBase không chấp nhận pattern \p{L} ở đây.
       { type: "text", name: "ten", required: true, min: 1, max: 20 },
-      { type: "number", name: "diem", required: true },
+      { type: "number", name: "diem", required: true, min: 0 }, // điểm không xuống dưới 0
       { type: "number", name: "so_van", min: 0 },
       { type: "number", name: "thang", min: 0 },
       { type: "number", name: "hoa", min: 0 },
