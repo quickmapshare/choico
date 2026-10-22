@@ -12,6 +12,7 @@ import Layout from "../layouts/Layout.astro";
     <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
     <button type="button" id="co-moi">Ván mới</button>
     <button type="button" id="co-phong-to">Phóng to bàn cờ</button>
+    <button type="button" id="co-tieng" aria-pressed="false">Tiếng: tắt</button>
   </div>
 
   <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
@@ -45,6 +46,8 @@ import Layout from "../layouts/Layout.astro";
     font: inherit; padding: .4rem .6rem; border-radius: .3rem; border: 1px solid var(--nhan);
     background: var(--nhan); color: var(--nen); font-weight: 600; cursor: pointer;
   }
+  /* Nút bật tắt tiếng: đang bật thì đổi sang kiểu viền */
+  .co-dieu-khien button[aria-pressed="true"] { background: var(--nen); color: var(--nhan); }
   .co-muc-hien-tai { font-weight: 600; }
   .co-ten input { font: inherit; padding: .35rem .5rem; border: 1px solid var(--vien); border-radius: .3rem; background: var(--nen); color: var(--chu); width: 12rem; }
   .co-trang-thai { min-height: 1.5em; font-weight: 600; }
@@ -99,6 +102,7 @@ import Layout from "../layouts/Layout.astro";
     NUOC_TOI_DA,
   } from "../lib/co-tuong.js";
   import { timNuocMay } from "../lib/co-tuong-may.js";
+  import { taoAmThanh } from "../lib/co-tuong-am.js";
   // Địa chỉ PocketBase công khai: chỉ đọc bảng điểm, ghi điểm đi qua /api/co-tuong-van
   const PB_CONG_KHAI = "https://api.botgap.dev";
 
@@ -135,6 +139,36 @@ import Layout from "../layouts/Layout.astro";
   const mucHienTai = document.getElementById("co-muc-hien-tai") as HTMLElement;
   const moiEl = document.getElementById("co-moi") as HTMLButtonElement;
   const tenEl = document.getElementById("co-ten") as HTMLInputElement;
+
+  // Âm thanh: mặc định tắt, nhớ lựa chọn của người dùng
+  const KHOA_TIENG = "co-tuong-tieng";
+  const am = taoAmThanh();
+  const tiengEl = document.getElementById("co-tieng") as HTMLButtonElement;
+  function hienTieng() {
+    tiengEl.textContent = am.dangBat() ? "Tiếng: bật" : "Tiếng: tắt";
+    tiengEl.setAttribute("aria-pressed", String(am.dangBat()));
+  }
+  try {
+    am.datBat(localStorage.getItem(KHOA_TIENG) === "1", false);
+  } catch {
+    // Trình duyệt chặn localStorage: giữ mặc định tắt
+  }
+  hienTieng();
+  tiengEl.addEventListener("click", () => {
+    am.datBat(!am.dangBat());
+    try {
+      localStorage.setItem(KHOA_TIENG, am.dangBat() ? "1" : "0");
+    } catch {
+      // không nhớ được lựa chọn, vẫn dùng bình thường
+    }
+    hienTieng();
+    am.phat("di"); // nghe thử ngay khi vừa bật
+  });
+  // Tiếng đi quân đến đúng lúc quân trượt tới nơi (hai tiếng cộc nếu ăn quân), rồi tiếng chiếu nếu có
+  function phatTiengNuoc(anQuan: boolean, chieu: boolean) {
+    am.phat(anQuan ? "an" : "di", THOI_GIAN_DI);
+    if (chieu) am.phat("chieu", THOI_GIAN_DI);
+  }
 
   let b: (string | null)[][];
   let chon: [number, number] | null = null;
@@ -479,6 +513,7 @@ import Layout from "../layouts/Layout.astro";
   // Cập nhật mức theo kết quả: thắng +1 (tối đa 5), thua -1 (tối thiểu 1), hòa giữ nguyên
   function ketThucVan(ketQua) {
     ketThuc = true;
+    am.phat(ketQua, THOI_GIAN_DI + 500); // sau khi tiếng đi quân và hiệu ứng nước cuối
     if (ketQua === "thang") capDo = Math.min(MUC_TOI_DA, capDo + 1);
     if (ketQua === "thua") capDo = Math.max(1, capDo - 1);
     if (ketQua === "thang") hienTrangThai(`${tenHienThi()} thắng! Lên mức ${capDo}/${MUC_TOI_DA}.`);
@@ -534,6 +569,7 @@ import Layout from "../layouts/Layout.astro";
       apDung(b, chonNuoc.m);
       nuocCuoi = [chonNuoc.m.tu, chonNuoc.m.den];
       hieuUng = { batDau: Date.now(), quanBiAn: chonNuoc.m.an || null, chieu: biChieu(b, "r") };
+      phatTiengNuoc(Boolean(chonNuoc.m.an), hieuUng.chieu);
       soNuoc++;
       nuocDaDi.push(chonNuoc.nuoc);
     }
@@ -553,6 +589,7 @@ import Layout from "../layouts/Layout.astro";
   }
 
   banEl.addEventListener("click", (e) => {
+    am.mo(); // tạo hoặc mở lại ngữ cảnh âm thanh ngay trong lúc người dùng bấm (iPhone chỉ cho phép như vậy)
     const o = (e.target as Element).closest("g.co-o");
     if (!o || ketThuc || dangChoMay) return;
     const r = Number(o.getAttribute("data-r"));
@@ -565,6 +602,7 @@ import Layout from "../layouts/Layout.astro";
         apDung(b, m);
         nuocCuoi = [m.tu, m.den];
         hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, chieu: biChieu(b, "b") };
+        phatTiengNuoc(Boolean(m.an), hieuUng.chieu);
         soNuoc++;
         nuocDaDi.push(kyHieu(m));
         chon = null;
