@@ -14,6 +14,7 @@ const tinhs = khuVuc.filter((k) => k.cap === "tinh_thanh");
     <GopY loai="them_cho" lang={lang} />
   </div>
   <p class="phu">{t(lang, "ghiChuChu")}</p>
+  {lang === "vi" && <p><a href="/co-tuong/">Chơi cờ tướng với máy</a></p>}
 
   <WidgetHomNay chos={choDaXacMinh} lang={lang} />
   <MaNhung lang={lang} />
