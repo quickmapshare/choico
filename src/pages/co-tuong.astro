@@ -49,7 +49,7 @@ import Layout from "../layouts/Layout.astro";
 
 <script>
   import {
-    khoiTao, nuocHopLe, apDung, kyHieu, xepHangNuoc, nuocTot, banVanBan, lamSachTen, tenHopLe,
+    khoiTao, nuocHopLe, apDung, kyHieu, chonTrongDinh, xepHangTheoThoiGian, banVanBan, lamSachTen, tenHopLe,
     NUOC_TOI_DA,
   } from "../lib/co-tuong.js";
   // Địa chỉ PocketBase công khai: chỉ đọc bảng điểm, ghi điểm đi qua /api/co-tuong-van
@@ -67,13 +67,14 @@ import Layout from "../layouts/Layout.astro";
   const toaDoX = (c) => LE + c * KC;
   const toaDoY = (r) => LE + r * KC;
 
-  // Năm mức chơi. doSau: độ sâu minimax. haiku: số nước đầu bảng minimax để Haiku chọn (0 = không dùng Haiku).
+  // Năm mức chơi. doSauToiDa: độ sâu minimax tối đa. thoiGian: ms tối đa để nghĩ một nước, 0 là không giới hạn
+  // (đi đúng doSauToiDa). Ở mức có thời gian, máy tìm sâu dần và dừng khi hết giờ. haiku: số nước đầu để Haiku chọn (0 = không dùng).
   const MUC = {
-    1: { doSau: 1, haiku: 0 },
-    2: { doSau: 2, haiku: 0 },
-    3: { doSau: 3, haiku: 0 },
-    4: { doSau: 3, haiku: 3 },
-    5: { doSau: 4, haiku: 3 },
+    1: { doSauToiDa: 1, thoiGian: 0, haiku: 0 },
+    2: { doSauToiDa: 2, thoiGian: 0, haiku: 0 },
+    3: { doSauToiDa: 3, thoiGian: 0, haiku: 0 },
+    4: { doSauToiDa: 4, thoiGian: 5000, haiku: 3 },
+    5: { doSauToiDa: 6, thoiGian: 5000, haiku: 3 },
   };
   const MUC_TOI_DA = 5;
   const PB_CHO_PHEP = 2500; // ms: thời gian tối đa chờ Haiku trước khi dùng nước của máy
@@ -315,10 +316,13 @@ import Layout from "../layouts/Layout.astro";
     dangChoMay = true;
     hienTrangThai("Máy đang nghĩ…");
     ve();
+    // Nhường lượt để trình duyệt vẽ dòng "đang nghĩ" trước khi máy tính toán
+    await new Promise((r) => setTimeout(r, 30));
     const cap = MUC[capDo];
     let chonNuoc;
+    const { xep: bangXep } = xepHangTheoThoiGian(b, "b", { doSauToiDa: cap.doSauToiDa, thoiGianMs: cap.thoiGian });
     if (cap.haiku > 0) {
-      const xep = xepHangNuoc(b, "b", cap.doSau).slice(0, cap.haiku);
+      const xep = bangXep.slice(0, cap.haiku);
       chonNuoc = xep[0];
       try {
         const ctrl = new AbortController();
@@ -338,7 +342,7 @@ import Layout from "../layouts/Layout.astro";
         // Lỗi mạng hoặc hết giờ: giữ nước tốt nhất của minimax
       }
     } else {
-      chonNuoc = nuocTot(b, "b", cap.doSau);
+      chonNuoc = chonTrongDinh(bangXep);
     }
     dangChoMay = false;
     if (chonNuoc) {

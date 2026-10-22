@@ -2,8 +2,26 @@ import { describe, it, expect } from "vitest";
 import {
   khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu,
   timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe,
-  xacMinhVan,
+  xacMinhVan, xepHangTheoThoiGian,
 } from "../src/lib/co-tuong.js";
+
+describe("tìm nước theo thời gian", () => {
+  it("không giới hạn thời gian thì đi đúng độ sâu yêu cầu", () => {
+    const { xep, doSau } = xepHangTheoThoiGian(khoiTao(), "r", { doSauToiDa: 2, thoiGianMs: 0 });
+    expect(doSau).toBe(2);
+    expect(xep).toHaveLength(44);
+  });
+
+  it("hết giờ giữa chừng vẫn trả về kết quả và không làm hỏng bàn cờ", () => {
+    const b = khoiTao();
+    const truoc = JSON.stringify(b);
+    const { xep, doSau } = xepHangTheoThoiGian(b, "r", { doSauToiDa: 6, thoiGianMs: 30 });
+    expect(xep).toHaveLength(44);
+    expect(doSau).toBeGreaterThanOrEqual(1);
+    expect(doSau).toBeLessThan(6);
+    expect(JSON.stringify(b)).toBe(truoc); // bàn phải như cũ sau khi bị ngắt
+  });
+});
 
 describe("xác minh ván để tính điểm", () => {
   // Chơi ngẫu nhiên đến khi hết nước hoặc đủ 120 nước, trả về nhật ký nước đi

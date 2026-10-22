@@ -268,7 +268,12 @@ export function danhGia(b, s) {
 const MAT = -100000;
 
 // Negamax với cắt tỉa alpha-beta. Điểm luôn nhìn từ bên đang đi.
-function negamax(b, s, doSau, alpha, beta) {
+// Tín hiệu hết giờ: ném ra khi tìm kiếm quá thời gian cho phép
+const HET_GIO = Symbol("het_gio");
+
+// het: mốc thời gian (ms) phải dừng. Không truyền thì tìm đến hết độ sâu.
+function negamax(b, s, doSau, alpha, beta, het) {
+  if (het && Date.now() > het) throw HET_GIO;
   if (doSau === 0) return danhGia(b, s);
   const nuoc = nuocHopLe(b, s);
   if (nuoc.length === 0) return MAT; // hết nước đi là thua (kể cả hết nước không bị chiếu)
@@ -277,8 +282,12 @@ function negamax(b, s, doSau, alpha, beta) {
   let tot = -Infinity;
   for (const m of nuoc) {
     const an = thucHien(b, m);
-    const v = -negamax(b, doiBen(s), doSau - 1, -beta, -alpha);
-    hoanTac(b, m, an);
+    let v;
+    try {
+      v = -negamax(b, doiBen(s), doSau - 1, -beta, -alpha, het);
+    } finally {
+      hoanTac(b, m, an); // luôn hoàn tác, kể cả khi hết giờ giữa chừng
+    }
     if (v > tot) tot = v;
     if (tot > alpha) alpha = tot;
     if (alpha >= beta) break;
@@ -287,24 +296,52 @@ function negamax(b, s, doSau, alpha, beta) {
 }
 
 // Xếp hạng tất cả nước đi của s theo điểm, cao nhất trước.
-export function xepHangNuoc(b, s, doSau) {
+export function xepHangNuoc(b, s, doSau, het) {
   const nuoc = nuocHopLe(b, s);
   const ket = nuoc.map((m) => {
     const an = thucHien(b, m);
-    const diem = -negamax(b, doiBen(s), doSau - 1, -Infinity, Infinity);
-    hoanTac(b, m, an);
+    let diem;
+    try {
+      diem = -negamax(b, doiBen(s), doSau - 1, -Infinity, Infinity, het);
+    } finally {
+      hoanTac(b, m, an);
+    }
     return { m, nuoc: kyHieu(m), diem };
   });
   return ket.sort((x, y) => y.diem - x.diem);
 }
 
-// Chọn nước tốt nhất; các nước bằng điểm nhau được chọn ngẫu nhiên để ván không lặp lại.
-export function nuocTot(b, s, doSau) {
-  const xep = xepHangNuoc(b, s, doSau);
+// Chọn ngẫu nhiên trong các nước bằng điểm cao nhất, để ván không lặp lại.
+export function chonTrongDinh(xep) {
   if (xep.length === 0) return null;
   const dinh = xep[0].diem;
   const bang = xep.filter((x) => x.diem === dinh);
   return bang[Math.floor(Math.random() * bang.length)];
+}
+
+// Chọn nước tốt nhất với độ sâu cố định.
+export function nuocTot(b, s, doSau) {
+  return chonTrongDinh(xepHangNuoc(b, s, doSau));
+}
+
+// Tìm sâu dần (độ sâu 1, 2, ...) đến doSauToiDa, dừng khi hết thoiGianMs.
+// Trả về bảng xếp hạng của độ sâu hoàn thành cuối cùng. thoiGianMs = 0 nghĩa là không giới hạn thời gian.
+export function xepHangTheoThoiGian(b, s, { doSauToiDa, thoiGianMs }) {
+  if (!thoiGianMs) return { xep: xepHangNuoc(b, s, doSauToiDa), doSau: doSauToiDa };
+  const het = Date.now() + thoiGianMs;
+  let xep = null;
+  let doSau = 0;
+  for (let d = 1; d <= doSauToiDa; d++) {
+    try {
+      xep = xepHangNuoc(b, s, d, het);
+      doSau = d;
+    } catch (e) {
+      if (e === HET_GIO) break;
+      throw e;
+    }
+  }
+  if (!xep) xep = xepHangNuoc(b, s, 1); // độ sâu 1 luôn kịp
+  return { xep, doSau };
 }
 
 // Bàn dạng chữ để gửi cho AI: mỗi hàng là 9 ô, ".." là ô trống.
