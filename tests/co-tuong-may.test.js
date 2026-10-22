@@ -102,7 +102,10 @@ describe("máy tìm nước (mảng số): chơi cờ", () => {
   it("mọi biến thể (bảng băm, tìm kiếm tĩnh, điểm vị trí) chỉ đi nước hợp lệ", () => {
     for (const { b, s } of theCoMau(3)) {
       const hopLe = new Set(nuocHopLe(b, s).map(kyHieu));
-      for (const opts of [{}, { tt: true }, { tt: true, q: true }, { tt: true, q: true, pst: true }]) {
+      for (const opts of [
+        {}, { tt: true }, { tt: true, q: true }, { tt: true, q: true, pst: true },
+        { tt: true, q: true, pst: true, cat: true, giaHan: true },
+      ]) {
         const kq = timNuocMay(b, s, { doSauToiDa: 4, ...opts });
         expect(hopLe.has(kq.xep[0].nuoc)).toBe(true);
       }
@@ -120,6 +123,53 @@ describe("máy tìm nước (mảng số): chơi cờ", () => {
         expect(x.diem).toBe(diemDay.get(x.nuoc));
       }
     }
+  });
+
+  it("thế lặp lại theo lịch sử ván được tính là hòa", () => {
+    // Hai bên nhảy mã ra rồi về: thế mở đầu lặp lại, đỏ đi tiếp
+    const lichSu = ["b9c7", "b0c2", "c7b9", "c2b0"];
+    const diem = (opts) => timNuocMay(khoiTao(), "r", { doSauToiDa: 2, soNuoc: 1000, pst: true, ...opts })
+      .xep.find((x) => x.nuoc === "b9c7").diem;
+    expect(diem({})).not.toBe(0);
+    expect(diem({ lichSu })).toBe(0); // nhảy mã ra lần nữa là lặp thế đã có
+  });
+
+  it("lịch sử không khớp bàn hiện tại thì bị bỏ qua", () => {
+    const opts = { doSauToiDa: 3, soNuoc: 1000, pst: true };
+    const khong = timNuocMay(khoiTao(), "r", opts).xep;
+    const sai = timNuocMay(khoiTao(), "r", { ...opts, lichSu: ["b9c7"] }).xep;
+    expect(sai).toEqual(khong);
+  });
+
+  it("sắp đủ 120 nước: mọi nước đều về hòa", () => {
+    // Ván ngẫu nhiên 119 nước có hạt giống cố định, không kết thúc giữa chừng
+    let h = 99;
+    const rnd = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return (h >>> 0) / 4294967296; };
+    const b = khoiTao(), lichSu = [];
+    let s = "r";
+    while (lichSu.length < 119) {
+      const ds = nuocHopLe(b, s);
+      expect(ds.length).toBeGreaterThan(0);
+      const m = ds[Math.floor(rnd() * ds.length)];
+      apDung(b, m);
+      lichSu.push(kyHieu(m));
+      s = doiBen(s);
+    }
+    const kq = timNuocMay(b, s, { doSauToiDa: 2, soNuoc: 1000, pst: true, lichSu });
+    for (const x of kq.xep) expect(x.diem).toBe(0);
+  });
+
+  it("nutToiDa: dừng sớm theo số nút nhưng luôn trả về một nước", () => {
+    const kq = timNuocMay(khoiTao(), "r", { doSauToiDa: 30, nutToiDa: 20000, tt: true, q: true, pst: true, cat: true });
+    expect(kq.doSau).toBeGreaterThanOrEqual(1);
+    expect(kq.nodes).toBeLessThan(40000);
+    expect(kq.xep.length).toBeGreaterThan(0);
+  });
+
+  it("cắt tỉa và gia hạn vẫn thấy nước thắng ngay", () => {
+    const b = thế();
+    const kq = timNuocMay(b, "r", { doSauToiDa: 5, tt: true, q: true, pst: true, cat: true, giaHan: true });
+    expect(kq.xep[0].diem).toBeGreaterThan(90000);
   });
 
   it("dừng đúng giờ nhưng luôn trả về một nước", () => {

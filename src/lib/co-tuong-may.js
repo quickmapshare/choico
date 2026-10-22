@@ -2,6 +2,9 @@
 // Khác bản cũ: bàn cờ là mảng số, bảng nước đi tính sẵn, bộ đệm nước đi dùng chung (không cấp phát khi tìm),
 // điểm, hash và vị trí tướng cập nhật tăng dần khi đi, tìm trên nước giả hợp lệ (bắt tướng = thắng).
 // Có tìm sâu dần, bảng băm vị trí (tt), tìm kiếm tĩnh (q) và điểm vị trí quân (pst), mỗi thứ bật tắt riêng.
+// Luôn dùng PVS và nhận ra thế lặp, luật hòa 120 nước (khi có lichSu). Null-move và LMR (cat), gia hạn khi bị chiếu
+// (giaHan) làm điểm khác minimax đúng nên chỉ bật khi chọn.
+import { khoiTao, NUOC_TOI_DA } from "./co-tuong.js";
 
 // Quân = bên * 8 + loại. Bên 0 là đỏ (phía dưới, đi lên), bên 1 là đen. Loại 1..7. Ô = hàng * 9 + cột.
 const TK = 1, TA = 2, TE = 3, TH = 4, TR = 5, TC = 6, TP = 7;
@@ -124,6 +127,15 @@ const ttInfo = new Int32Array(1 << TT_BITS); // 0 = trống; sau đó độ sâu
 const ttSc = new Int32Array(1 << TT_BITS);
 const ttMv = new Int32Array(1 << TT_BITS);
 let h1 = 0, h2 = 0, ev = 0, nodes = 0, het = 0, bangDiem = DIEM_THUONG, dungQ = false, dungTT = false;
+let dungCat = false, dungGiaHan = false, dungDG = false, gioiHanNut = 0; // dg: thêm điểm an toàn tướng
+let cauHinhTT = -1; // cách tính điểm (pst, q) của các điểm đang nằm trong bảng băm
+// Số quân mỗi loại theo mã quân, cập nhật khi ăn quân
+const DEM = new Int32Array(16);
+// Hash các thế đã qua: lịch sử ván (chỉ số 0 đến iGoc - 1), thế gốc (iGoc), rồi đường đang tìm (iGoc + ply).
+// mocGoc: chỉ số thế ngay sau lần ăn quân gần nhất trong ván, trước đó không thể lặp lại. nuocVan: số nước đã đi.
+const DUONG1 = new Int32Array(NUOC_TOI_DA + MAXPLY + 8);
+const DUONG2 = new Int32Array(NUOC_TOI_DA + MAXPLY + 8);
+let iGoc = 0, mocGoc = 0, nuocVan = 0;
 
 // Nước đi mã hóa: từ | đến << 7 | quân bị ăn << 14
 function dat(m) {
@@ -134,7 +146,7 @@ function dat(m) {
   h1 ^= Z1[pi + tu] ^ Z1[pi + den] ^ ZS1;
   h2 ^= Z2[pi + tu] ^ Z2[pi + den] ^ ZS2;
   ev += bangDiem[pi + den] - bangDiem[pi + tu];
-  if (an) { const ai = an * 90 + den; h1 ^= Z1[ai]; h2 ^= Z2[ai]; ev -= bangDiem[ai]; }
+  if (an) { const ai = an * 90 + den; h1 ^= Z1[ai]; h2 ^= Z2[ai]; ev -= bangDiem[ai]; DEM[an]--; }
   if ((p & 7) === TK) kingSq[p >> 3] = den;
 }
 
@@ -146,7 +158,7 @@ function hoan(m) {
   h1 ^= Z1[pi + tu] ^ Z1[pi + den] ^ ZS1;
   h2 ^= Z2[pi + tu] ^ Z2[pi + den] ^ ZS2;
   ev -= bangDiem[pi + den] - bangDiem[pi + tu];
-  if (an) { const ai = an * 90 + den; h1 ^= Z1[ai]; h2 ^= Z2[ai]; ev += bangDiem[ai]; }
+  if (an) { const ai = an * 90 + den; h1 ^= Z1[ai]; h2 ^= Z2[ai]; ev += bangDiem[ai]; DEM[an]++; }
   if ((p & 7) === TK) kingSq[p >> 3] = tu;
 }
 
@@ -245,11 +257,36 @@ function chon(base, n, i) {
   return MV[base + i];
 }
 
-const diemBen = (bn) => (bn === 0 ? ev : -ev);
+// An toàn tướng: thiếu sĩ, tượng thì bị phạt, càng nặng khi đối phương còn nhiều xe, mã, pháo. Điểm nhìn từ đỏ.
+function anToanTuong() {
+  let v = 0;
+  for (let bn = 0; bn < 2; bn++) {
+    const ta = bn << 3, dich = (bn ^ 1) << 3;
+    const thieu = (2 - DEM[ta | TA]) * 25 + (2 - DEM[ta | TE]) * 20;
+    const tanCong = 2 * DEM[dich | TR] + DEM[dich | TH] + DEM[dich | TC];
+    const phat = (thieu * tanCong) >> 2;
+    v += bn === 0 ? -phat : phat;
+  }
+  return v;
+}
+
+const diemBen = (bn) => {
+  const v = dungDG ? ev + anToanTuong() : ev;
+  return bn === 0 ? v : -v;
+};
 
 function kiemGio() {
-  if ((++nodes & 2047) === 0 && het !== 0 && Date.now() > het) throw HET_GIO;
+  if ((++nodes & 2047) === 0 && ((het !== 0 && Date.now() > het) || (gioiHanNut !== 0 && nodes > gioiHanNut))) throw HET_GIO;
 }
+
+// Thế đang xét (chỉ số i) đã có trước đó với cùng bên đi, kể từ chỉ số moc. Cần ít nhất 4 nước mới lặp được.
+function lapLai(i, moc) {
+  for (let j = i - 4; j >= moc; j -= 2) if (DUONG1[j] === h1 && DUONG2[j] === h2) return true;
+  return false;
+}
+
+// Bên bn còn xe, mã hoặc pháo. Chỉ còn tướng, sĩ, tượng, tốt thì bỏ lượt có thể có lợi, null-move không an toàn.
+const conQuanManh = (bn) => DEM[(bn << 3) | TR] + DEM[(bn << 3) | TH] + DEM[(bn << 3) | TC] > 0;
 
 // Lá khi không dùng tìm kiếm tĩnh: nước cuối của đối phương để tướng bị ăn thì tính là thắng
 function la(bn, ply) {
@@ -277,7 +314,17 @@ function tinhTinh(bn, alpha, beta, ply, qd) {
   return tot;
 }
 
-function nega(bn, depth, alpha, beta, ply) {
+// moc: chỉ số thế ngay sau lần ăn quân (hoặc bỏ lượt) gần nhất trên đường đi. choNull: được thử bỏ lượt.
+function nega(bn, depth, alpha, beta, ply, moc, choNull) {
+  const i = iGoc + ply;
+  DUONG1[i] = h1; DUONG2[i] = h2;
+  // Ván đủ 120 nước hoặc thế lặp lại: hòa, trừ khi nước vừa đi để tướng bị ăn
+  if (nuocVan + ply >= NUOC_TOI_DA || (depth > 0 && lapLai(i, moc))) return damBat(kingSq[bn ^ 1], bn) ? MAT - ply : 0;
+  let biChieu = false;
+  if (dungCat || dungGiaHan) {
+    biChieu = damBat(kingSq[bn], bn ^ 1);
+    if (biChieu && dungGiaHan && ply < MAXPLY - 10) depth++; // bị chiếu: tìm sâu thêm một lớp
+  }
   if (depth <= 0) return dungQ ? tinhTinh(bn, alpha, beta, ply, QD) : la(bn, ply);
   kiemGio();
   if (damBat(kingSq[bn ^ 1], bn)) return MAT - ply;
@@ -298,23 +345,46 @@ function nega(bn, depth, alpha, beta, ply) {
       }
     }
   }
+  // Null-move: bỏ lượt mà đối phương tìm nông vẫn không gỡ được thì nhánh này gần như chắc chắn bị cắt
+  if (dungCat && choNull && beta - alpha === 1 && !biChieu && depth >= 3 && conQuanManh(bn) && diemBen(bn) >= beta) {
+    const R = depth >= 6 ? 3 : 2;
+    h1 ^= ZS1; h2 ^= ZS2;
+    const v = -nega(bn ^ 1, depth - 1 - R, -beta, -beta + 1, ply + 1, i + 1, false);
+    h1 ^= ZS1; h2 ^= ZS2;
+    if (v >= beta) return v > MAT_NGUONG ? beta : v; // không tin điểm chiếu hết có được nhờ bỏ lượt
+  }
   const base = ply * MAXM;
   const n = sinh(bn, ply, false);
   const k1 = KIL[ply * 2], k2 = KIL[ply * 2 + 1];
-  for (let i = 0; i < n; i++) {
-    const m = MV[base + i];
-    if (m === nuocTT) SC[base + i] = 2000000;
-    else if (m === k1 || m === k2) SC[base + i] = 9000;
-    else if (((m >> 14) & 15) === 0) SC[base + i] = LICH_SU[(m & 127) * 90 + ((m >> 7) & 127)];
+  for (let j = 0; j < n; j++) {
+    const m = MV[base + j];
+    if (m === nuocTT) SC[base + j] = 2000000;
+    else if (m === k1 || m === k2) SC[base + j] = 9000;
+    else if (((m >> 14) & 15) === 0) SC[base + j] = LICH_SU[(m & 127) * 90 + ((m >> 7) & 127)];
   }
   const alpha0 = alpha;
   let tot = -VO_CUC, tot_m = 0, hopLe = 0;
-  for (let i = 0; i < n; i++) {
-    const m = chon(base, n, i);
+  for (let k = 0; k < n; k++) {
+    const m = chon(base, n, k);
     dat(m);
     if (doiMat()) { hoan(m); continue; }
     hopLe++;
-    const v = -nega(bn ^ 1, depth - 1, -beta, -alpha, ply + 1);
+    const an = (m >> 14) & 15;
+    const mocCon = an ? i + 1 : moc;
+    let v;
+    if (hopLe === 1) {
+      v = -nega(bn ^ 1, depth - 1, -beta, -alpha, ply + 1, mocCon, true);
+    } else {
+      // LMR: nước yên tĩnh xếp muộn (không ăn quân, không chiếu, không phải nước giết) thì tìm nông hơn
+      let giam = 0;
+      if (dungCat && depth >= 3 && hopLe > 3 && !an && !biChieu && m !== k1 && m !== k2 && !damBat(kingSq[bn ^ 1], bn)) {
+        giam = hopLe > 10 ? 2 : 1;
+      }
+      // PVS: các nước sau nước đầu chỉ cần chứng minh không hơn alpha, có vẻ hơn mới tìm lại đủ
+      v = -nega(bn ^ 1, depth - 1 - giam, -alpha - 1, -alpha, ply + 1, mocCon, true);
+      if (v > alpha && giam) v = -nega(bn ^ 1, depth - 1, -alpha - 1, -alpha, ply + 1, mocCon, true);
+      if (v > alpha && v < beta) v = -nega(bn ^ 1, depth - 1, -beta, -alpha, ply + 1, mocCon, true);
+    }
     hoan(m);
     if (v > tot) {
       tot = v; tot_m = m;
@@ -357,6 +427,7 @@ const moTa = (m) => {
 function napBan(b, bn, pst) {
   bangDiem = pst ? DIEM_PST : DIEM_THUONG;
   bd.fill(0); h1 = 0; h2 = 0; ev = 0; nodes = 0; het = 0;
+  DEM.fill(0);
   kingSq[0] = -1; kingSq[1] = -1;
   for (let r = 0; r < 10; r++) {
     for (let c = 0; c < 9; c++) {
@@ -365,6 +436,7 @@ function napBan(b, bn, pst) {
       const p = ((x[0] === "r" ? 0 : 1) << 3) | (LOAI.indexOf(x[1]) + 1);
       const o = r * 9 + c;
       bd[o] = p;
+      DEM[p]++;
       h1 ^= Z1[p * 90 + o]; h2 ^= Z2[p * 90 + o];
       ev += bangDiem[p * 90 + o];
       if ((p & 7) === TK) kingSq[p >> 3] = o;
@@ -372,6 +444,34 @@ function napBan(b, bn, pst) {
   }
   if (bn === 1) { h1 ^= ZS1; h2 ^= ZS2; }
   return kingSq[0] >= 0 && kingSq[1] >= 0;
+}
+
+const MAU_NUOC = /^[a-i][0-9][a-i][0-9]$/;
+
+// Nạp lịch sử ván (các nước từ thế mở đầu, dạng "h2e2") để nhận ra thế lặp và biết còn bao nhiêu nước tới hòa.
+// Chỉ dùng khi đi lại đúng các nước đó từ thế mở đầu ra được bàn hiện tại, không thì bỏ qua.
+// Luôn để lại bàn b đã nạp, như napBan.
+function napLichSu(lichSu, b, bn, pst) {
+  iGoc = 0; mocGoc = 0; nuocVan = 0;
+  let ok = Array.isArray(lichSu) && lichSu.length > 0 && lichSu.length <= NUOC_TOI_DA;
+  let moc = 0, c1 = 0, c2 = 0;
+  if (ok) {
+    napBan(khoiTao(), 0, pst);
+    for (let i = 0; i < lichSu.length; i++) {
+      const x = lichSu[i];
+      if (typeof x !== "string" || !MAU_NUOC.test(x)) { ok = false; break; }
+      const tu = Number(x[1]) * 9 + CAC_COT.indexOf(x[0]);
+      const den = Number(x[3]) * 9 + CAC_COT.indexOf(x[2]);
+      if (bd[tu] === 0) { ok = false; break; }
+      DUONG1[i] = h1; DUONG2[i] = h2;
+      const an = bd[den];
+      dat(tu | (den << 7) | (an << 14));
+      if (an) moc = i + 1;
+    }
+    c1 = h1; c2 = h2;
+  }
+  napBan(b, bn, pst);
+  if (ok && h1 === c1 && h2 === c2) { iGoc = lichSu.length; mocGoc = moc; nuocVan = lichSu.length; }
 }
 
 // Tướng của bên s có đang bị chiếu không (dùng để kiểm thử so với co-tuong.js)
@@ -394,11 +494,20 @@ export function nuocGiaMay(b, s) {
   return out;
 }
 
-export function timNuocMay(b, s, { doSauToiDa = 20, thoiGianMs = 0, soNuoc = 1, q = false, tt = false, pst = false } = {}) {
+// lichSu: các nước đã đi trong ván từ thế mở đầu (để nhận ra thế lặp và luật hòa 120 nước).
+// nutToiDa: dừng sau khoảng số nút này (độ sâu 1 luôn xong), dùng để đấu thử không phụ thuộc tốc độ máy.
+export function timNuocMay(b, s, {
+  doSauToiDa = 20, thoiGianMs = 0, soNuoc = 1, q = false, tt = false, pst = false,
+  cat = false, giaHan = false, dg = false, nutToiDa = 0, lichSu = null,
+} = {}) {
   const bn = s === "r" ? 0 : 1;
-  dungQ = q; dungTT = tt;
+  dungQ = q; dungTT = tt; dungCat = cat; dungGiaHan = giaHan; dungDG = dg;
   if (!napBan(b, bn, pst)) return { xep: [], doSau: 0, nodes: 0 };
-  if (dungTT) ttInfo.fill(0);
+  napLichSu(lichSu, b, bn, pst);
+  DUONG1[iGoc] = h1; DUONG2[iGoc] = h2;
+  // Giữ bảng băm giữa các nước để lượt sau không tính lại từ đầu. Xóa khi đổi cách tính điểm.
+  const cauHinh = (pst ? 1 : 0) | (q ? 2 : 0) | (dg ? 4 : 0);
+  if (dungTT && cauHinh !== cauHinhTT) { ttInfo.fill(0); cauHinhTT = cauHinh; }
   KIL.fill(0);
   LICH_SU.fill(0);
 
@@ -420,13 +529,22 @@ export function timNuocMay(b, s, { doSauToiDa = 20, thoiGianMs = 0, soNuoc = 1, 
   let ketQua = null, doSau = 0;
   for (let d = 1; d <= doSauToiDa; d++) {
     het = d === 1 || !thoiGianMs ? 0 : batDau + thoiGianMs; // độ sâu 1 luôn hoàn thành
+    gioiHanNut = d === 1 ? 0 : nutToiDa;
     const ds = [];
     const top = []; // điểm giảm dần của soNuoc nước tốt nhất đến lúc này
     try {
       for (const m of goc) {
         const alphaGoc = top.length >= soNuoc ? top[soNuoc - 1] - 1 : -VO_CUC;
         dat(m);
-        const v = -nega(bn ^ 1, d - 1, -VO_CUC, -alphaGoc, 1);
+        const mocCon = (m >> 14) & 15 ? iGoc + 1 : mocGoc;
+        let v;
+        if (alphaGoc === -VO_CUC) {
+          v = -nega(bn ^ 1, d - 1, -VO_CUC, VO_CUC, 1, mocCon, true);
+        } else {
+          // PVS ở gốc: thử với cửa sổ hẹp, chỉ tìm lại đủ khi nước này có thể vào nhóm đầu bảng
+          v = -nega(bn ^ 1, d - 1, -alphaGoc - 1, -alphaGoc, 1, mocCon, true);
+          if (v > alphaGoc) v = -nega(bn ^ 1, d - 1, -VO_CUC, -alphaGoc, 1, mocCon, true);
+        }
         hoan(m);
         ds.push({ m, v });
         let j = top.length;
