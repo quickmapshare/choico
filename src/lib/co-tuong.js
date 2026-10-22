@@ -1,22 +1,24 @@
 // Luật cờ tướng và AI minimax (alpha-beta).
-// Tên người chơi: tối đa 20 ký tự, chỉ gồm chữ cái (kể cả tiếng Việt có dấu) và khoảng trắng giữa các từ.
-export const TEN_TOI_DA = 20;
-const MAU_TEN = /^\p{L}+( \p{L}+)*$/u;
+// Tên người chơi: tối đa 50 ký tự, gồm chữ cái (kể cả tiếng Việt có dấu), chữ số và khoảng trắng giữa các từ.
+export const TEN_TOI_DA = 50;
+const MAU_TEN = /^[\p{L}\d]+( [\p{L}\d]+)*$/u;
 
-// Làm sạch khi gõ: bỏ mọi ký tự không phải chữ cái hoặc khoảng trắng, gộp khoảng trắng, cắt độ dài.
+// Làm sạch khi gõ: bỏ mọi ký tự không phải chữ cái, chữ số hoặc khoảng trắng, gộp khoảng trắng, cắt độ dài.
 export function lamSachTen(s) {
   return String(s)
-    .replace(/[^\p{L} ]/gu, "")
+    .replace(/[^\p{L}\d ]/gu, "")
     .replace(/ {2,}/g, " ")
     .replace(/^ +/, "")
     .slice(0, TEN_TOI_DA);
 }
 
-// Tên tạm có dạng "Kỳ thủ KQMA 23102026": 4 chữ cái ngẫu nhiên, rồi ngày chơi lần đầu ddmmyyyy (chỉ có số).
-const MAU_TEN_TAM = /^Kỳ thủ [A-Z]{4} \d{8}$/;
-
 export function tenHopLe(s) {
-  return s.length > 0 && s.length <= TEN_TOI_DA && (MAU_TEN.test(s) || MAU_TEN_TAM.test(s));
+  return s.length > 0 && s.length <= TEN_TOI_DA && MAU_TEN.test(s);
+}
+
+// Tên hiện trên bảng xếp hạng: mỗi chữ số thành dấu *, để không lộ số điện thoại hay thông tin khác.
+export function tenBangDiem(s) {
+  return s.replace(/\d/g, "*");
 }
 
 // Tên tạm cho người chơi chưa đặt tên, ghép thêm ngày chơi lần đầu theo giờ Việt Nam (UTC+7).

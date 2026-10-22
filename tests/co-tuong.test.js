@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu,
-  timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe,
+  timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe, tenBangDiem,
   xacMinhVan, xepHangTheoThoiGian, quanBiAn, biChieu, diemCongVan, HOAN_TOI_DA, taoTenTam,
 } from "../src/lib/co-tuong.js";
 
@@ -11,7 +11,7 @@ describe("tên tạm", () => {
       const t = taoTenTam();
       expect(tenHopLe(t)).toBe(true);
       expect(t).toMatch(/^Kỳ thủ [A-Z]{4} \d{8}$/);
-      expect(t.length).toBeLessThanOrEqual(20);
+      expect(t.length).toBeLessThanOrEqual(50);
     }
   });
 
@@ -22,10 +22,9 @@ describe("tên tạm", () => {
     expect(taoTenTam(() => 0.999999, luc)).toBe("Kỳ thủ ZZZZ 23102026");
   });
 
-  it("tên tạm có số được chấp nhận, tên người chơi thường vẫn không có số", () => {
+  it("tên có chữ số được chấp nhận, tên tạm có ngày vẫn hợp lệ", () => {
     expect(tenHopLe("Kỳ thủ KQMA 23102026")).toBe(true);
-    expect(tenHopLe("Kỳ thủ KQMA 2310202")).toBe(false);
-    expect(tenHopLe("An 23102026")).toBe(false);
+    expect(tenHopLe("0912345678")).toBe(true);
   });
 });
 
@@ -118,24 +117,30 @@ describe("tên người chơi", () => {
     expect(tenHopLe("Đỗ")).toBe(true);
   });
 
-  it("từ chối số, ký tự đặc biệt, khoảng trắng đầu hoặc cuối, chuỗi rỗng", () => {
-    expect(tenHopLe("An2")).toBe(false);
+  it("từ chối ký tự đặc biệt, khoảng trắng đầu hoặc cuối, chuỗi rỗng", () => {
     expect(tenHopLe("An!")).toBe(false);
+    expect(tenHopLe("An-Bình")).toBe(false);
     expect(tenHopLe(" An")).toBe(false);
     expect(tenHopLe("An ")).toBe(false);
     expect(tenHopLe("")).toBe(false);
   });
 
-  it("giới hạn 20 ký tự", () => {
-    expect(tenHopLe("a".repeat(20))).toBe(true);
-    expect(tenHopLe("a".repeat(21))).toBe(false);
+  it("giới hạn 50 ký tự", () => {
+    expect(tenHopLe("a".repeat(50))).toBe(true);
+    expect(tenHopLe("a".repeat(51))).toBe(false);
   });
 
-  it("làm sạch khi gõ: bỏ số và ký tự đặc biệt, gộp khoảng trắng, cắt 20 ký tự", () => {
-    expect(lamSachTen("An2!3")).toBe("An");
+  it("bảng xếp hạng che mọi chữ số bằng dấu *", () => {
+    expect(tenBangDiem("0912345678")).toBe("**********");
+    expect(tenBangDiem("Kỳ thủ KQMA 23102026")).toBe("Kỳ thủ KQMA ********");
+    expect(tenBangDiem("Lê Hoài")).toBe("Lê Hoài");
+  });
+
+  it("làm sạch khi gõ: bỏ ký tự đặc biệt, giữ chữ số, gộp khoảng trắng, cắt 50 ký tự", () => {
+    expect(lamSachTen("An2!3")).toBe("An23");
     expect(lamSachTen("  Lê   Hoài")).toBe("Lê Hoài");
     expect(lamSachTen("Lê ")).toBe("Lê "); // giữ khoảng trắng cuối khi đang gõ, cắt khi lưu
-    expect(lamSachTen("a".repeat(30))).toHaveLength(20);
+    expect(lamSachTen("a".repeat(60))).toHaveLength(50);
     expect(tenHopLe(lamSachTen("Trần #1 Bình 99").trim())).toBe(true); // trang cắt khoảng trắng cuối khi lưu
   });
 });

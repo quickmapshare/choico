@@ -7,7 +7,7 @@ import Layout from "../layouts/Layout.astro";
 
   <div class="co-dieu-khien">
     <label class="co-ten">Tên của bạn
-      <input id="co-ten" type="text" maxlength="20" autocomplete="nickname" placeholder="Tối đa 20 chữ cái" />
+      <input id="co-ten" type="text" maxlength="50" autocomplete="nickname" placeholder="Tối đa 50 ký tự" />
     </label>
     <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
     <button type="button" id="co-moi">Ván mới</button>
@@ -106,7 +106,6 @@ import Layout from "../layouts/Layout.astro";
   import { timNuocMay } from "../lib/co-tuong-may.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
   // Địa chỉ PocketBase công khai: chỉ đọc bảng điểm, ghi điểm đi qua /api/co-tuong-van
-  const PB_CONG_KHAI = "https://api.botgap.dev";
 
   // Tên quân theo cách gọi thường thấy ở Việt Nam: quân đỏ có Tốt, quân đen có Chốt
   // Quân dùng chữ Hán như bàn cờ truyền thống: bên đỏ và bên đen khác nhau
@@ -243,7 +242,7 @@ import Layout from "../layouts/Layout.astro";
     ds.replaceChildren();
     for (const it of items) {
       const li = document.createElement("li");
-      if (ten && it.ten === ten) li.classList.add("minh");
+      if (it.minh) li.classList.add("minh");
       const a = document.createElement("span");
       a.textContent = `${it.ten}`;
       const bb = document.createElement("span");
@@ -257,20 +256,16 @@ import Layout from "../layouts/Layout.astro";
   async function taiBangDiem() {
     const viEl = document.getElementById("co-vi-tri") as HTMLElement;
     try {
-      const top = await (await fetch(`${PB_CONG_KHAI}/api/collections/cho_phien_co_diem/records?perPage=10&sort=-diem,ten`)).json();
-      hienBangDiem(top.items || []);
-      if (!ten) {
-        viEl.textContent = "Nhập tên ở trên để xem vị trí của bạn.";
-        return;
-      }
-      const mine = await (await fetch(`${PB_CONG_KHAI}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`ten="${ten}"`)}`)).json();
-      const dong = mine.items?.[0];
-      if (!dong) {
+      // Server che số trong tên trên bảng điểm và tính vị trí, trình duyệt không đọc trực tiếp PocketBase
+      const r = await fetch(`/api/co-tuong-bang-diem?ten=${encodeURIComponent(ten)}`);
+      if (!r.ok) throw new Error("bang_diem_loi");
+      const { top, vi_tri } = await r.json();
+      hienBangDiem(top || []);
+      if (!vi_tri) {
         viEl.textContent = `${ten} chưa có điểm. Hoàn thành một ván để có điểm.`;
         return;
       }
-      const hon = await (await fetch(`${PB_CONG_KHAI}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`diem>${dong.diem}`)}`)).json();
-      viEl.textContent = `${ten} đang ở vị trí #${(hon.totalItems || 0) + 1} với ${soDiem(dong.diem)} điểm.`;
+      viEl.textContent = `${ten} đang ở vị trí #${vi_tri.hang} với ${soDiem(vi_tri.diem)} điểm.`;
     } catch {
       viEl.textContent = "Chưa tải được bảng điểm. Thử tải lại trang sau.";
     }
@@ -800,7 +795,7 @@ import Layout from "../layouts/Layout.astro";
     document.addEventListener("fullscreenchange", capNhatPhongTo);
   }
 
-  // Gõ tên: bỏ ký tự không phải chữ cái, khi rời ô thì kiểm tra và lưu
+  // Gõ tên: bỏ ký tự đặc biệt, khi rời ô thì kiểm tra và lưu
   tenEl.addEventListener("input", () => {
     tenEl.value = lamSachTen(tenEl.value);
   });
@@ -828,7 +823,7 @@ import Layout from "../layouts/Layout.astro";
       return;
     }
     if (!tenHopLe(t)) {
-      hienTrangThai("Tên chỉ gồm chữ cái, tối đa 20 ký tự.");
+      hienTrangThai("Tên chỉ gồm chữ cái và chữ số, tối đa 50 ký tự.");
       return;
     }
     if (t === ten) return;
