@@ -527,20 +527,69 @@ import Layout from "../layouts/Layout.astro";
     return nuocHopLe(b, s).length === 0;
   }
 
+  // Máy tìm nước chạy trong Web Worker để trang vẫn bấm được và hiệu ứng vẫn mượt khi máy nghĩ lâu.
+  // Trình duyệt không có Worker hoặc worker lỗi thì tính ngay trong trang (như trước, trang sẽ đứng hình trong lúc nghĩ).
+  let mayWorker: Worker | null = null;
+  let demMay = 0; // tăng mỗi lần bỏ lượt tính đang chạy (ván mới), để kết quả muộn bị bỏ
+  let choKetQua: ((r: any) => void) | null = null;
+
+  function huyTinh() {
+    demMay++;
+    if (mayWorker) {
+      mayWorker.terminate(); // dừng hẳn việc đang tính
+      mayWorker = null;
+    }
+    if (choKetQua) {
+      choKetQua(null);
+      choKetQua = null;
+    }
+  }
+
+  // Trả về { xep, doSau, nodes }, hoặc null nếu lượt tính bị hủy
+  function tinhNuoc(tuyChon) {
+    const ma = demMay;
+    return new Promise((xong) => {
+      const tinhTrongTrang = () => setTimeout(() => xong(ma === demMay ? timNuocMay(b, "b", tuyChon) : null), 30);
+      if (typeof Worker === "undefined") return tinhTrongTrang();
+      try {
+        if (!mayWorker) mayWorker = new Worker(new URL("../lib/co-tuong-may-worker.js", import.meta.url), { type: "module" });
+        const w = mayWorker;
+        choKetQua = xong;
+        w.onmessage = (e) => {
+          if (choKetQua === xong) choKetQua = null;
+          xong(e.data);
+        };
+        w.onerror = () => {
+          if (mayWorker === w) mayWorker = null;
+          if (choKetQua !== xong) return; // lượt tính này đã xong hoặc bị hủy
+          choKetQua = null;
+          tinhTrongTrang();
+        };
+        w.postMessage({ ban: b, ben: "b", tuyChon });
+      } catch {
+        choKetQua = null;
+        tinhTrongTrang();
+      }
+    });
+  }
+
   // Máy chọn nước. Nếu mức có haiku > 0 thì Haiku chọn trong các nước minimax xếp đầu, lỗi thì dùng nước tốt nhất. Hiện tất cả mức đều tắt Haiku (haiku: 0).
   async function mayDi() {
+    const luot = demMay; // nếu bắt đầu ván mới trong lúc máy nghĩ thì demMay đổi và bỏ kết quả này
     dangChoMay = true;
     hienTrangThai(hieuUng?.chieu ? "Chiếu tướng! Máy đang nghĩ…" : "Máy đang nghĩ…");
     ve();
-    // Nhường lượt để trình duyệt vẽ dòng "đang nghĩ", và chờ hiệu ứng nước vừa đi chạy xong
-    // (khi máy tính toán trình duyệt không vẽ được nên hiệu ứng sẽ đứng giữa chừng)
-    const conLai = hieuUng && !giamChuyenDong ? tongHieuUng() - (Date.now() - hieuUng.batDau) : 0;
-    await new Promise((r) => setTimeout(r, Math.max(30, conLai)));
     const cap = MUC[capDo];
     let chonNuoc;
-    const { xep: bangXep } = timNuocMay(b, "b", {
+    const kq = await tinhNuoc({
       doSauToiDa: cap.doSauToiDa, thoiGianMs: thoiGianNghi(capDo), soNuoc: Math.max(1, cap.haiku), tt: cap.tt, q: cap.q,
     });
+    if (!kq || luot !== demMay) return;
+    const bangXep = kq.xep;
+    // Máy nghĩ song song với hiệu ứng nước vừa đi: đợi hiệu ứng chạy xong rồi mới đi để không bị cắt ngang
+    const conLai = hieuUng && !giamChuyenDong ? tongHieuUng() - (Date.now() - hieuUng.batDau) : 0;
+    if (conLai > 0) await new Promise((r) => setTimeout(r, conLai));
+    if (luot !== demMay) return;
     if (cap.haiku > 0) {
       const xep = bangXep.slice(0, cap.haiku);
       chonNuoc = xep[0];
@@ -564,6 +613,7 @@ import Layout from "../layouts/Layout.astro";
     } else {
       chonNuoc = chonTrongDinh(bangXep);
     }
+    if (luot !== demMay) return; // ván mới bắt đầu trong lúc chờ Haiku
     dangChoMay = false;
     if (chonNuoc) {
       apDung(b, chonNuoc.m);
@@ -633,6 +683,7 @@ import Layout from "../layouts/Layout.astro";
   });
 
   function vanMoi() {
+    huyTinh(); // bỏ lượt máy đang nghĩ (nếu có)
     b = khoiTao();
     chon = null;
     gioDi = nuocHopLe(b, "r");
