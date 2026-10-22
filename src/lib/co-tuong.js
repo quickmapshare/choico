@@ -12,16 +12,22 @@ export function lamSachTen(s) {
     .slice(0, TEN_TOI_DA);
 }
 
+// Tên tạm có dạng "Kỳ thủ KQMA 23102026": 4 chữ cái ngẫu nhiên, rồi ngày chơi lần đầu ddmmyyyy (chỉ có số).
+const MAU_TEN_TAM = /^Kỳ thủ [A-Z]{4} \d{8}$/;
+
 export function tenHopLe(s) {
-  return s.length > 0 && s.length <= TEN_TOI_DA && MAU_TEN.test(s);
+  return s.length > 0 && s.length <= TEN_TOI_DA && (MAU_TEN.test(s) || MAU_TEN_TAM.test(s));
 }
 
-// Tên tạm cho người chơi chưa đặt tên: "Kỳ thủ" kèm 4 chữ cái ngẫu nhiên, ví dụ "Kỳ thủ KQMA".
-export function taoTenTam(ngauNhien = Math.random) {
+// Tên tạm cho người chơi chưa đặt tên, ghép thêm ngày chơi lần đầu theo giờ Việt Nam (UTC+7).
+export function taoTenTam(ngauNhien = Math.random, luc = new Date()) {
   const chu = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let ma = "";
   for (let i = 0; i < 4; i++) ma += chu[Math.floor(ngauNhien() * chu.length)];
-  return "Kỳ thủ " + ma;
+  const vn = new Date(luc.getTime() + 7 * 3600 * 1000);
+  const so = (n) => String(n).padStart(2, "0");
+  const ngay = so(vn.getUTCDate()) + so(vn.getUTCMonth() + 1) + vn.getUTCFullYear();
+  return `Kỳ thủ ${ma} ${ngay}`;
 }
 
 // Bàn 10 hàng x 9 cột. Hàng 0 là phía đen (trên), hàng 9 là phía đỏ (dưới). Đỏ đi trước.

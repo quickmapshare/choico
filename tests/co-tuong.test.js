@@ -6,17 +6,26 @@ import {
 } from "../src/lib/co-tuong.js";
 
 describe("tên tạm", () => {
-  it("tên tạm luôn hợp lệ và có dạng Cờ thủ + 4 chữ cái", () => {
+  it("tên tạm luôn hợp lệ, có 4 chữ cái và ngày chơi lần đầu", () => {
     for (let i = 0; i < 50; i++) {
       const t = taoTenTam();
       expect(tenHopLe(t)).toBe(true);
-      expect(t).toMatch(/^Kỳ thủ [A-Z]{4}$/);
+      expect(t).toMatch(/^Kỳ thủ [A-Z]{4} \d{8}$/);
+      expect(t.length).toBeLessThanOrEqual(20);
     }
   });
 
-  it("chọn đúng chữ cái theo số ngẫu nhiên", () => {
-    expect(taoTenTam(() => 0)).toBe("Kỳ thủ AAAA");
-    expect(taoTenTam(() => 0.999999)).toBe("Kỳ thủ ZZZZ");
+  it("chọn đúng chữ cái theo số ngẫu nhiên và ghép ngày theo giờ Việt Nam", () => {
+    // 2026-10-22 23:30 UTC là 2026-10-23 06:30 giờ Việt Nam
+    const luc = new Date("2026-10-22T23:30:00Z");
+    expect(taoTenTam(() => 0, luc)).toBe("Kỳ thủ AAAA 23102026");
+    expect(taoTenTam(() => 0.999999, luc)).toBe("Kỳ thủ ZZZZ 23102026");
+  });
+
+  it("tên tạm có số được chấp nhận, tên người chơi thường vẫn không có số", () => {
+    expect(tenHopLe("Kỳ thủ KQMA 23102026")).toBe(true);
+    expect(tenHopLe("Kỳ thủ KQMA 2310202")).toBe(false);
+    expect(tenHopLe("An 23102026")).toBe(false);
   });
 });
 
