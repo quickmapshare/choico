@@ -54,6 +54,9 @@ import Layout from "../layouts/Layout.astro";
     font: inherit; font-weight: 600; cursor: pointer; background: var(--nhan); color: var(--nen); border: 1px solid var(--nhan);
   }
   .co-thu-nho[hidden] { display: none; }
+  /* Khi phóng to bàn cờ thì ẩn nút chat (widget bên thứ ba: nút và khung chat) để không che bàn */
+  body.co-dang-phong-to #formmailhub-widget-container,
+  body.co-dang-phong-to iframe[title="AI Chat Assistant"] { display: none !important; }
   .co-svg { width: 100%; height: auto; display: block; user-select: none; }
   /* Quân đặt trên giao điểm đường kẻ, bấm vào giao điểm để chọn hoặc đi */
   .co-o { cursor: pointer; }
@@ -455,6 +458,12 @@ import Layout from "../layouts/Layout.astro";
   const datPhongCss = (bat) => {
     banEl.classList.toggle("co-phong-to-css", bat);
     thuNhoEl.hidden = !bat;
+    capNhatPhongTo();
+  };
+  // Ẩn nút chat khi bàn đang phóng to (cả chế độ toàn màn hình thật lẫn CSS)
+  const capNhatPhongTo = () => {
+    const dang = document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css");
+    document.body.classList.toggle("co-dang-phong-to", dang);
     phongEl.textContent = nhanPhong();
   };
   phongEl.addEventListener("click", () => {
@@ -470,9 +479,7 @@ import Layout from "../layouts/Layout.astro";
   });
   thuNhoEl.addEventListener("click", () => datPhongCss(false));
   if (coFullscreen) {
-    document.addEventListener("fullscreenchange", () => {
-      phongEl.textContent = nhanPhong();
-    });
+    document.addEventListener("fullscreenchange", capNhatPhongTo);
   }
 
   // Gõ tên: bỏ ký tự không phải chữ cái, khi rời ô thì kiểm tra và lưu
