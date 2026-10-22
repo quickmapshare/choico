@@ -15,6 +15,13 @@ import Layout from "../layouts/Layout.astro";
 
   <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
   <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
+
+  <section class="co-bang-diem" aria-labelledby="co-bang-diem-tieu-de">
+    <h2 id="co-bang-diem-tieu-de">Bảng điểm</h2>
+    <p class="phu">Thắng +3 điểm, hòa +1 điểm, thua -1 điểm. Ván được tính khi kết thúc.</p>
+    <p id="co-vi-tri" class="co-vi-tri"></p>
+    <ol id="co-top10" class="co-top10"></ol>
+  </section>
 </Layout>
 
 <!-- is:global vì bàn cờ được JavaScript vẽ, CSS có phạm vi sẽ không áp dụng cho các phần tử đó -->
@@ -32,10 +39,20 @@ import Layout from "../layouts/Layout.astro";
   /* Quân đặt trên giao điểm đường kẻ, bấm vào giao điểm để chọn hoặc đi */
   .co-o { cursor: pointer; }
   .co-ban.khoa .co-o { cursor: default; }
+  .co-bang-diem { margin-top: 1rem; }
+  .co-vi-tri { font-weight: 600; min-height: 1.5em; }
+  .co-top10 { max-width: 30rem; padding-left: 1.6rem; }
+  .co-top10 li { display: flex; justify-content: space-between; gap: 1rem; padding: .15rem 0; border-bottom: 1px dotted var(--vien); }
+  .co-top10 li.minh { color: var(--nhan); font-weight: 700; }
 </style>
 
 <script>
-  import { khoiTao, nuocHopLe, apDung, kyHieu, xepHangNuoc, nuocTot, banVanBan, lamSachTen, tenHopLe } from "../lib/co-tuong.js";
+  import {
+    khoiTao, nuocHopLe, apDung, kyHieu, xepHangNuoc, nuocTot, banVanBan, lamSachTen, tenHopLe,
+    NUOC_TOI_DA,
+  } from "../lib/co-tuong.js";
+  // Địa chỉ PocketBase công khai: chỉ đọc bảng điểm, ghi điểm đi qua /api/co-tuong-van
+  const PB_CONG_KHAI = "https://api.botgap.dev";
 
   // Tên quân theo cách gọi thường thấy ở Việt Nam: quân đỏ có Tốt, quân đen có Chốt
   const TEN = { K: "Tướng", A: "Sĩ", E: "Tượng", H: "Mã", R: "Xe", C: "Pháo", P: "Tốt" };
@@ -58,7 +75,6 @@ import Layout from "../layouts/Layout.astro";
     5: { doSau: 3, haiku: 5 },
   };
   const MUC_TOI_DA = 5;
-  const NUOC_TOI_DA = 120; // đi quá số nước này (cả hai bên) thì ván hòa
   const PB_CHO_PHEP = 2500; // ms: thời gian tối đa chờ Haiku trước khi dùng nước của máy
   const KHOA_LUU = "co-tuong-van-v2";
 
@@ -101,10 +117,89 @@ import Layout from "../layouts/Layout.astro";
     return ten || "Bạn";
   }
 
+  // Mã định danh cho mỗi ván, để server không tính điểm trùng cho cùng một ván
+  let maVan = "";
+  let nuocDaDi: string[] = []; // nhật ký nước đi của ván, gửi lên server khi kết thúc
+  let daNop = false; // ván đã được ghi điểm chưa
+
+  function taoMaVan() {
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+  }
+
+  function hienBangDiem(items) {
+    const ds = document.getElementById("co-top10") as HTMLOListElement;
+    ds.replaceChildren();
+    for (const it of items) {
+      const li = document.createElement("li");
+      if (ten && it.ten === ten) li.classList.add("minh");
+      const a = document.createElement("span");
+      a.textContent = `${it.ten}`;
+      const bb = document.createElement("span");
+      bb.textContent = `${it.diem} điểm`;
+      li.append(a, bb);
+      ds.appendChild(li);
+    }
+  }
+
+  // Tải top 10 và vị trí của người chơi hiện tại
+  async function taiBangDiem() {
+    const viEl = document.getElementById("co-vi-tri") as HTMLElement;
+    try {
+      const top = await (await fetch(`${PB_CONG_KHAI}/api/collections/cho_phien_co_diem/records?perPage=10&sort=-diem,ten`)).json();
+      hienBangDiem(top.items || []);
+      if (!ten) {
+        viEl.textContent = "Nhập tên ở trên để xem vị trí của bạn.";
+        return;
+      }
+      const mine = await (await fetch(`${PB_CONG_KHAI}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`ten="${ten}"`)}`)).json();
+      const dong = mine.items?.[0];
+      if (!dong) {
+        viEl.textContent = `${ten} chưa có điểm. Hoàn thành một ván để có điểm.`;
+        return;
+      }
+      const hon = await (await fetch(`${PB_CONG_KHAI}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`diem>${dong.diem}`)}`)).json();
+      viEl.textContent = `${ten} đang ở vị trí #${(hon.totalItems || 0) + 1} với ${dong.diem} điểm.`;
+    } catch {
+      viEl.textContent = "Chưa tải được bảng điểm. Thử tải lại trang sau.";
+    }
+  }
+
+  // Gửi nhật ký ván lên server để tính điểm. Mỗi ván chỉ gửi thành công một lần.
+  async function nopDiem() {
+    if (!ketThuc || daNop || nuocDaDi.length === 0) return;
+    if (!tenHopLe(ten)) {
+      hienTrangThai(`${trangThai.textContent} Nhập tên để ghi điểm.`);
+      return;
+    }
+    try {
+      const r = await fetch("/api/co-tuong-van", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ma_van: maVan, ten, nuoc: nuocDaDi }),
+      });
+      if (r.status === 409) {
+        daNop = true; // ván đã được tính trước đó
+      } else if (r.ok) {
+        const { diem_cong, tong_diem } = await r.json();
+        daNop = true;
+        const dau = diem_cong > 0 ? "+" : "";
+        hienTrangThai(`${trangThai.textContent} Điểm ván này: ${dau}${diem_cong}. Tổng điểm: ${tong_diem}.`);
+      } else {
+        hienTrangThai(`${trangThai.textContent} Chưa ghi được điểm, sẽ thử lại khi tải lại trang.`);
+      }
+    } catch {
+      hienTrangThai(`${trangThai.textContent} Chưa ghi được điểm, sẽ thử lại khi tải lại trang.`);
+    }
+    luuTrangThai("r");
+    void taiBangDiem();
+  }
+
   function luuTrangThai(luot) {
     try {
       localStorage.setItem(KHOA_LUU, JSON.stringify({
         b, luot, capDo, soNuoc, ketThuc, nuocCuoi, thongBao: trangThai.textContent,
+        maVan, nuocDaDi, daNop,
       }));
     } catch {
       // Trình duyệt chặn localStorage: vẫn chơi bình thường, chỉ không nhớ được ván
@@ -201,6 +296,7 @@ import Layout from "../layouts/Layout.astro";
     if (ketQua === "thang") hienTrangThai(`${tenHienThi()} thắng! Lên mức ${capDo}/${MUC_TOI_DA}.`);
     if (ketQua === "thua") hienTrangThai(`${tenHienThi()} thua. Xuống mức ${capDo}/${MUC_TOI_DA}.`);
     if (ketQua === "hoa") hienTrangThai(`Ván hòa. Giữ nguyên mức ${capDo}/${MUC_TOI_DA}.`);
+    void nopDiem();
   }
 
   // Trả về true nếu bên s hết nước đi (bị chiếu hết hoặc hết nước)
@@ -243,6 +339,7 @@ import Layout from "../layouts/Layout.astro";
       apDung(b, chonNuoc.m);
       nuocCuoi = [chonNuoc.m.tu, chonNuoc.m.den];
       soNuoc++;
+      nuocDaDi.push(chonNuoc.nuoc);
     }
     if (kiemHetNuoc("r")) {
       ketThucVan("thua"); // đỏ hết nước đi: người chơi thua
@@ -272,6 +369,7 @@ import Layout from "../layouts/Layout.astro";
         apDung(b, m);
         nuocCuoi = [m.tu, m.den];
         soNuoc++;
+        nuocDaDi.push(kyHieu(m));
         chon = null;
         gioDi = [];
         if (kiemHetNuoc("b")) {
@@ -307,6 +405,9 @@ import Layout from "../layouts/Layout.astro";
     ketThuc = false;
     dangChoMay = false;
     soNuoc = 0;
+    maVan = taoMaVan();
+    nuocDaDi = [];
+    daNop = false;
     hienTrangThai(`${tenHienThi()} đi trước (quân đỏ).`);
     luuTrangThai("r");
     ve();
@@ -327,6 +428,9 @@ import Layout from "../layouts/Layout.astro";
     ten = t;
     tenEl.value = t;
     luuTen(t);
+    // Ván đã kết thúc nhưng chưa ghi điểm vì thiếu tên: ghi ngay bây giờ
+    if (ketThuc && !daNop) void nopDiem();
+    void taiBangDiem();
   });
 
   ten = docTen();
@@ -340,12 +444,18 @@ import Layout from "../layouts/Layout.astro";
     soNuoc = Number.isInteger(d.soNuoc) ? d.soNuoc : 0;
     ketThuc = !!d.ketThuc;
     nuocCuoi = Array.isArray(d.nuocCuoi) ? d.nuocCuoi : null;
+    maVan = typeof d.maVan === "string" && d.maVan ? d.maVan : taoMaVan();
+    nuocDaDi = Array.isArray(d.nuocDaDi) ? d.nuocDaDi : [];
+    daNop = !!d.daNop;
     chon = null;
     gioDi = [];
     hienTrangThai(d.thongBao || "");
     ve();
     if (d.luot === "b" && !ketThuc) void mayDi();
+    // Ván đã kết thúc nhưng chưa ghi điểm (ví dụ mạng lỗi lúc trước): thử ghi lại
+    if (ketThuc && !daNop) void nopDiem();
   } else {
     vanMoi();
   }
+  void taiBangDiem();
 </script>

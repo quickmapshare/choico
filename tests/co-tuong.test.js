@@ -2,7 +2,43 @@ import { describe, it, expect } from "vitest";
 import {
   khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu,
   timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe,
+  xacMinhVan,
 } from "../src/lib/co-tuong.js";
+
+describe("xác minh ván để tính điểm", () => {
+  // Chơi ngẫu nhiên đến khi hết nước hoặc đủ 120 nước, trả về nhật ký nước đi
+  function vanNgauNhien() {
+    const b = khoiTao();
+    const log = [];
+    let s = "r";
+    while (log.length < 120) {
+      const nuoc = nuocHopLe(b, s);
+      if (nuoc.length === 0) break;
+      const m = nuoc[Math.floor(Math.random() * nuoc.length)];
+      log.push(kyHieu(m));
+      apDung(b, m);
+      s = s === "r" ? "b" : "r";
+    }
+    return log;
+  }
+
+  it("ván ngẫu nhiên hợp lệ luôn được nhận và có kết quả đúng", () => {
+    for (let i = 0; i < 20; i++) {
+      const log = vanNgauNhien();
+      const kq = xacMinhVan(log);
+      if (log.length >= 120) expect(kq).toEqual({ hop_le: true, ket_qua: expect.stringMatching(/thang|thua|hoa/) });
+      else expect(kq.hop_le).toBe(true);
+    }
+  });
+
+  it("nước đi không hợp lệ hoặc ván chưa kết thúc thì bị từ chối", () => {
+    expect(xacMinhVan(["a0a0"])).toEqual({ hop_le: false });
+    // Đỏ đi nước của đen: không hợp lệ
+    expect(xacMinhVan(["a3a4"])).toEqual({ hop_le: false });
+    // Ván chưa kết thúc (mới 1 nước)
+    expect(xacMinhVan(["a6a5"])).toEqual({ hop_le: false });
+  });
+});
 
 describe("tên người chơi", () => {
   it("chấp nhận chữ cái, có dấu tiếng Việt và khoảng trắng giữa các từ", () => {

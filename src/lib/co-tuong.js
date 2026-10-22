@@ -229,6 +229,27 @@ export function timNuoc(b, s, ky) {
   return nuocHopLe(b, s).find((m) => kyHieu(m) === ky) || null;
 }
 
+export const NUOC_TOI_DA = 120; // đi quá số nước này (cả hai bên) thì ván hòa
+export const DIEM_THEO_KET_QUA = { thang: 3, hoa: 1, thua: -1 };
+
+// Chạy lại cả ván từ thế cờ mở đầu để kiểm tra. Đỏ (người chơi) đi trước, các nước xen kẽ.
+// Trả về { hop_le, ket_qua } với ket_qua là "thang" hoặc "thua" (theo người chơi là đỏ) hoặc "hoa".
+export function xacMinhVan(danhSach) {
+  const b = khoiTao();
+  let s = "r";
+  for (let i = 0; i < danhSach.length; i++) {
+    if (i >= NUOC_TOI_DA) return { hop_le: false };
+    const m = timNuoc(b, s, danhSach[i]);
+    if (!m) return { hop_le: false };
+    apDung(b, m);
+    s = doiBen(s);
+  }
+  // s là bên sẽ đi tiếp: nếu bên đó hết nước thì ván đã kết thúc
+  if (nuocHopLe(b, s).length === 0) return { hop_le: true, ket_qua: s === "b" ? "thang" : "thua" };
+  if (danhSach.length >= NUOC_TOI_DA) return { hop_le: true, ket_qua: "hoa" };
+  return { hop_le: false }; // ván chưa kết thúc thì không tính điểm
+}
+
 // Điểm của bàn theo góc nhìn bên s: dương là s hơn.
 export function danhGia(b, s) {
   let diem = 0;
