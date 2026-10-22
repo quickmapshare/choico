@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Đẩy các commit trên nhánh hiện tại lên origin. Không tự commit: nếu còn thay đổi chưa commit thì dừng lại.
+# Đẩy các commit trên nhánh hiện tại lên origin. Nếu còn thay đổi chưa commit thì hỏi lời nhắn rồi commit tất cả trước khi đẩy.
 # Dùng: bash push.sh
 set -euo pipefail
 
@@ -12,10 +12,15 @@ if [ -z "$nhanh" ]; then
 fi
 
 if [ -n "$(git status --porcelain)" ]; then
-  echo "Còn thay đổi chưa commit, không đẩy:"
+  echo "Còn thay đổi chưa commit:"
   git status --short
-  echo "Commit hoặc bỏ các thay đổi đó rồi chạy lại."
-  exit 1
+  read -r -p "Lời nhắn commit (bỏ trống để dùng mặc định): " loi_nhan
+  if [ -z "$loi_nhan" ]; then
+    loi_nhan="Cập nhật $(date +%Y-%m-%d_%H:%M)"
+  fi
+  git add -A
+  git commit -q -m "$loi_nhan"
+  echo "Đã commit: $loi_nhan"
 fi
 
 git fetch -q origin
