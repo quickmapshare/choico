@@ -116,8 +116,8 @@ import Layout from "../layouts/Layout.astro";
     1: { doSauToiDa: 1, haiku: 0 },
     2: { doSauToiDa: 2, haiku: 0 },
     3: { doSauToiDa: 3, haiku: 0 },
-    4: { doSauToiDa: 4, haiku: 3 },
-    5: { doSauToiDa: 6, haiku: 3 },
+    4: { doSauToiDa: 4, haiku: 0 },
+    5: { doSauToiDa: 6, haiku: 0 },
   };
   const thoiGianNghi = (muc) => muc * 1000; // ms
   const MUC_TOI_DA = 5;
@@ -373,7 +373,7 @@ import Layout from "../layouts/Layout.astro";
     return nuocHopLe(b, s).length === 0;
   }
 
-  // Máy chọn nước. Mức 4 và 5: Haiku chọn một trong các nước minimax xếp đầu, nếu lỗi thì dùng nước tốt nhất.
+  // Máy chọn nước. Nếu mức có haiku > 0 thì Haiku chọn trong các nước minimax xếp đầu, lỗi thì dùng nước tốt nhất. Hiện tất cả mức đều tắt Haiku (haiku: 0).
   async function mayDi() {
     dangChoMay = true;
     hienTrangThai("Máy đang nghĩ…");
