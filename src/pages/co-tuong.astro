@@ -3,16 +3,10 @@ import Layout from "../layouts/Layout.astro";
 ---
 <Layout lang="vi" tieuDe="Cờ tướng với máy" moTa="Chơi cờ tướng với máy. Bạn cầm quân đỏ, máy đi quân đen.">
   <h1>Cờ tướng với máy</h1>
-  <p class="phu">Bạn cầm quân đỏ và đi trước. Mức "Khó" dùng Haiku 5.5 để chọn nước trong các nước máy đã phân tích, nhưng chỉ khi bạn thắng 2 ván liên tiếp trở lên. Thua một ván thì máy trở lại minimax thuần.</p>
+  <p class="phu">Bạn cầm quân đỏ và đi trước. Bắt đầu ở mức 1/5: thắng thì lên một mức, hòa giữ nguyên, thua thì xuống một mức. Mức 4 và 5 có Haiku 5.5 chọn nước trong các nước máy đã phân tích. Ván hòa khi đi quá 120 nước.</p>
 
   <div class="co-dieu-khien">
-    <label>Mức chơi
-      <select id="co-muc">
-        <option value="de">Dễ</option>
-        <option value="vua" selected>Vừa</option>
-        <option value="kho">Khó (Haiku khi bạn thắng 2 ván liên tiếp)</option>
-      </select>
-    </label>
+    <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
     <button type="button" id="co-moi">Ván mới</button>
   </div>
 
@@ -20,14 +14,14 @@ import Layout from "../layouts/Layout.astro";
   <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
 </Layout>
 
-<!-- is:global vì ô và quân cờ được JavaScript tạo ra, CSS có phạm vi sẽ không áp dụng cho chúng -->
+<!-- is:global vì bàn cờ được JavaScript vẽ, CSS có phạm vi sẽ không áp dụng cho các phần tử đó -->
 <style is:global>
   .co-dieu-khien { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1rem 0; }
-  .co-dieu-khien select, .co-dieu-khien button {
-    font: inherit; padding: .4rem .6rem; border-radius: .3rem; border: 1px solid var(--vien);
-    background: var(--nen); color: var(--chu);
+  .co-dieu-khien button {
+    font: inherit; padding: .4rem .6rem; border-radius: .3rem; border: 1px solid var(--nhan);
+    background: var(--nhan); color: var(--nen); font-weight: 600; cursor: pointer;
   }
-  .co-dieu-khien button { background: var(--nhan); color: var(--nen); border-color: var(--nhan); font-weight: 600; cursor: pointer; }
+  .co-muc-hien-tai { font-weight: 600; }
   .co-trang-thai { min-height: 1.5em; font-weight: 600; }
   .co-ban { width: 100%; max-width: 460px; margin: .5rem 0 1.5rem; }
   .co-svg { width: 100%; height: auto; display: block; user-select: none; }
@@ -50,11 +44,23 @@ import Layout from "../layouts/Layout.astro";
   const SVG_NS = "http://www.w3.org/2000/svg";
   const toaDoX = (c) => LE + c * KC;
   const toaDoY = (r) => LE + r * KC;
+
+  // Năm mức chơi. doSau: độ sâu minimax. haiku: số nước đầu bảng minimax để Haiku chọn (0 = không dùng Haiku).
+  const MUC = {
+    1: { doSau: 1, haiku: 0 },
+    2: { doSau: 2, haiku: 0 },
+    3: { doSau: 3, haiku: 0 },
+    4: { doSau: 3, haiku: 3 },
+    5: { doSau: 3, haiku: 5 },
+  };
+  const MUC_TOI_DA = 5;
+  const NUOC_TOI_DA = 120; // đi quá số nước này (cả hai bên) thì ván hòa
   const PB_CHO_PHEP = 2500; // ms: thời gian tối đa chờ Haiku trước khi dùng nước của máy
+  const KHOA_LUU = "co-tuong-van-v2";
 
   const banEl = document.getElementById("co-ban") as HTMLElement;
   const trangThai = document.getElementById("co-trang-thai") as HTMLElement;
-  const mucEl = document.getElementById("co-muc") as HTMLSelectElement;
+  const mucHienTai = document.getElementById("co-muc-hien-tai") as HTMLElement;
   const moiEl = document.getElementById("co-moi") as HTMLButtonElement;
 
   let b: (string | null)[][];
@@ -63,17 +69,13 @@ import Layout from "../layouts/Layout.astro";
   let nuocCuoi: [number, number][] | null = null;
   let dangChoMay = false;
   let ketThuc = false;
-  // Số ván thắng liên tiếp của người chơi. Mức Khó chỉ gọi Haiku khi chuỗi này từ 2 trở lên.
-  let thangLienTiep = 0;
-  const NGUONG_HAIKU = 2;
-  // Lưu ván trong localStorage của trình duyệt (chỉ người chơi này thấy, không gửi lên máy chủ)
-  const KHOA_LUU = "co-tuong-van";
-  const MUC_HOP_LE = ["de", "vua", "kho"];
+  let capDo = 1; // mức hiện tại, 1 đến 5
+  let soNuoc = 0; // số nước đã đi trong ván (cả hai bên)
 
   function luuTrangThai(luot) {
     try {
       localStorage.setItem(KHOA_LUU, JSON.stringify({
-        b, luot, thangLienTiep, muc: mucEl.value, ketThuc, nuocCuoi, thongBao: trangThai.textContent,
+        b, luot, capDo, soNuoc, ketThuc, nuocCuoi, thongBao: trangThai.textContent,
       }));
     } catch {
       // Trình duyệt chặn localStorage: vẫn chơi bình thường, chỉ không nhớ được ván
@@ -98,10 +100,16 @@ import Layout from "../layouts/Layout.astro";
     return e;
   }
 
+  function hienMuc() {
+    const cap = MUC[capDo];
+    mucHienTai.textContent = `Mức ${capDo}/${MUC_TOI_DA}${cap.haiku ? " (có Haiku 5.5)" : ""}`;
+  }
+
   // Vẽ bàn theo kiểu Việt Nam: hàng 0 ở trên (phía đen), hàng 9 ở dưới (phía đỏ), có khoảng sông ở giữa
   function ve() {
     banEl.replaceChildren();
     banEl.classList.toggle("khoa", ketThuc || dangChoMay);
+    hienMuc();
     const s = svgEl("svg", { viewBox: `0 0 ${RONG} ${CAO}`, class: "co-svg", role: "img", "aria-label": "Bàn cờ tướng" }, banEl);
     const net = { stroke: "#7a4b1e", "stroke-width": 1.5, fill: "none" };
 
@@ -156,25 +164,30 @@ import Layout from "../layouts/Layout.astro";
     trangThai.textContent = text;
   }
 
-  function kiemKetThuc(s) {
-    if (nuocHopLe(b, s).length === 0) {
-      ketThuc = true;
-      hienTrangThai(s === "r" ? "Bạn thua. Máy thắng." : "Bạn thắng!");
-      return true;
-    }
-    return false;
+  // Cập nhật mức theo kết quả: thắng +1 (tối đa 5), thua -1 (tối thiểu 1), hòa giữ nguyên
+  function ketThucVan(ketQua) {
+    ketThuc = true;
+    if (ketQua === "thang") capDo = Math.min(MUC_TOI_DA, capDo + 1);
+    if (ketQua === "thua") capDo = Math.max(1, capDo - 1);
+    if (ketQua === "thang") hienTrangThai(`Bạn thắng! Lên mức ${capDo}/${MUC_TOI_DA}.`);
+    if (ketQua === "thua") hienTrangThai(`Bạn thua. Xuống mức ${capDo}/${MUC_TOI_DA}.`);
+    if (ketQua === "hoa") hienTrangThai(`Ván hòa. Giữ nguyên mức ${capDo}/${MUC_TOI_DA}.`);
   }
 
-  // Máy chọn nước. Mức Khó khi người chơi đang thắng liên tiếp: Haiku chọn một trong năm nước minimax xếp đầu,
-  // nếu lỗi thì dùng nước đầu. Các trường hợp khác chỉ dùng minimax.
+  // Trả về true nếu bên s hết nước đi (bị chiếu hết hoặc hết nước)
+  function kiemHetNuoc(s) {
+    return nuocHopLe(b, s).length === 0;
+  }
+
+  // Máy chọn nước. Mức 4 và 5: Haiku chọn một trong các nước minimax xếp đầu, nếu lỗi thì dùng nước tốt nhất.
   async function mayDi() {
     dangChoMay = true;
     hienTrangThai("Máy đang nghĩ…");
     ve();
-    const doSau = mucEl.value === "de" ? 1 : mucEl.value === "vua" ? 2 : 3;
+    const cap = MUC[capDo];
     let chonNuoc;
-    if (mucEl.value === "kho" && thangLienTiep >= NGUONG_HAIKU) {
-      const xep = xepHangNuoc(b, "b", doSau).slice(0, 5);
+    if (cap.haiku > 0) {
+      const xep = xepHangNuoc(b, "b", cap.doSau).slice(0, cap.haiku);
       chonNuoc = xep[0];
       try {
         const ctrl = new AbortController();
@@ -194,15 +207,21 @@ import Layout from "../layouts/Layout.astro";
         // Lỗi mạng hoặc hết giờ: giữ nước tốt nhất của minimax
       }
     } else {
-      chonNuoc = nuocTot(b, "b", doSau);
+      chonNuoc = nuocTot(b, "b", cap.doSau);
     }
+    dangChoMay = false;
     if (chonNuoc) {
       apDung(b, chonNuoc.m);
       nuocCuoi = [chonNuoc.m.tu, chonNuoc.m.den];
+      soNuoc++;
     }
-    dangChoMay = false;
-    if (kiemKetThuc("r")) {
-      thangLienTiep = 0; // thua thì dừng dùng Haiku cho đến khi thắng liên tiếp lại
+    if (kiemHetNuoc("r")) {
+      ketThucVan("thua"); // đỏ hết nước đi: người chơi thua
+      luuTrangThai("r");
+      return ve();
+    }
+    if (soNuoc >= NUOC_TOI_DA) {
+      ketThucVan("hoa");
       luuTrangThai("r");
       return ve();
     }
@@ -223,10 +242,16 @@ import Layout from "../layouts/Layout.astro";
       if (m) {
         apDung(b, m);
         nuocCuoi = [m.tu, m.den];
+        soNuoc++;
         chon = null;
         gioDi = [];
-        if (kiemKetThuc("b")) {
-          thangLienTiep++;
+        if (kiemHetNuoc("b")) {
+          ketThucVan("thang"); // đen hết nước đi: người chơi thắng
+          luuTrangThai("r");
+          return ve();
+        }
+        if (soNuoc >= NUOC_TOI_DA) {
+          ketThucVan("hoa");
           luuTrangThai("r");
           return ve();
         }
@@ -252,20 +277,20 @@ import Layout from "../layouts/Layout.astro";
     nuocCuoi = null;
     ketThuc = false;
     dangChoMay = false;
+    soNuoc = 0;
     hienTrangThai("Bạn đi trước (quân đỏ).");
     luuTrangThai("r");
     ve();
   }
 
   moiEl.addEventListener("click", vanMoi);
-  mucEl.addEventListener("change", vanMoi);
 
   // Khôi phục ván đang dở (nếu có), không thì bắt đầu ván mới
   const d = docTrangThai();
   if (d) {
     b = d.b;
-    thangLienTiep = Number(d.thangLienTiep) || 0;
-    if (MUC_HOP_LE.includes(d.muc)) mucEl.value = d.muc;
+    capDo = Number.isInteger(d.capDo) && d.capDo >= 1 && d.capDo <= MUC_TOI_DA ? d.capDo : 1;
+    soNuoc = Number.isInteger(d.soNuoc) ? d.soNuoc : 0;
     ketThuc = !!d.ketThuc;
     nuocCuoi = Array.isArray(d.nuocCuoi) ? d.nuocCuoi : null;
     chon = null;
