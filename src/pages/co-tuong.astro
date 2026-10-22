@@ -64,6 +64,7 @@ import Layout from "../layouts/Layout.astro";
   }
   .co-chip-r { color: #b3261e; }
   .co-chip-b { color: #1f1f1f; }
+  .co-chip-moi { background: #fff3c4; box-shadow: 0 0 0 3px #e0a100; }
   /* Chế độ toàn màn hình: chỉ bàn cờ, căn giữa, cao bằng màn hình */
   .co-ban:fullscreen { max-width: none; margin: 0; padding: 1rem; box-sizing: border-box; background: var(--nen); display: flex; align-items: center; justify-content: center; }
   .co-ban:fullscreen .co-svg { width: auto; height: 100%; max-width: 100%; max-height: 100vh; }
@@ -219,6 +220,7 @@ import Layout from "../layouts/Layout.astro";
   let nuocDaDi: string[] = []; // nhật ký nước đi của ván, gửi lên server khi kết thúc
   let daNop = false; // ván đã được ghi điểm chưa
   let soHoan = 0; // số nước đã hoãn trong ván, mỗi nước trừ 0,5 điểm
+  let anCuoi: string | null = null; // quân vừa bị ăn gần nhất (mã bên + loại, ví dụ "bR"), đánh dấu trong khay
 
   // Điểm có thể là số lẻ 0,5: dùng dấu phẩy theo cách viết tiếng Việt
   const soDiem = (x: number) => String(x).replace(".", ",");
@@ -305,7 +307,7 @@ import Layout from "../layouts/Layout.astro";
     try {
       localStorage.setItem(KHOA_LUU, JSON.stringify({
         b, luot, capDo, soNuoc, ketThuc, nuocCuoi, thongBao: trangThai.textContent,
-        maVan, nuocDaDi, daNop, soHoan,
+        maVan, nuocDaDi, daNop, soHoan, anCuoi,
       }));
     } catch {
       // Trình duyệt chặn localStorage: vẫn chơi bình thường, chỉ không nhớ được ván
@@ -341,12 +343,14 @@ import Layout from "../layouts/Layout.astro";
     const dien = (id, list, s) => {
       const el = document.getElementById(id) as HTMLElement;
       el.replaceChildren();
-      for (const t of list) {
+      // Quân vừa bị ăn của bên s: đánh dấu quân cùng loại cuối cùng trong khay
+      const noi = anCuoi && anCuoi[0] === s ? list.lastIndexOf(anCuoi[1]) : -1;
+      list.forEach((t, i) => {
         const chip = document.createElement("span");
-        chip.className = "co-chip co-chip-" + s;
+        chip.className = "co-chip co-chip-" + s + (i === noi ? " co-chip-moi" : "");
         chip.textContent = s === "r" ? TEN[t] : TEN_DEN[t];
         el.appendChild(chip);
-      }
+      });
     };
     dien("co-an-den", ket.b, "b");
     dien("co-an-do", ket.r, "r");
@@ -624,6 +628,7 @@ import Layout from "../layouts/Layout.astro";
     if (chonNuoc) {
       apDung(b, chonNuoc.m);
       nuocCuoi = [chonNuoc.m.tu, chonNuoc.m.den];
+      if (chonNuoc.m.an) anCuoi = chonNuoc.m.an;
       hieuUng = { batDau: Date.now(), quanBiAn: chonNuoc.m.an || null, chieu: biChieu(b, "r") };
       phatTiengNuoc(Boolean(chonNuoc.m.an), hieuUng.chieu);
       soNuoc++;
@@ -657,6 +662,7 @@ import Layout from "../layouts/Layout.astro";
       if (m) {
         apDung(b, m);
         nuocCuoi = [m.tu, m.den];
+        if (m.an) anCuoi = m.an;
         hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, chieu: biChieu(b, "b") };
         phatTiengNuoc(Boolean(m.an), hieuUng.chieu);
         soNuoc++;
@@ -704,10 +710,12 @@ import Layout from "../layouts/Layout.astro";
     b = khoiTao();
     let s = "r";
     nuocCuoi = null;
+    anCuoi = null;
     for (const ky of nuocDaDi) {
-      const m = timNuoc(b, s, ky);
+      const m = timNuoc(b, s, ky)!;
       apDung(b, m);
       nuocCuoi = [m.tu, m.den];
+      if (m.an) anCuoi = m.an;
       s = s === "r" ? "b" : "r";
     }
     soNuoc = nuocDaDi.length;
@@ -734,6 +742,7 @@ import Layout from "../layouts/Layout.astro";
     nuocDaDi = [];
     daNop = false;
     soHoan = 0;
+    anCuoi = null;
     thongBaoDiem("");
     hienTrangThai(`${tenHienThi()} đi trước (quân đỏ).`);
     luuTrangThai("r");
@@ -810,6 +819,7 @@ import Layout from "../layouts/Layout.astro";
     nuocDaDi = Array.isArray(d.nuocDaDi) ? d.nuocDaDi : [];
     daNop = !!d.daNop;
     soHoan = Number.isInteger(d.soHoan) && d.soHoan >= 0 && d.soHoan <= HOAN_TOI_DA ? d.soHoan : 0;
+    anCuoi = typeof d.anCuoi === "string" ? d.anCuoi : null;
     chon = null;
     gioDi = [];
     hienTrangThai(d.thongBao || "");
