@@ -14,6 +14,7 @@ import Layout from "../layouts/Layout.astro";
   </div>
 
   <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
+  <p id="co-ghi-diem" class="phu" aria-live="polite"></p>
   <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
 
   <section class="co-bang-diem" aria-labelledby="co-bang-diem-tieu-de">
@@ -165,11 +166,16 @@ import Layout from "../layouts/Layout.astro";
     }
   }
 
+  // Thông báo về việc ghi điểm nằm ở dòng riêng, không lưu vào trạng thái ván để không bị nối trùng khi tải lại
+  function thongBaoDiem(text) {
+    (document.getElementById("co-ghi-diem") as HTMLElement).textContent = text;
+  }
+
   // Gửi nhật ký ván lên server để tính điểm. Mỗi ván chỉ gửi thành công một lần.
   async function nopDiem() {
     if (!ketThuc || daNop || nuocDaDi.length === 0) return;
     if (!tenHopLe(ten)) {
-      hienTrangThai(`${trangThai.textContent} Nhập tên để ghi điểm.`);
+      thongBaoDiem("Nhập tên để ghi điểm.");
       return;
     }
     try {
@@ -184,12 +190,12 @@ import Layout from "../layouts/Layout.astro";
         const { diem_cong, tong_diem } = await r.json();
         daNop = true;
         const dau = diem_cong > 0 ? "+" : "";
-        hienTrangThai(`${trangThai.textContent} Điểm ván này: ${dau}${diem_cong}. Tổng điểm: ${tong_diem}.`);
+        thongBaoDiem(`Điểm ván này: ${dau}${diem_cong}. Tổng điểm: ${tong_diem}.`);
       } else {
-        hienTrangThai(`${trangThai.textContent} Chưa ghi được điểm, sẽ thử lại khi tải lại trang.`);
+        thongBaoDiem("Chưa ghi được điểm, sẽ thử lại khi tải lại trang.");
       }
     } catch {
-      hienTrangThai(`${trangThai.textContent} Chưa ghi được điểm, sẽ thử lại khi tải lại trang.`);
+      thongBaoDiem("Chưa ghi được điểm, sẽ thử lại khi tải lại trang.");
     }
     luuTrangThai("r");
     void taiBangDiem();
@@ -408,6 +414,7 @@ import Layout from "../layouts/Layout.astro";
     maVan = taoMaVan();
     nuocDaDi = [];
     daNop = false;
+    thongBaoDiem("");
     hienTrangThai(`${tenHienThi()} đi trước (quân đỏ).`);
     luuTrangThai("r");
     ve();
