@@ -19,7 +19,7 @@ const NGON_NGU = {
   ja: { mon: "シャンチー", moi: "シャンチーで対局しませんか", phong: "'Yu Gothic', 'Meiryo', 'Hiragino Sans', 'Noto Sans JP', sans-serif" },
 };
 
-// Bàn cờ cắt một góc kèm vài quân, cùng kiểu với bàn cờ trong trang (xem src/lib/co-tuong-ban.js)
+// Bàn cờ cắt một góc kèm vài quân, cùng kiểu với bàn cờ trong trang (xem src/lib/co-tuong/ve.js)
 function banCo() {
   const KC = 86;
   const x = (c) => 40 + c * KC;

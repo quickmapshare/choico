@@ -13,7 +13,7 @@ const chu = JSON.stringify(Object.fromEntries(Object.entries(CHU).map(([ma, c]) 
 </Layout>
 
 <script>
-  import { hoanTatDangNhap } from "../lib/co-tuong-tai-khoan.js";
+  import { hoanTatDangNhap } from "../lib/chung/tai-khoan.js";
   const chu = JSON.parse(document.getElementById("dn-chu")?.textContent || "{}");
   // Ngôn ngữ đã lưu ở bộ chọn ngôn ngữ; chưa chọn thì lấy theo trình duyệt (khớp 5 ngôn ngữ, còn lại tiếng Anh)
   // Ưu tiên ngôn ngữ của trang vừa bấm đăng nhập (suy từ tiền tố đường dẫn đã lưu), rồi tới lựa chọn đã lưu

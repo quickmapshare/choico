@@ -1,8 +1,10 @@
-// Tiện ích dùng chung cho trận giữa hai người (khép kín và thượng đài). Không phải route.
+// Tiện ích dùng chung cho trận giữa hai người (khép kín và thượng đài) của mọi loại cờ. Không phải route.
 // Người chơi là tài khoản (header Authorization) hoặc khách (header x-khach-id, khép kín không cần tài khoản).
-import { dangNhap, xacThuc, tra } from "./pocketbase.js";
+// Trận ghi loại cờ ở cột tro_choi (trận cũ để trống là cờ tướng).
+import { xacThuc, tra, headerAdmin, docBang } from "./pocketbase.js";
 import { capNhatDiem } from "./diem.js";
-import { ketQuaChoBen, laMay } from "../../src/lib/co-tuong-tran.js";
+import { ketQuaChoBen, laMay } from "../../src/lib/chung/tran.js";
+import { TRO_CHOI, layTroChoi } from "../../src/lib/tro-choi.js";
 
 export const BANG_TRAN = "co_tuong_tran";
 export const MAU_MA = /^[a-f0-9]{32}$/; // mã trận sinh bằng crypto.randomUUID() bỏ dấu gạch
@@ -36,28 +38,11 @@ export async function layNguoi(pb, request, { nho = false } = {}) {
   return null;
 }
 
-// Token admin được giữ lại trong bộ nhớ của worker một lúc, để mỗi yêu cầu không phải đăng nhập lại (tiết kiệm một lượt gọi).
-let tokenAdmin = null;
-let hanTokenAdmin = 0;
-const GIU_TOKEN_MS = 10 * 60 * 1000;
-
-// Header cho các lời gọi PocketBase bằng tài khoản admin
-export async function headerAdmin(env) {
-  if (!tokenAdmin || Date.now() > hanTokenAdmin) {
-    tokenAdmin = await dangNhap(env.PB_URL, env.PB_ADMIN_EMAIL, env.PB_ADMIN_PASSWORD);
-    hanTokenAdmin = Date.now() + GIU_TOKEN_MS;
-  }
-  return { authorization: tokenAdmin, "content-type": "application/json" };
-}
-
-// Bỏ token đã giữ (khi PocketBase từ chối), lần gọi sau sẽ đăng nhập lại
-export function quenTokenAdmin() {
-  tokenAdmin = null;
-}
+// Loại cờ của một trận (đối tượng trong src/lib/tro-choi.js). Trận cũ để trống là cờ tướng.
+export const troChoiTran = (tran) => layTroChoi(tran.tro_choi) ?? TRO_CHOI.co_tuong;
 
 export async function docTran(pb, H, ma) {
-  const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records?perPage=1&filter=${encodeURIComponent(`ma="${ma}"`)}`, { headers: H });
-  if (r.status === 401 || r.status === 403) quenTokenAdmin(); // token cũ hết hạn: lần sau đăng nhập lại
+  const r = await docBang(pb, H, BANG_TRAN, `perPage=1&filter=${encodeURIComponent(`ma="${ma}"`)}`);
   if (!r.ok) return { loi: "khong_doc_duoc_tran" };
   return { tran: (await r.json()).items?.[0] ?? null };
 }
@@ -66,7 +51,8 @@ export async function docTran(pb, H, ma) {
 // tóm tắt "tom_tat" (số nước, nước cuối, hạn nước, trạng thái): bên kia đi quân ngay khi chuông rung, không phải gọi server đọc
 // lại. Nước đi không phải dữ liệu riêng tư, và mã chuông chỉ người trong trận biết.
 export const BANG_TIN_HIEU = "co_tuong_tin_hieu";
-export const TIN_HIEU_SANH = "sanhthuongdai01"; // chuông chung của sảnh thượng đài
+// Chuông chung của sảnh thượng đài, mỗi loại cờ một cái. Không bao giờ xóa khi dọn trận.
+const CHUONG_SANH = new Set(Object.values(TRO_CHOI).map((t) => t.chuongSanh));
 
 async function taoTinHieu(pb, H) {
   const r = await fetch(`${pb}/api/collections/${BANG_TIN_HIEU}/records`, { method: "POST", headers: H, body: JSON.stringify({ phien: 0 }) });
@@ -91,6 +77,14 @@ export function tomTatTran(tran, gui = 0) {
   const tt = { n: nuoc.length, ky: nuoc[nuoc.length - 1] || "", han: tran.han_nuoc || "", trang_thai: tran.trang_thai };
   if (gui) tt.gui = gui;
   return tt;
+}
+
+// Xóa một trận kèm chuông riêng của nó (chuông chung của sảnh thì giữ)
+export async function xoaTran(pb, H, t) {
+  const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records/${t.id}`, { method: "DELETE", headers: H });
+  if (r.ok && t.tin_hieu && !CHUONG_SANH.has(t.tin_hieu)) {
+    await fetch(`${pb}/api/collections/${BANG_TIN_HIEU}/records/${t.tin_hieu}`, { method: "DELETE", headers: H });
+  }
 }
 
 // Ghi thay đổi của trận rồi rung chuông của trận đó. Rung sau khi ghi xong: người nghe đi nước tiếp ngay thì server đã có
@@ -118,7 +112,7 @@ export async function docNguoiVaTran(env, request, ma) {
   }
 }
 
-// Tạo trận mới kèm chuông riêng của trận
+// Tạo trận mới kèm chuông riêng của trận. data phải có tro_choi.
 export async function taoTran(pb, H, data) {
   const tinHieu = await taoTinHieu(pb, H);
   return fetch(`${pb}/api/collections/${BANG_TRAN}/records`, { method: "POST", headers: H, body: JSON.stringify({ ...data, tin_hieu: tinHieu }) });
@@ -126,7 +120,7 @@ export async function taoTran(pb, H, data) {
 
 export const sauPhut = (giay) => new Date(Date.now() + giay * 1000).toISOString();
 
-// Dọn bản ghi trận cũ (kèm chuông của trận). Chỉ dọn hai loại, trận thượng đài có người chơi được giữ lại:
+// Dọn bản ghi trận cũ (kèm chuông của trận) của mọi loại cờ. Chỉ dọn hai loại, trận thượng đài có người chơi được giữ lại:
 //  - link không ai vào: đã đóng hơn 1 ngày, hoặc còn "cho" sau 2 ngày (link khép kín hết hạn 24 giờ, đài tự rời sau 30 phút)
 //  - trận do khách tạo (mã "k_..."): không thao tác gì hơn 7 ngày
 // Không có lịch chạy định kỳ nên gọi kèm lúc tạo link / lên đài (sau khi đã trả lời), mỗi worker tối đa một lần mỗi 5 phút,
@@ -149,21 +143,18 @@ export async function donTranCu(pb, H) {
   // "k_%" trong LIKE còn khớp mã tài khoản bắt đầu bằng "k" ("_" là ký tự đại diện), nên lọc lại cho đúng mã khách
   // Máy trên sảnh thượng đài luôn đứng sẵn, không dọn
   const canDon = new Map([...khongAiVao.filter((t) => !laMay(t.do)), ...cuaKhach.filter((t) => t.do.startsWith("k_"))].map((t) => [t.id, t]));
-  await Promise.all([...canDon.values()].map(async (t) => {
-    const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records/${t.id}`, { method: "DELETE", headers: H });
-    if (r.ok && t.tin_hieu && t.tin_hieu !== TIN_HIEU_SANH) {
-      await fetch(`${pb}/api/collections/${BANG_TIN_HIEU}/records/${t.tin_hieu}`, { method: "DELETE", headers: H });
-    }
-  }));
+  await Promise.all([...canDon.values()].map((t) => xoaTran(pb, H, t)));
   return canDon.size;
 }
 
-// Cộng điểm cho cả hai người của một trận thượng đài đã có kết quả. Điểm tính như đấu máy (xem diem.js), không hoãn nước.
+// Cộng điểm cho cả hai người của một trận thượng đài đã có kết quả, vào bảng điểm của loại cờ của trận.
+// Điểm tính như đấu máy (xem diem.js), không hoãn nước.
 async function tinhDiemTran(pb, H, tran, ketQua) {
+  const troChoi = troChoiTran(tran).ma;
   const ben = [["r", tran.do, tran.ten_do], ["b", tran.den, tran.ten_den]];
   for (const [s, id, ten] of ben) {
     if (laMay(id)) continue; // máy không có tài khoản, không cộng điểm
-    await capNhatDiem(pb, H, { id }, ten, ketQuaChoBen(ketQua, s), 0);
+    await capNhatDiem(pb, H, { id }, ten, troChoi, ketQuaChoBen(ketQua, s), 0);
   }
 }
 

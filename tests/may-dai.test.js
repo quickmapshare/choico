@@ -1,7 +1,8 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { bamDanhMay } from "../functions/_lib/may-dai.js";
-import { denLuotMay, duocDiNuoc, kiemHetGio } from "../src/lib/co-tuong-tran.js";
-import { MUC, MUC_TOI_DA, thoiGianNghi } from "../src/lib/co-tuong-muc.js";
+import { denLuotMay, duocDiNuoc, kiemHetGio } from "../src/lib/chung/tran.js";
+import { MUC } from "../src/lib/co-tuong/muc.js";
+import { MUC_TOI_DA, thoiGianNghi } from "../src/lib/chung/diem.js";
 
 // PocketBase giả trong bộ nhớ, đủ cho việc đặt máy lên đài
 function taoPocketBase() {

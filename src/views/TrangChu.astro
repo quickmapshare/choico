@@ -3,10 +3,12 @@
 import Layout from "../layouts/Layout.astro";
 import Logo from "../components/Logo.astro";
 import { t, duongDan } from "../i18n/strings.js";
+import { TRO_CHOI } from "../lib/tro-choi.js";
 
 const { lang = "vi" } = Astro.props;
 const loaiCo = [
-  { href: duongDan(lang, "/co-tuong/"), ten: t(lang, "homeCo1"), mo: t(lang, "homeCo1Mo") },
+  { href: duongDan(lang, TRO_CHOI.co_tuong.duong.cong), ten: t(lang, "homeCo1"), mo: t(lang, "homeCo1Mo") },
+  { href: duongDan(lang, TRO_CHOI.co_vua.duong.cong), ten: t(lang, "homeCo2"), mo: t(lang, "homeCo2Mo") },
 ];
 ---
 <Layout lang={lang} tieuDe={t(lang, "homeTieuDe")} moTa={t(lang, "homeMoTa")}>

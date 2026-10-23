@@ -1,15 +1,21 @@
 ---
-// Trang trận khép kín: tạo link mời hoặc vào chơi qua link, đều không cần đăng nhập. Không tính điểm.
+// Trang trận giữa hai người, dùng chung cho mọi loại cờ: tạo link mời hoặc vào chơi qua link (khép kín, không cần đăng nhập,
+// không tính điểm), và chơi trận thượng đài. troChoi: loại cờ khi tạo link mới; trận mở qua ?ma= theo loại cờ của trận đó.
 import Layout from "../layouts/Layout.astro";
-import { t, chuCaTrang } from "../i18n/strings.js";
-import "../styles/co-tuong-ban.css";
+import NutBan from "../components/NutBan.astro";
+import KhungBan from "../components/KhungBan.astro";
+import { t, chuCaTrang, chuRieng } from "../i18n/strings.js";
+import { MA_TRO_CHOI } from "../lib/tro-choi.js";
+import "../styles/ban-co.css";
+import "../styles/nut.css";
 
-const { lang = "vi" } = Astro.props;
-const T = chuCaTrang(lang);
+const { lang = "vi", troChoi = "co_tuong" } = Astro.props;
+const T = chuCaTrang(lang, troChoi);
+const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.map((m) => [m, chuRieng(lang, m)])) };
 ---
-<Layout lang={lang} tieuDe={t(lang, "trTieuDe")} moTa={t(lang, "trMoTaChung")} khongLapChiMuc>
-  <script is:inline type="application/json" id="tran-chu" set:html={JSON.stringify(T)}></script>
-  <h1 id="tr-h1">{T.trTieuDe}</h1>
+<Layout lang={lang} tieuDe={t(lang, "trTieuDe", {}, troChoi)} moTa={t(lang, "trMoTaChung", {}, troChoi)} khongLapChiMuc troChoi={troChoi}>
+  <script is:inline type="application/json" id="tran-chu" data-tro-choi={troChoi} set:html={JSON.stringify(chuGui)}></script>
+  <h1 id="tr-h1">{T.trTieuDe} · {T.tenCo}</h1>
   <p id="tr-mo-ta" class="phu">{T.trMoTa}</p>
 
   <section id="tr-tao" class="tr-khoi" hidden>
@@ -18,68 +24,49 @@ const T = chuCaTrang(lang);
       <span>{T.trTenVao}</span>
       <input id="tr-ten-tao" type="text" maxlength="50" autocomplete="nickname" />
     </label>
-    <button type="button" id="tr-nut-tao" class="tr-nut tr-nut-chinh">{T.trTaoLink}</button>
+    <button type="button" id="tr-nut-tao" class="nut nut-chinh">{T.trTaoLink}</button>
   </section>
 
   <section id="tr-link" class="tr-khoi" hidden>
     <p class="phu">{T.trLinkCuaBan}</p>
     <div class="tr-hang">
       <input id="tr-link-o" type="text" readonly />
-      <button type="button" id="tr-nut-chep" class="tr-nut">{T.trChepLink}</button>
+      <button type="button" id="tr-nut-chep" class="nut">{T.trChepLink}</button>
     </div>
-    <button type="button" id="tr-nut-vo-hieu" class="tr-nut tr-nut-phu">{T.trVoHieu}</button>
+    <button type="button" id="tr-nut-vo-hieu" class="nut nut-phu">{T.trVoHieu}</button>
   </section>
 
   <section id="tr-roi-dai" class="tr-khoi" hidden>
-    <button type="button" id="tr-nut-roi-dai" class="tr-nut tr-nut-phu">{T.tdRoiDai}</button>
+    <button type="button" id="tr-nut-roi-dai" class="nut nut-phu">{T.tdRoiDai}</button>
   </section>
 
   <section id="tr-vao" class="tr-khoi tr-moi" hidden>
     <h2 id="tr-moi-vao" class="tr-moi-tieu-de"></h2>
-    <p>{T.trMoiGioiThieu}</p>
+    <p id="tr-moi-gioi-thieu">{T.trMoiGioiThieu}</p>
     <label class="tr-hang">
       <span>{T.trTenVao}</span>
       <input id="tr-ten-vao" type="text" maxlength="50" autocomplete="nickname" />
     </label>
     <p class="tr-luu-y">{T.trMoiLuuY}</p>
-    <button type="button" id="tr-nut-vao" class="tr-nut tr-nut-chinh">{T.trVao}</button>
+    <button type="button" id="tr-nut-vao" class="nut nut-chinh">{T.trVao}</button>
   </section>
 
   <p id="tr-trang-thai" class="tr-trang-thai" role="status" aria-live="polite"></p>
   <!-- Ba nút khi đối thủ hết giờ, ngay dưới dòng thông báo để dễ thấy. Chỉ hiện khi đến lượt đối thủ mà họ đã hết giờ -->
   <div id="tr-het-gio" class="tr-het-gio" hidden>
-    <button type="button" id="tr-nut-them" class="tr-nut tr-nut-chinh">{T.trThem1Phut}</button>
-    <button type="button" id="tr-nut-thoai" class="tr-nut">{T.trThoaiMai}</button>
-    <button type="button" id="tr-nut-xu" class="tr-nut tr-nut-phu">{T.trXuThua}</button>
+    <button type="button" id="tr-nut-them" class="nut nut-chinh">{T.trThem1Phut}</button>
+    <button type="button" id="tr-nut-thoai" class="nut">{T.trThoaiMai}</button>
+    <button type="button" id="tr-nut-xu" class="nut nut-phu">{T.trXuThua}</button>
   </div>
   <p id="tr-doi" class="phu"></p>
   <!-- Hàng nút loa và phóng to nằm ngoài khung bàn, căn phải, giống chơi với máy -->
   <div id="tr-thanh-nut" class="tr-thanh-nut" hidden>
-    <button type="button" id="tr-tieng" class="co-nut-icon" aria-label={T.amThanh} aria-pressed="false" title={T.batAm}>
-      <svg id="tr-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <svg id="tr-loa-tat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </button>
-    <button type="button" id="tr-phong-to" class="co-nut-icon" aria-label={T.phongTo} title={T.phongTo}>
-      <svg id="tr-phong-mo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <svg id="tr-phong-dong" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
+    <NutBan T={T} />
   </div>
-  <!-- Khay quân bị ăn đặt trên và dưới bàn, giống chơi với máy. Bên nào có quân ở phía trên bàn thì khay đó nằm trên -->
-  <div id="tr-khung" class="tr-khung" hidden>
-    <div class="co-an-nua" id="tr-khay-tren">
-      <div id="tr-an-tren"></div>
-    </div>
-    <div id="co-ban" class="co-ban"></div>
-    <div class="co-an-nua" id="tr-khay-duoi">
-      <div id="tr-an-duoi"></div>
-    </div>
-  </div>
-  <button type="button" id="tr-thu-nho" class="co-nut-icon co-thu-nho" aria-label={T.thuNhoBan} title={T.thuNhoBan} hidden>
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>
+  <KhungBan T={T} hidden />
   <p id="tr-tiep" class="tr-khoi" hidden><a id="tr-tiep-a" href="#"></a></p>
   <div id="tr-dieu-khien" class="tr-khoi" hidden>
-    <button type="button" id="tr-nut-dau-hang" class="tr-nut tr-nut-phu">{T.trDauHang}</button>
+    <button type="button" id="tr-nut-dau-hang" class="nut nut-phu">{T.trDauHang}</button>
   </div>
 
 <style is:global>
@@ -88,41 +75,21 @@ const T = chuCaTrang(lang);
   .tr-khoi[hidden] { display: none; }
   .tr-hang { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; width: 100%; max-width: 460px; }
   .tr-hang input { flex: 1; min-width: 0; font: inherit; padding: .45rem .7rem; border-radius: .5rem; border: 1px solid var(--vien); background: var(--mat); color: var(--chu); }
-  .tr-nut {
-    font: inherit; font-weight: 600; min-height: 2.4rem; padding: .4rem 1.1rem; border-radius: 999px; cursor: pointer;
-    max-width: 100%; line-height: 1.25; text-align: center;
-    border: 1px solid var(--nhan); background: transparent; color: var(--nhan);
-  }
-  .tr-nut { transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s, transform .1s, opacity .15s; touch-action: manipulation; }
-  .tr-nut:hover:not(:disabled) { background: var(--nhan-nhe); box-shadow: 0 2px 8px rgba(0, 0, 0, .18); }
-  .tr-nut:active:not(:disabled) { transform: scale(.96); }
-  .tr-nut:focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; }
-  /* Đang gửi yêu cầu: nút mờ đi, con trỏ chờ, không bấm thêm được */
-  .tr-nut[aria-busy="true"] { opacity: .6; cursor: progress; }
-  .tr-nut-chinh { background: var(--nhan); color: #fff; }
-  .tr-nut-chinh:hover:not(:disabled) { background: var(--nhan); filter: brightness(1.1); }
-  .tr-nut-phu { background: transparent; color: var(--phu); border-color: var(--vien); }
-  .tr-nut-phu:hover:not(:disabled) { border-color: var(--nhan); color: var(--nhan); }
-  .tr-nut:disabled { opacity: .45; cursor: default; }
   .tr-trang-thai { min-height: 1.5em; font-weight: 600; border-radius: .4rem; }
   /* Thông báo mới nháy nền một lần để người chơi nhận ra kết quả của nút vừa bấm */
   @media (prefers-reduced-motion: no-preference) {
     .tr-trang-thai.moi { animation: tr-nhay 1.2s ease-out; }
   }
   @keyframes tr-nhay { from { background: var(--nhan-nhe); box-shadow: 0 0 0 6px var(--nhan-nhe); } to { background: transparent; box-shadow: 0 0 0 6px transparent; } }
-  .co-ban { width: 100%; max-width: 460px; margin: .5rem 0 1rem; }
-  /* Khung gồm khay trên, bàn, khay dưới; cùng kích thước và kiểu với khung ở chơi với máy */
-  .tr-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; margin: 0 auto; }
-  .tr-khung .co-ban { max-width: none; margin: .4rem 0; }
   /* Nút âm thanh và phóng to: kiểu giống trang chơi với máy */
   .tr-thanh-nut { display: flex; justify-content: flex-end; gap: .5rem; margin: 0 0 1rem; }
-  .tr-thanh-nut[hidden], .tr-khung[hidden] { display: none; }
+  .tr-thanh-nut[hidden] { display: none; }
   /* Khối nút khi đối thủ hết giờ: một thẻ nhạt màu nhấn, ba nút chia đều, xuống dòng khi màn hình hẹp */
   .tr-het-gio { width: 100%; max-width: 460px; margin: 0 0 .8rem; padding: .5rem; display: flex; flex-wrap: wrap; gap: .5rem; border: 1px solid var(--nhan); border-radius: .6rem; background: var(--nhan-nhe); }
   .tr-het-gio[hidden] { display: none; }
   /* Nút trong thẻ: chia đều hàng, chữ dài tự xuống dòng trong nút thay vì tràn ra ngoài */
-  .tr-het-gio .tr-nut { flex: 1 1 8rem; font-size: .9rem; padding: .4rem .8rem; background: var(--mat); }
-  .tr-het-gio .tr-nut-chinh { background: var(--nhan); }
+  .tr-het-gio .nut { flex: 1 1 8rem; font-size: .9rem; padding: .4rem .8rem; background: var(--mat); }
+  .tr-het-gio .nut-chinh { background: var(--nhan); }
   .tr-hang[hidden] { display: none; }
   /* Thẻ lời mời cho người mở link: tiêu đề mời, giới thiệu, lưu ý link chỉ một người vào, rồi nút chấp nhận */
   .tr-moi { max-width: 32rem; }
@@ -131,19 +98,46 @@ const T = chuCaTrang(lang);
 </style>
 
 <script>
-  import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu, diemCongVan, quanBiAn, chonTrongDinh } from "../lib/co-tuong.js";
-  import { timNuocMay } from "../lib/co-tuong-may.js";
-  import { MUC, thoiGianNghi } from "../lib/co-tuong-muc.js";
-  import { duyetNuoc, benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
-  import { taoAmThanh } from "../lib/co-tuong-am.js";
-  import { taoToa, veBanCo, veKhayQuanAn, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutTieng, gaiPhongTo, oBamDuoc, THOI_GIAN } from "../lib/co-tuong-ban.js";
-  import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
-  import { docToken, headerXacThuc, damBaoCoTen } from "../lib/co-tuong-tai-khoan.js";
+  import { thoiGianNghi, diemCongVan } from "../lib/chung/diem.js";
+  import { phatLai } from "../lib/chung/van.js";
+  import { chonTrongDinh } from "../lib/chung/may.js";
+  import { benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/chung/tran.js";
+  import { layTroChoi } from "../lib/tro-choi.js";
+  import { VE, MUC, taoMay, sangMenu, docChu, f } from "../lib/chung/trinh-duyet.js";
+  import { taoAmThanh } from "../lib/chung/am.js";
+  import { veBanCo, veHaiKhay, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutKhung, oBamDuoc, chonNuocPhong, THOI_GIAN } from "../lib/chung/ban.js";
+  import { ngheTinHieu } from "../lib/chung/realtime.js";
+  import { docToken, headerXacThuc, damBaoCoTen } from "../lib/chung/tai-khoan.js";
 
-  const T = JSON.parse(document.getElementById("tran-chu")?.textContent || "{}");
-  const f = (mau: string, v: Record<string, string | number> = {}) => mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
+  type O = [number, number];
+  const elChu = document.getElementById("tran-chu") as HTMLElement;
+  const chuGoc = docChu("tran-chu");
   const $ = (id: string) => document.getElementById(id) as HTMLElement;
   const ma = new URLSearchParams(location.search).get("ma") || "";
+  const tienTo = document.documentElement.dataset.tienTo || "";
+  const TRO_CHOI_TRANG = elChu.dataset.troChoi; // loại cờ của trang: dùng khi tạo link mới
+
+  // Loại cờ đang hiện: theo trang, đổi theo trận khi đã tải trận
+  let tc: any;
+  let luat: any;
+  let ve: any;
+  let T: Record<string, string> = {};
+  let may: ReturnType<typeof taoMay> | null = null;
+  function datTroChoi(maTc: string | undefined) {
+    const moi = layTroChoi(maTc) ?? layTroChoi(undefined);
+    if (tc && moi.ma === tc.ma) return;
+    tc = moi;
+    luat = tc.luat;
+    ve = VE[tc.ma as keyof typeof VE];
+    T = { ...chuGoc.chung, ...chuGoc.rieng[tc.ma] };
+    may?.huy();
+    may = taoMay(tc.ma);
+    document.body.classList.toggle("co-vua", tc.ma === "co_vua");
+    sangMenu(tc.ma);
+    $("tr-moi-gioi-thieu").textContent = T.trMoiGioiThieu;
+    $("co-ban").setAttribute("aria-label", T.banCo);
+  }
+  datTroChoi(TRO_CHOI_TRANG);
 
   // Mã khách: tạo một lần, lưu trong trình duyệt. Dùng để nhận diện người không có tài khoản.
   function layKhachId(): string {
@@ -161,29 +155,30 @@ const T = chuCaTrang(lang);
   const KHACH = layKhachId();
   const yeuCau = (): Record<string, string> => ({ "content-type": "application/json", "x-khach-id": KHACH, ...headerXacThuc() });
 
-
   let tran: any = null; // trạng thái trận từ server
-  let ban: (string | null)[][] | null = null; // bàn đang hiển thị, dựng từ nước đi rồi cập nhật tức thì khi đi
+  let the: any = null; // thế cờ đang hiển thị, dựng từ nước đi rồi cập nhật tức thì khi đi
+  let nuocCuoi: O[] | null = null; // ô rời và ô đến của nước gần nhất, đánh dấu vàng
   let anCuoi: string | null = null; // quân vừa bị ăn gần nhất (mã bên + loại, ví dụ "bR"), đánh dấu trong khay
-  let chon: [number, number] | null = null; // ô đang chọn
+  let chon: O | null = null; // ô đang chọn
   let gioDi: any[] = []; // nước hợp lệ từ ô đang chọn
   let dangGui = false; // đang gửi một nước lên server
+  let dangChonPhong = false; // đang hiện ô chọn quân phong cấp
   let pollId: number | undefined; // hẹn giờ đọc lại trạng thái
   let gioTimer: number | undefined; // hẹn giờ cập nhật đếm ngược
   let lechGio = 0; // giờ server trừ giờ máy, để đếm ngược đúng dù đồng hồ máy lệch
   let giuTrangThaiDen = 0; // trước thời điểm này (ms) thì không ghi đè dòng thông báo (ví dụ báo lỗi nước đi)
   let daBaoKetThuc = false; // đã phát tiếng kết thúc cho trận này chưa (không phát khi vừa mở một trận đã xong)
 
-  // Hiệu ứng nước vừa đi (xem chayHieuUng trong co-tuong-ban.js). batDau: thời điểm đi; tu, den: ô rời và ô đến.
-  let hieuUng: { batDau: number; quanBiAn: string | null; chieu: boolean; tu: [number, number]; den: [number, number] } | null = null;
+  // Hiệu ứng nước vừa đi (xem chayHieuUng trong src/lib/chung/ban.js). batDau: thời điểm đi; tu, den: ô rời và ô đến.
+  let hieuUng: { batDau: number; quanBiAn: string | null; oAn?: O; chieu: boolean; tu: O; den: O } | null = null;
 
-  // Âm thanh theo lựa chọn đã lưu ở trang chơi với máy (mặc định tắt)
+  // Âm thanh theo lựa chọn đã lưu ở trang chơi với máy (mặc định tắt); nút phóng to bàn
   const am = taoAmThanh();
-  gaiNutTieng(am, { nut: $("tr-tieng"), loaBat: $("tr-loa-bat") as unknown as SVGElement, loaTat: $("tr-loa-tat") as unknown as SVGElement, nhan: T });
-
   const trangThai = $("tr-trang-thai");
   const banEl = $("co-ban");
   const doiEl = $("tr-doi");
+  gaiNutKhung(am, banEl, T);
+
   const batTrangThai = (text: string) => {
     if (trangThai.textContent === text) return;
     trangThai.textContent = text;
@@ -221,102 +216,73 @@ const T = chuCaTrang(lang);
     return { ok: r.ok, status: r.status, data };
   }
 
-  // Nhận trạng thái mới từ server: ghi nhớ độ lệch giờ để đếm ngược đúng
+  // Nhận trạng thái mới từ server: ghi nhớ độ lệch giờ để đếm ngược đúng, đổi bàn theo loại cờ của trận
   function nhanTran(data: any) {
     tran = data;
     if (data.bay_gio) lechGio = Date.parse(data.bay_gio) - Date.now();
+    datTroChoi(data.tro_choi);
   }
 
-  // Dựng bàn từ danh sách nước đi của server
+  // Dựng bàn từ danh sách nước đi của server (các nước đã được server kiểm luật nên chỉ đặt quân lên bàn)
   function dungBan() {
     if (!tran?.nuoc) return;
-    const d = duyetNuoc(tran.nuoc);
-    ban = d.hop_le ? d.b : khoiTao();
-    anCuoi = anCuoiCung(tran.nuoc);
+    const p = phatLai(luat, tran.nuoc, { kiemLuat: false });
+    the = p.hop_le ? p.the : luat.khoiTao();
+    nuocCuoi = p.hop_le ? p.nuocCuoi : null;
+    anCuoi = p.hop_le ? p.anCuoi : null;
   }
 
-  // Quân bị ăn gần nhất trong cả ván (để đánh dấu trong khay), đi lại từ đầu ván
-  function anCuoiCung(nuoc: string[]): string | null {
-    const b = khoiTao();
-    let s = "r";
-    let cuoi: string | null = null;
-    for (const ky of nuoc) {
-      const m = timNuoc(b, s, ky);
-      if (!m) break;
-      if (m.an) cuoi = m.an;
-      apDung(b, m);
-      s = doiBen(s);
-    }
-    return cuoi;
-  }
-
-  // Tên người cầm bên s (r hoặc b). Máy (luôn bên đỏ) thì tên theo ngôn ngữ đang chọn, vì tên lưu trên server là tiếng Việt.
+  // Tên người cầm bên s (r hoặc b). Máy (luôn bên đi trước) thì tên theo ngôn ngữ đang chọn, vì tên lưu trên server là tiếng Việt.
   const tenBen = (s: string): string => (s === "r" && tran.may_muc ? f(T.tenMay, { c: tran.may_muc }) : (s === "r" ? tran.ten_do : tran.ten_den) || "");
 
-  // Khi mình cầm quân đen thì xoay bàn 180 độ để quân đen nằm phía dưới
+  // Khi mình cầm bên đi sau thì xoay bàn 180 độ để quân của mình nằm phía dưới
   const xoay = () => tran?.ban_cua === "b";
-
-  // Vẽ khay quân bị ăn: bên nào ở phía trên bàn thì khay của bên đó nằm trên (khi xoay bàn thì đảo lại)
-  function veQuanAn() {
-    const ket = quanBiAn(ban);
-    const benTren = xoay() ? "r" : "b";
-    const benDuoi = doiBen(benTren);
-    // Khay không có chữ tiêu đề, chỉ đặt nhãn cho trình đọc màn hình
-    $("tr-khay-tren").setAttribute("aria-label", benTren === "r" ? T.quanDoBiAn : T.quanDenBiAn);
-    $("tr-khay-duoi").setAttribute("aria-label", benDuoi === "r" ? T.quanDoBiAn : T.quanDenBiAn);
-    veKhayQuanAn($("tr-an-tren"), ket[benTren], benTren, anCuoi);
-    veKhayQuanAn($("tr-an-duoi"), ket[benDuoi], benDuoi, anCuoi);
-  }
-
-
-  // Ô "a0" dạng chữ và số (cột, hàng) của server thành [hàng, cột]
-  const toaO = (ten: string): [number, number] => [Number(ten[1]), ten.charCodeAt(0) - 97];
 
   function veBan() {
     banEl.replaceChildren();
     // Chưa có bàn (chưa có trận, đang chờ đối thủ, chưa đăng nhập...) thì ẩn khay và hàng nút loa, phóng to
-    $("tr-khung").hidden = !ban;
-    $("tr-thanh-nut").hidden = !ban;
-    if (!ban) return;
-    veQuanAn();
-    const toa = taoToa(xoay());
-    // Nước gần nhất trên server (ô rời và ô đến) được đánh dấu vàng
-    const cuoi: string | null = tran.nuoc?.length ? tran.nuoc[tran.nuoc.length - 1] : null;
-    const nuocCuoi = cuoi ? [toaO(cuoi.slice(0, 2)), toaO(cuoi.slice(2, 4))] : null;
+    $("co-khung").hidden = !the;
+    $("tr-thanh-nut").hidden = !the;
+    if (!the) return;
+    veHaiKhay(luat.quanBiAn(the), xoay() ? "r" : "b", anCuoi, ve, T);
+    const toa = ve.taoToa(xoay());
     const s = veBanCo(banEl, {
-      ban,
+      ban: the.b,
+      ve,
       toa,
       khoa: !(tran.trang_thai === "dang_dau" && tran.den_luot === tran.ban_cua),
       nuocCuoi,
       chon,
       dich: gioDi.map((m) => m.den),
+      chieu: { r: luat.biChieu(the, "r"), b: luat.biChieu(the, "b") },
       nhanBan: T.banCo,
     });
     // Hiệu ứng nước vừa đi (quân trượt, ăn quân, chiếu) chạy tiếp trên bàn vừa vẽ
     const nuocDi = hieuUng ? [hieuUng.tu, hieuUng.den] : null;
-    if (chayHieuUng(s, hieuUng, { banEl, ban, toa, nuocCuoi: nuocDi, nhanChieu: T.chieu })) hieuUng = null;
+    if (chayHieuUng(s, hieuUng, { banEl, ban: the.b, ve, toa, nuocCuoi: nuocDi, nhanChieu: T.chieu })) hieuUng = null;
   }
 
-
-  function apMove(m: any, s: string) {
-    if (!ban) return;
-    apDung(ban, m);
+  // Đi nước m (đã hợp lệ) trên bàn đang hiện: hiệu ứng và tiếng như nước đi của máy
+  function apMove(m: any) {
+    if (!the) return;
+    luat.apDung(the, m);
+    nuocCuoi = [m.tu, m.den];
     if (m.an) anCuoi = m.an;
-    hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, chieu: biChieu(ban, doiBen(s)), tu: m.tu, den: m.den };
+    hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, oAn: m.oAn, chieu: luat.biChieu(the, the.s), tu: m.tu, den: m.den };
     phatTiengNuoc(am, Boolean(m.an), hieuUng.chieu);
   }
 
   // Đi nước: hiện ngay trên màn hình rồi gửi server ngầm, không phải chờ mạng mới thấy quân di chuyển
   // s: bên đi nước này. Mặc định là bên mình; trận với máy thì trình duyệt này cũng đi nước của máy (s = "r").
   async function diNuoc(m: any, s: string = tran.ban_cua) {
-    const ky = kyHieu(m);
-    apMove(m, s);
+    const ky = luat.kyHieu(m);
+    apMove(m);
     tran.nuoc = [...tran.nuoc, ky];
     tran.den_luot = doiBen(s);
     // Máy không có hạn nước: tới lượt máy thì để trống, giống server
     tran.han_nuoc = tran.may_muc && tran.den_luot === "r" ? "" : new Date(Date.now() + lechGio + GIAY_MOI_NUOC * 1000).toISOString();
-    const kt = duyetNuoc(tran.nuoc);
-    if (kt.hop_le && kt.ket_thuc) {
+    const kt = luat.ketThuc(the, tran.nuoc.length);
+    if (kt) {
       tran.trang_thai = "ket_thuc";
       tran.ket_qua = kt.ket_qua;
       tran.ly_do = kt.ly_do;
@@ -325,7 +291,7 @@ const T = chuCaTrang(lang);
     gioDi = [];
     hienKhoi();
     dangGui = true;
-    const { ok, data } = await goi("/api/co-tuong-tran", {
+    const { ok, data } = await goi("/api/tran", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "nuoc", ma, ky, gui: Date.now() + lechGio }),
     });
     dangGui = false;
@@ -350,33 +316,13 @@ const T = chuCaTrang(lang);
 
   // Trận với máy trên thượng đài chạy như trận với máy: trình duyệt này tính nước cho máy (Web Worker, cùng mức, cùng thời gian
   // nghĩ, cùng cách chọn nước) rồi gửi lên như một nước đi; server chỉ kiểm luật. Người chơi đóng trang thì máy đứng chờ.
-  let mayWorker: Worker | null = null;
   let dangMay = false; // máy đang nghĩ hoặc đang gửi nước
   let soLanMayLoi = 0; // số lần liên tiếp server từ chối nước của máy, quá 3 thì thôi để khỏi lặp mãi
   const nghi = (ms: number) => new Promise((xong) => setTimeout(xong, ms));
 
-  function tinhNuocMay(b: any, tuyChon: any): Promise<any> {
-    return new Promise((xong) => {
-      const tinhTrongTrang = () => setTimeout(() => xong(timNuocMay(b, "r", tuyChon)), 30);
-      if (typeof Worker === "undefined") return tinhTrongTrang();
-      try {
-        mayWorker ??= new Worker(new URL("../lib/co-tuong-may-worker.js", import.meta.url), { type: "module" });
-        const w = mayWorker;
-        w.onmessage = (e) => xong(e.data);
-        w.onerror = () => {
-          if (mayWorker === w) mayWorker = null;
-          tinhTrongTrang();
-        };
-        w.postMessage({ ban: b, ben: "r", tuyChon });
-      } catch {
-        tinhTrongTrang();
-      }
-    });
-  }
-
   // Tới lượt máy (và mình là người thách đấu) thì tính nước cho máy rồi đi
   async function kiemTraLuotMay() {
-    if (dangMay || dangGui || !ban || !tran?.may_muc || tran.ban_cua !== "b") return;
+    if (dangMay || dangGui || !the || !tran?.may_muc || tran.ban_cua !== "b") return;
     if (tran.trang_thai !== "dang_dau" || tran.den_luot !== "r" || soLanMayLoi >= 3) return;
     dangMay = true;
     const soNuoc: number = tran.nuoc.length;
@@ -384,16 +330,15 @@ const T = chuCaTrang(lang);
     try {
       giuTrangThaiDen = Date.now() + thoiGianNghi(muc) + 2000;
       batTrangThai(T.mayNghi);
-      const kq = await tinhNuocMay(duyetNuoc(tran.nuoc).b, {
-        ...(MUC as Record<number, any>)[muc], thoiGianMs: thoiGianNghi(muc), pst: true, lichSu: tran.nuoc,
-      });
+      const kq: any = await may!.tinh(the, { ...(MUC as any)[tc.ma][muc], thoiGianMs: thoiGianNghi(muc), lichSu: tran.nuoc });
+      if (!kq) return;
       // Máy nghĩ song song với hiệu ứng nước vừa đi: đợi hiệu ứng chạy xong (và nước của mình gửi xong) rồi mới đi
       const conLai = hieuUng ? tongThoiGianHieuUng(hieuUng.chieu) - (Date.now() - hieuUng.batDau) : 0;
       if (conLai > 0) await nghi(conLai);
       while (dangGui) await nghi(50);
       if (tran?.trang_thai !== "dang_dau" || tran.nuoc.length !== soNuoc) return; // trận đổi trong lúc máy nghĩ
       const chonMay = chonTrongDinh(kq.xep);
-      const m = chonMay && timNuoc(ban, "r", chonMay.nuoc);
+      const m = chonMay && luat.timNuoc(the, chonMay.nuoc);
       if (!m) return;
       await diNuoc(m, "r");
       soLanMayLoi = tran.nuoc.length === soNuoc + 1 ? 0 : soLanMayLoi + 1;
@@ -404,21 +349,36 @@ const T = chuCaTrang(lang);
   }
 
   // Nhấp vào bàn: chọn quân của mình, rồi nhấp vào ô đích để đi
-  banEl.addEventListener("click", (e) => {
+  banEl.addEventListener("click", async (e) => {
     am.mo(); // mở ngữ cảnh âm thanh ngay trong lúc người dùng bấm (iPhone chỉ cho phép như vậy)
     const o = oBamDuoc(e);
-    if (!o || !ban || dangGui || tran?.trang_thai !== "dang_dau" || tran.den_luot !== tran.ban_cua) return;
+    if (!o || !the || dangGui || dangChonPhong || tran?.trang_thai !== "dang_dau" || tran.den_luot !== tran.ban_cua) return;
     const [r, c] = o;
     const benMinh = tran.ban_cua;
-    const quan = ban[r][c];
+    const quan = the.b[r][c];
 
     if (chon) {
-      const m = gioDi.find((x) => x.den[0] === r && x.den[1] === c);
-      if (m) return void diNuoc(m);
+      const cacNuoc = gioDi.filter((x) => x.den[0] === r && x.den[1] === c);
+      if (cacNuoc.length) {
+        let m = cacNuoc[0];
+        // Nhiều nước cùng ô đến: tốt phong cấp ở cờ vua, hỏi người chơi chọn quân
+        if (cacNuoc.length > 1) {
+          dangChonPhong = true;
+          const soNuoc = tran.nuoc.length;
+          m = await chonNuocPhong(cacNuoc, ve, benMinh, (l: string) => T["quan" + l]);
+          dangChonPhong = false;
+          if (!m || tran.nuoc.length !== soNuoc || tran.trang_thai !== "dang_dau") {
+            chon = null;
+            gioDi = [];
+            return veBan();
+          }
+        }
+        return void diNuoc(m);
+      }
     }
     if (quan && quan[0] === benMinh) {
       chon = [r, c];
-      gioDi = nuocHopLe(ban, benMinh).filter((m) => m.tu[0] === r && m.tu[1] === c);
+      gioDi = luat.nuocHopLe(the).filter((m: any) => m.tu[0] === r && m.tu[1] === c);
     } else {
       chon = null;
       gioDi = [];
@@ -426,19 +386,10 @@ const T = chuCaTrang(lang);
     veBan();
   });
 
-  gaiPhongTo(banEl, {
-    nut: $("tr-phong-to") as HTMLButtonElement,
-    nutMo: $("tr-phong-mo") as unknown as SVGElement,
-    nutDong: $("tr-phong-dong") as unknown as SVGElement,
-    nutThuNho: $("tr-thu-nho") as HTMLButtonElement,
-    nhan: T,
-  });
-
-
   // Đọc trạng thái trận, dựng lại bàn và hiện đúng khối việc
   async function taiTran() {
     if (!ma) return hienKhoiTao();
-    const { ok, status, data } = await goi(`/api/co-tuong-tran?ma=${encodeURIComponent(ma)}`, { headers: yeuCau() });
+    const { ok, status, data } = await goi(`/api/tran?ma=${encodeURIComponent(ma)}`, { headers: yeuCau() });
     if (!ok) {
       batTrangThai(status === 404 ? T.trTranKhongTim : (T.loiMang || ""));
       return;
@@ -480,18 +431,27 @@ const T = chuCaTrang(lang);
     }
   }
 
-  // Sau khi trận xong: đường đi tiếp (về sảnh thượng đài, hoặc tạo trận khép kín mới)
+  // Sau khi trận xong: đường đi tiếp (về sảnh thượng đài, hoặc tạo trận khép kín mới), theo loại cờ của trận
   function hienBuocTiep() {
-    const tienTo = document.documentElement.dataset.tienTo || "";
     const a = $("tr-tiep-a") as HTMLAnchorElement;
-    a.href = tran.loai === "dai" ? `${tienTo}/thuong-dai/` : `${tienTo}/tran/`;
+    a.href = `${tienTo}${tran.loai === "dai" ? tc.duong.dai : tc.duong.tran}`;
     a.textContent = tran.loai === "dai" ? T.trVeSanh : T.trTranMoi;
     $("tr-tiep").hidden = false;
   }
 
+  // Lý do kết thúc trận, theo cách gọi của loại cờ
+  function lyDo(ly: string) {
+    const ma: Record<string, string> = {
+      het_gio: T.trLyHetGio, dau_hang: T.trLyDauHang, bo_do: T.trLyBoDo, het_nuoc: T.trLyHetNuoc,
+      het_nuoc_hoa: f(T.trLyHetNuocHoa, { n: luat.NUOC_TOI_DA }), chieu_het: T.trLyChieuHet, hoa_pat: T.trLyHoaPat,
+      lap_3: T.trLyLap3, luat_50: T.trLyLuat50, thieu_quan: T.trLyThieuQuan,
+    };
+    return ma[ly] || T.trLyHetNuoc;
+  }
+
   function hienKhoi() {
     // Khay và hàng nút loa, phóng to chỉ hiện khi veBan() vẽ được bàn; mọi trạng thái chờ (kể cả đài thượng đài) thì ẩn
-    $("tr-khung").hidden = true;
+    $("co-khung").hidden = true;
     $("tr-thanh-nut").hidden = true;
     $("tr-tao").hidden = true;
     $("tr-link").hidden = true;
@@ -503,7 +463,7 @@ const T = chuCaTrang(lang);
     $("tr-mo-ta").hidden = tran?.loai === "dai"; // đoạn mô tả nói về trận khép kín, không đúng với trận thượng đài
     // Tiêu đề theo loại trận để người chơi biết mình đang ở trận nào; chưa rõ loại thì dùng tiêu đề chung
     const tieuDe = tran?.loai === "dai" ? T.tdTieuDe : tran?.loai === "khep_kin" ? T.trTieuDeKhepKin : T.trTieuDe;
-    $("tr-h1").textContent = tieuDe;
+    $("tr-h1").textContent = `${tieuDe} · ${T.tenCo}`;
     document.title = tieuDe;
     doiEl.textContent = "";
     clearInterval(gioTimer);
@@ -556,13 +516,12 @@ const T = chuCaTrang(lang);
     const ten = tenBen(minhDo ? "b" : "r");
     doiEl.textContent = ten ? f(T.trDoi, { ten }) : "";
     const kq = tran.ket_qua === "do" ? T.trKetDo : tran.ket_qua === "den" ? T.trKetDen : T.trKetHoa;
-    const ly = tran.ly_do === "het_gio" ? T.trLyHetGio : tran.ly_do === "dau_hang" ? T.trLyDauHang : tran.ly_do === "bo_do" ? T.trLyBoDo : T.trLyHetNuoc;
     let diem = T.trKhongTinh;
     if (tran.loai === "dai") {
       const d = diemCongVan(ketQuaChoBen(tran.ket_qua, tran.ban_cua), 0);
       diem = f(T.trDiemTran, { diem: `${d > 0 ? "+" : ""}${d}` });
     }
-    batTrangThai(`${kq}${tran.ly_do ? ` (${ly})` : ""}. ${diem}`);
+    batTrangThai(`${kq}${tran.ly_do ? ` (${lyDo(tran.ly_do)})` : ""}. ${diem}`);
     hienBuocTiep();
     if (!daBaoKetThuc) {
       daBaoKetThuc = true;
@@ -576,7 +535,7 @@ const T = chuCaTrang(lang);
   async function docMoi() {
     const cu: number = tran?.nuoc?.length ?? 0;
     const trangThaiCu = tran?.trang_thai;
-    const { ok, data } = await goi(`/api/co-tuong-tran?ma=${encodeURIComponent(ma)}`, { headers: yeuCau() });
+    const { ok, data } = await goi(`/api/tran?ma=${encodeURIComponent(ma)}`, { headers: yeuCau() });
     if (!ok || dangGui) return; // người chơi vừa đi trong lúc chờ: bỏ kết quả cũ này
     const moi: number = data.nuoc?.length ?? 0;
     if (moi === cu && data.trang_thai === trangThaiCu) {
@@ -588,11 +547,10 @@ const T = chuCaTrang(lang);
       return;
     }
     // Đúng một nước mới của đối thủ: đi nước đó trên bàn đang có để quân trượt, có tiếng, có hiệu ứng
-    if (trangThaiCu === "dang_dau" && moi === cu + 1 && ban) {
-      const s = benDenLuot(cu);
-      const m = timNuoc(ban, s, data.nuoc[moi - 1]);
+    if (trangThaiCu === "dang_dau" && moi === cu + 1 && the && the.s === benDenLuot(cu)) {
+      const m = luat.timNuoc(the, data.nuoc[moi - 1]);
       if (m) {
-        apMove(m, s);
+        apMove(m);
         nhanTran(data);
         chon = null;
         gioDi = [];
@@ -609,7 +567,7 @@ const T = chuCaTrang(lang);
   // Chuông mang kèm tóm tắt trận (số nước, nước cuối, hạn nước, trạng thái): đối thủ vừa đi một nước, hoặc vừa cho thêm giờ,
   // thì làm luôn trên bàn mà không gọi server. Trường hợp khác (trận đổi trạng thái, lệch số nước...) trả false để đọc lại cả trận.
   function apTomTat(t: any): boolean {
-    if (!t || !ban || tran?.trang_thai !== "dang_dau" || t.trang_thai !== "dang_dau") return false;
+    if (!t || !the || tran?.trang_thai !== "dang_dau" || t.trang_thai !== "dang_dau") return false;
     const cu: number = tran.nuoc.length;
     if (t.n === cu) {
       if (t.han !== tran.han_nuoc) {
@@ -619,10 +577,10 @@ const T = chuCaTrang(lang);
       return true;
     }
     const s = benDenLuot(cu);
-    if (t.n !== cu + 1 || s === tran.ban_cua) return false; // nước của chính mình từ tab khác: đọc lại cho chắc
-    const m = timNuoc(ban, s, t.ky);
+    if (t.n !== cu + 1 || s === tran.ban_cua || the.s !== s) return false; // nước của chính mình từ tab khác: đọc lại cho chắc
+    const m = luat.timNuoc(the, t.ky);
     if (!m) return false;
-    apMove(m, s);
+    apMove(m);
     tran.nuoc = [...tran.nuoc, t.ky];
     tran.den_luot = doiBen(s);
     tran.han_nuoc = t.han;
@@ -682,11 +640,11 @@ const T = chuCaTrang(lang);
 
   const nut = (id: string) => $(id) as HTMLButtonElement;
 
-  // Tạo link (tài khoản hoặc khách), xong thì chuyển sang trang có mã
+  // Tạo link (tài khoản hoặc khách) cho loại cờ của trang, xong thì chuyển sang trang có mã
   nut("tr-nut-tao").addEventListener("click", () => void chay(nut("tr-nut-tao"), T.trDangTao, async () => {
     const tenKhach = ($("tr-ten-tao") as HTMLInputElement).value.trim();
-    const tao = () => goi("/api/co-tuong-khep-kin", {
-      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "tao", ten_khach: tenKhach }),
+    const tao = () => goi("/api/khep-kin", {
+      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "tao", tro_choi: TRO_CHOI_TRANG, ten_khach: tenKhach }),
     });
     let { ok, status, data } = await tao();
     // Người mới đăng nhập chưa có tên: tạo tên từ tên Google (như trang chơi với máy) rồi tạo link lại
@@ -711,7 +669,7 @@ const T = chuCaTrang(lang);
 
   // Vô hiệu hóa link: xong thì khối link biến mất và thông báo nháy lên
   nut("tr-nut-vo-hieu").addEventListener("click", () => void chay(nut("tr-nut-vo-hieu"), T.trDangXuLy, async () => {
-    const { ok } = await goi("/api/co-tuong-khep-kin", {
+    const { ok } = await goi("/api/khep-kin", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "huy", ma }),
     });
     if (!ok) return void batTrangThai(T.tdLoi);
@@ -721,7 +679,7 @@ const T = chuCaTrang(lang);
 
   nut("tr-nut-vao").addEventListener("click", () => void chay(nut("tr-nut-vao"), T.trDangXuLy, async () => {
     const tenKhach = ($("tr-ten-vao") as HTMLInputElement).value.trim();
-    const { ok, data } = await goi("/api/co-tuong-khep-kin", {
+    const { ok, data } = await goi("/api/khep-kin", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "vao", ma, ten_khach: tenKhach }),
     });
     if (ok) return void (await taiTran());
@@ -729,7 +687,7 @@ const T = chuCaTrang(lang);
   }));
 
   nut("tr-nut-dau-hang").addEventListener("click", () => void chay(nut("tr-nut-dau-hang"), T.trDangXuLy, async () => {
-    const { ok, data } = await goi("/api/co-tuong-tran", {
+    const { ok, data } = await goi("/api/tran", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "dau_hang", ma }),
     });
     if (!ok) return void (await taiTran());
@@ -741,7 +699,7 @@ const T = chuCaTrang(lang);
 
   // Đối thủ hết giờ: chọn cho nghĩ thêm 1 phút, nghĩ thoải mái hoặc xử thua
   async function xuHetGio(luaChon: string) {
-    const { ok, data } = await goi("/api/co-tuong-tran", {
+    const { ok, data } = await goi("/api/tran", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "xu_het_gio", ma, lua_chon: luaChon }),
     });
     if (!ok) return void (await taiTran()); // trạng thái đã đổi (đối thủ vừa đi): tải lại cho đúng
@@ -754,10 +712,10 @@ const T = chuCaTrang(lang);
   nut("tr-nut-thoai").addEventListener("click", () => void chay(nut("tr-nut-thoai"), T.trDangXuLy, () => xuHetGio("thoai_mai")));
   nut("tr-nut-xu").addEventListener("click", () => void chay(nut("tr-nut-xu"), T.trDangXuLy, () => xuHetGio("xu_thua")));
 
-  // Rời đài khi chưa có ai thách đấu, rồi về sảnh
+  // Rời đài khi chưa có ai thách đấu, rồi về sảnh của loại cờ đó
   nut("tr-nut-roi-dai").addEventListener("click", () => void chay(nut("tr-nut-roi-dai"), T.trDangXuLy, async () => {
-    await goi("/api/co-tuong-dai", { method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "roi_dai", ma }) });
-    location.href = `${document.documentElement.dataset.tienTo || ""}/thuong-dai/`;
+    await goi("/api/dai", { method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "roi_dai", ma }) });
+    location.href = `${tienTo}${tc.duong.dai}`;
     return true;
   }));
 

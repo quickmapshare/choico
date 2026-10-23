@@ -1,14 +1,16 @@
 ---
-// Sảnh thượng đài: lên đài (cùng mức hoặc mở rộng) và thách đấu người đang trên đài. Cần đăng nhập. Ván tính điểm như đấu máy.
+// Sảnh thượng đài của một loại cờ (troChoi): lên đài (cùng mức hoặc mở rộng) và thách đấu người đang trên đài.
+// Cần đăng nhập. Ván tính điểm như đấu máy, vào bảng điểm của loại cờ đó.
 import Layout from "../layouts/Layout.astro";
 import { t, chuCaTrang } from "../i18n/strings.js";
+import "../styles/nut.css";
 
-const { lang = "vi" } = Astro.props;
-const T = chuCaTrang(lang);
+const { lang = "vi", troChoi = "co_tuong" } = Astro.props;
+const T = chuCaTrang(lang, troChoi);
 ---
-<Layout lang={lang} tieuDe={t(lang, "tdTieuDe")} moTa={t(lang, "tdMoTa")}>
-  <script is:inline type="application/json" id="td-chu" set:html={JSON.stringify(T)}></script>
-  <h1>{T.tdTieuDe}</h1>
+<Layout lang={lang} tieuDe={`${t(lang, "tdTieuDe")} · ${T.tenCo}`} moTa={t(lang, "tdMoTa")} troChoi={troChoi}>
+  <script is:inline type="application/json" id="td-chu" data-tro-choi={troChoi} set:html={JSON.stringify(T)}></script>
+  <h1>{T.tdTieuDe} · {T.tenCo}</h1>
   <p class="phu">{T.tdMoTa}</p>
 
   <!-- Hiện ngay khi vào trang cho đến khi biết kết quả đọc sảnh, để trang không trống lúc chờ máy chủ -->
@@ -29,18 +31,18 @@ const T = chuCaTrang(lang);
     <div id="td-co-tran" class="td-khoi" hidden>
       <p>{T.tdBanDangCoTran}</p>
       <div class="td-hang">
-        <a id="td-vao-tran" class="td-nut td-nut-chinh" href="#">{T.tdVaoTran}</a>
-        <button type="button" id="td-roi-dai" class="td-nut td-nut-phu" hidden>{T.tdRoiDai}</button>
+        <a id="td-vao-tran" class="nut nut-chinh" href="#">{T.tdVaoTran}</a>
+        <button type="button" id="td-roi-dai" class="nut nut-phu" hidden>{T.tdRoiDai}</button>
       </div>
     </div>
 
     <div id="td-len-dai" class="td-khoi">
       <div class="td-lua-chon">
-        <button type="button" id="td-cung-muc" class="td-nut td-nut-chinh">{T.tdCungMuc}</button>
+        <button type="button" id="td-cung-muc" class="nut nut-chinh">{T.tdCungMuc}</button>
         <p class="phu">{T.tdMoTaCungMuc}</p>
       </div>
       <div class="td-lua-chon">
-        <button type="button" id="td-mo-rong" class="td-nut">{T.tdMoRong}</button>
+        <button type="button" id="td-mo-rong" class="nut">{T.tdMoRong}</button>
         <p class="phu">{T.tdMoTaMoRong}</p>
       </div>
     </div>
@@ -76,20 +78,6 @@ const T = chuCaTrang(lang);
   .td-lua-chon { display: flex; flex-direction: column; gap: .3rem; align-items: flex-start; }
   .td-lua-chon p { margin: 0; }
   .td-hang { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-  .td-nut {
-    font: inherit; font-weight: 600; min-height: 2.4rem; padding: .4rem 1.1rem; border-radius: 999px; cursor: pointer;
-    border: 1px solid var(--nhan); background: transparent; color: var(--nhan); text-decoration: none; display: inline-flex; align-items: center;
-  }
-  .td-nut { transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s, transform .1s, opacity .15s; touch-action: manipulation; }
-  .td-nut:hover:not(:disabled) { background: var(--nhan-nhe); box-shadow: 0 2px 8px rgba(0, 0, 0, .18); }
-  .td-nut:active:not(:disabled) { transform: scale(.96); }
-  .td-nut:focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; }
-  .td-nut[aria-busy="true"] { opacity: .6; cursor: progress; }
-  .td-nut-chinh { background: var(--nhan); color: #fff; }
-  .td-nut-chinh:hover:not(:disabled) { background: var(--nhan); filter: brightness(1.1); }
-  .td-nut-phu { color: var(--phu); border-color: var(--vien); }
-  .td-nut-phu:hover:not(:disabled) { border-color: var(--nhan); color: var(--nhan); }
-  .td-nut:disabled { opacity: .45; cursor: default; }
   /* Khung danh sách đài: nổi lên, vạch nhấn trên cùng và chấm đỏ "trực tiếp" trước tiêu đề */
   .td-bang { margin: 1.5rem 0 1rem; padding: 1rem 1.1rem 1.1rem; border: 1px solid var(--vien); border-top: 3px solid var(--nhan); border-radius: .8rem; background: var(--mat); box-shadow: var(--bong); }
   .td-bang-tieu { margin: 0 0 .8rem; font-size: 1.1rem; display: flex; align-items: center; gap: .6rem; }
@@ -131,14 +119,17 @@ const T = chuCaTrang(lang);
 </style>
 
 <script>
-  import { docToken, headerXacThuc, batDauDangNhap, damBaoCoTen, xoaToken } from "../lib/co-tuong-tai-khoan.js";
-  import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
+  import { docToken, headerXacThuc, batDauDangNhap, damBaoCoTen, xoaToken } from "../lib/chung/tai-khoan.js";
+  import { ngheTinHieu } from "../lib/chung/realtime.js";
+  import { layTroChoi } from "../lib/tro-choi.js";
+  import { docChu, f } from "../lib/chung/trinh-duyet.js";
 
-  const T = JSON.parse(document.getElementById("td-chu")?.textContent || "{}");
-  const f = (mau: string, v: Record<string, string | number> = {}) => mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
+  const T = docChu("td-chu");
   const $ = (id: string) => document.getElementById(id) as HTMLElement;
   const tienTo = document.documentElement.dataset.tienTo || "";
-  const linkTran = (ma: string) => `${tienTo}/tran/?ma=${ma}`;
+  const tc: any = layTroChoi($("td-chu").dataset.troChoi) ?? layTroChoi(undefined);
+  // Link trận theo loại cờ của trận (trận đang dở của mình có thể thuộc loại cờ khác với sảnh này)
+  const linkTran = (ma: string, troChoi = tc.ma) => `${tienTo}${(layTroChoi(troChoi) ?? tc).duong.tran}?ma=${ma}`;
   const yeuCau = (): Record<string, string> => ({ "content-type": "application/json", ...headerXacThuc() });
 
   let pollId: number | undefined;
@@ -205,7 +196,7 @@ const T = chuCaTrang(lang);
       thongTin.append(ten, nhan);
       const nut = document.createElement("button");
       nut.type = "button";
-      nut.className = "td-nut td-nut-chinh td-thach";
+      nut.className = "nut nut-chinh td-thach";
       nut.textContent = T.tdThachDau;
       nut.addEventListener("click", () => void chay(nut, T.trDangXuLy, () => thachDau(it.ma)));
       li.append(avatar, thongTin, nut);
@@ -222,7 +213,7 @@ const T = chuCaTrang(lang);
   // Đọc sảnh một lần. Người mới chưa có tên thì tạo tên từ tên Google (như trang chơi với máy) rồi đọc lại.
   async function taiMot(daThuTen = false): Promise<void> {
     if (!docToken()) return hienDangNhap();
-    const { ok, status, data } = await goi("/api/co-tuong-dai", { headers: yeuCau() });
+    const { ok, status, data } = await goi(`/api/dai?tro_choi=${tc.ma}`, { headers: yeuCau() });
     if (status === 401) {
       xoaToken(); // token hết hạn: bỏ đi để lần sau không gọi vô ích
       return hienDangNhap();
@@ -238,7 +229,7 @@ const T = chuCaTrang(lang);
     $("td-co-tran").hidden = !coTran;
     $("td-len-dai").hidden = coTran;
     if (coTran) {
-      ($("td-vao-tran") as HTMLAnchorElement).href = linkTran(data.cua_toi.ma);
+      ($("td-vao-tran") as HTMLAnchorElement).href = linkTran(data.cua_toi.ma, data.cua_toi.tro_choi);
       $("td-roi-dai").hidden = data.cua_toi.trang_thai !== "cho"; // chỉ rời đài được khi chưa có đối thủ
       $("td-roi-dai").dataset.ma = data.cua_toi.ma;
     }
@@ -272,8 +263,8 @@ const T = chuCaTrang(lang);
 
   // Các hàm trả về true khi trang sắp chuyển sang trận (giữ nút ở trạng thái chờ cho đến khi đổi trang)
   async function lenDai(cheDo: string): Promise<boolean> {
-    const { ok, data } = await goi("/api/co-tuong-dai", {
-      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "len_dai", che_do: cheDo }),
+    const { ok, data } = await goi("/api/dai", {
+      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "len_dai", tro_choi: tc.ma, che_do: cheDo }),
     });
     if (ok || (data.loi === "dang_co_tran" && data.ma)) {
       location.href = linkTran(data.ma);
@@ -284,7 +275,7 @@ const T = chuCaTrang(lang);
   }
 
   async function thachDau(ma: string): Promise<boolean> {
-    const { ok, data } = await goi("/api/co-tuong-dai", {
+    const { ok, data } = await goi("/api/dai", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "vao_dai", ma }),
     });
     if (ok) {
@@ -303,7 +294,7 @@ const T = chuCaTrang(lang);
   nutMoRong.addEventListener("click", () => void chay(nutMoRong, T.trDangXuLy, () => lenDai("moi")));
   nutRoi.addEventListener("click", () => void chay(nutRoi, T.trDangXuLy, async () => {
     const ma = nutRoi.dataset.ma || "";
-    await goi("/api/co-tuong-dai", { method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "roi_dai", ma }) });
+    await goi("/api/dai", { method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "roi_dai", ma }) });
     await tai();
   }));
   // Đăng nhập: lấy địa chỉ Google mất một lúc nên nút khóa lại và báo lỗi nếu không chuyển trang được
@@ -318,12 +309,12 @@ const T = chuCaTrang(lang);
     }
   });
 
-  // Chuông chung của sảnh: có người lên đài, rời đài hoặc vào trận thì chuông rung và danh sách tải lại ngay.
+  // Chuông chung của sảnh (mỗi loại cờ một chuông): có người lên đài, rời đài hoặc vào trận thì chuông rung và danh sách tải lại ngay.
   // Đang nghe được chuông thì chỉ đọc dự phòng thưa; không nghe được thì đọc lại đều như trước.
   let dangNghe = false;
   if (docToken()) {
     ngheTinHieu(
-      "sanhthuongdai01",
+      tc.chuongSanh,
       () => {
         if (!dangLam) void tai();
       },

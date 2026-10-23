@@ -1,5 +1,5 @@
 ---
-// Khung tối giản cho trang cờ tướng: chỉ có biến màu, giao diện sáng/tối theo máy và báo chiều cao cho trang cha khi nhúng iframe.
+// Khung tối giản cho mọi trang: chỉ có biến màu, giao diện sáng/tối theo máy và báo chiều cao cho trang cha khi nhúng iframe.
 // nhung: bản nhúng vào web khác (iframe), không lập chỉ mục, mở liên kết ở tab mới.
 import Logo from "../components/Logo.astro";
 import ChuyenTheme from "../components/ChuyenTheme.astro";
@@ -8,11 +8,18 @@ import TaiKhoan from "../components/TaiKhoan.astro";
 import { NGON_NGU, t, thongTin, duongDan, boTienTo } from "../i18n/strings.js";
 // khongDich: trang không có bản theo ngôn ngữ (ví dụ /dang-nhap/), không hiện bộ chọn ngôn ngữ và không có hreflang.
 // khongLapChiMuc: trang có nội dung phụ thuộc mã trong địa chỉ (?ma=...), không nên xuất hiện trên công cụ tìm kiếm.
-const { tieuDe, moTa, lang = "vi", nhung = false, khongDich = false, khongLapChiMuc = false } = Astro.props;
+// troChoi: loại cờ của trang dùng chung cho mọi loại cờ (trận, sảnh), để làm sáng đúng mục menu.
+const { tieuDe, moTa, lang = "vi", nhung = false, khongDich = false, khongLapChiMuc = false, troChoi = "" } = Astro.props;
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 const duongGoc = boTienTo(Astro.url.pathname); // đường dẫn tiếng Việt của cùng trang
-// Mọi trang của loại cờ tướng (cổng, chơi với máy, thượng đài, chơi với bạn, xem lại, nhúng) làm sáng mục menu Cờ tướng
-const thuocCoTuong = /^\/(co-tuong|thuong-dai|tran|xem-van|nhung)\//.test(duongGoc);
+// Mục menu đang sáng: trang dưới /co-vua/ (và bản nhúng cờ vua) thuộc cờ vua; trang cờ tướng giữ đường dẫn cũ ở gốc
+// (/co-tuong/, /thuong-dai/, /tran/, /xem-van/, /nhung/). Trang trận và sảnh truyền troChoi; trang trận đổi lại bằng
+// script khi biết loại cờ của trận (sangMenu trong src/lib/chung/trinh-duyet.js).
+const menuSang = troChoi || (/^\/(co-vua|nhung\/co-vua)\//.test(duongGoc) ? "co_vua" : /^\/(co-tuong|thuong-dai|tran|xem-van|nhung)\//.test(duongGoc) ? "co_tuong" : "");
+const MENU = [
+  { ma: "co_tuong", href: "/co-tuong/", khoa: "menuCoTuong" },
+  { ma: "co_vua", href: "/co-vua/", khoa: "menuCoVua" },
+];
 // Tự chọn ngôn ngữ chỉ ở trang tiếng Việt thường (không phải bản nhúng, không phải trang trung tính)
 const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
 // Thẻ Open Graph và Twitter: tiêu đề, mô tả và ảnh hiện ra khi dán link vào mạng xã hội. Ảnh theo ngôn ngữ của trang
@@ -198,7 +205,7 @@ const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "
           <a class="ten-web" href={duongDan(lang, "/")} aria-label={t(lang, "logoAria")}><Logo size={30} /><span>Choi<span>Co</span></span></a>
           <div class="thanh-tren-phai">
             <nav id="menu-chinh" aria-label={t(lang, "menuAria")}>
-              <a href={duongDan(lang, "/co-tuong/")} aria-current={thuocCoTuong ? "page" : undefined}>{t(lang, "menuCoTuong")}</a>
+              {MENU.map((m) => <a href={duongDan(lang, m.href)} data-tro-choi={m.ma} aria-current={menuSang === m.ma ? "page" : undefined}>{t(lang, m.khoa)}</a>)}
             </nav>
             <ChuyenTheme lang={lang} />
             {!khongDich && <TaiKhoan lang={lang} />}

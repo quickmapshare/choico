@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { khoiTao, nuocHopLe, apDung, kyHieu, xepHangNuoc, biChieu, nuocThuVi } from "../src/lib/co-tuong.js";
-import { timNuocMay, biChieuMay, nuocGiaMay } from "../src/lib/co-tuong-may.js";
+import { khoiTao, nuocHopLe, apDung, kyHieu, biChieu, nuocThuVi } from "../src/lib/co-tuong/luat.js";
+import { xepHangNuoc } from "../src/lib/co-tuong/minimax.js";
+import { timNuocMay, biChieuMay, nuocGiaMay } from "../src/lib/co-tuong/may.js";
 
 const doiBen = (s) => (s === "r" ? "b" : "r");
 

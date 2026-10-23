@@ -1,0 +1,11 @@
+---
+// Bản nhúng gọn của bàn cờ chơi với máy (bàn cờ và các nút), dùng chung cho mọi ngôn ngữ và mọi loại cờ.
+import Layout from "../layouts/Layout.astro";
+import ChoiVoiMay from "../components/ChoiVoiMay.astro";
+import { t } from "../i18n/strings.js";
+
+const { lang = "vi", troChoi = "co_tuong" } = Astro.props;
+---
+<Layout lang={lang} tieuDe={t(lang, "nhungBanTieuDe", {}, troChoi)} moTa={t(lang, "nhungBanMoTa", {}, troChoi)} nhung>
+  <ChoiVoiMay lang={lang} troChoi={troChoi} nhung />
+</Layout>

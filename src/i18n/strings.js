@@ -1,5 +1,7 @@
 // Chuỗi giao diện 5 ngôn ngữ: Việt (gốc, không tiền tố), Anh, Trung phồn thể Đài Loan, Hàn, Nhật.
 // Mẫu có chỗ thay dạng {ten}; hàm dien() điền vào. {link} là chỗ đặt liên kết trong câu.
+// Chuỗi chung viết theo cờ tướng; chuỗi riêng của loại cờ khác nằm ở file riêng (co-vua.js) và đè lên khi cần.
+import { CHU_CO_VUA } from "./co-vua.js";
 
 export const NGON_NGU = [
   { ma: "vi", html: "vi", ten: "Tiếng Việt", tienTo: "" },
@@ -21,8 +23,12 @@ export function dien(mau, v = {}) {
   return mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
 }
 
-export const t = (lang, khoa, v) => dien(CHU[lang]?.[khoa] ?? CHU.vi[khoa], v);
-export const chuCaTrang = (lang) => ({ ...CHU.vi, ...CHU[lang] });
+// Chuỗi riêng của loại cờ troChoi đè lên chuỗi chung (chuỗi chung viết theo cờ tướng). Loại cờ không có chuỗi riêng thì rỗng.
+const RIENG = { co_vua: CHU_CO_VUA };
+export const chuRieng = (lang, troChoi) => ({ ...RIENG[troChoi]?.vi, ...RIENG[troChoi]?.[lang] });
+export const t = (lang, khoa, v, troChoi) => dien(chuRieng(lang, troChoi)[khoa] ?? CHU[lang]?.[khoa] ?? CHU.vi[khoa], v);
+// Mọi chuỗi của trang (gửi cho script phía trình duyệt): chung, ngôn ngữ trang, rồi riêng của loại cờ
+export const chuCaTrang = (lang, troChoi) => ({ ...CHU.vi, ...CHU[lang], ...chuRieng(lang, troChoi) });
 
 export const CHU = {
   vi: {
@@ -36,7 +42,7 @@ export const CHU = {
     chanTrangVe: "← Trang chủ ChoiCo",
     chanTrangMoTa: "Chơi cờ trực tuyến miễn phí.",
     homeTieuDe: "ChoiCo: chơi cờ trực tuyến",
-    homeMoTa: "Chơi cờ trực tuyến miễn phí ngay trên trình duyệt, bắt đầu từ cờ tướng.",
+    homeMoTa: "Chơi cờ tướng và cờ vua trực tuyến miễn phí ngay trên trình duyệt.",
     homeKhauHieu: "Chơi cờ ngay trên trình duyệt.",
     homeGioiThieu: "Chọn loại cờ bạn muốn chơi. Mọi ván chạy ngay trên trình duyệt, không cần cài đặt.",
     homeCo1: "Cờ tướng",
@@ -163,7 +169,7 @@ export const CHU = {
     kqThua: "thua",
     kqHoa: "hòa",
     xvTieuDe: "Xem lại ván cờ",
-    xvMoTa: "Xem lại nước đi của một ván cờ tướng đã chơi.",
+    xvMoTa: "Xem lại nước đi của một ván cờ đã chơi.",
     amThanh: "Âm thanh",
     batAm: "Bật âm thanh",
     tatAm: "Tắt âm thanh",
@@ -208,9 +214,9 @@ export const CHU = {
     tenKhongHop: "Tên chỉ gồm chữ cái và chữ số, tối đa 50 ký tự.",
     loiDangNhap: "Chưa đăng nhập Google được. Thử lại sau.",
     // Trang nhúng
-    nhungTieuDe: "Mã nhúng cờ tướng",
-    nhungMoTa: "Lấy mã nhúng bàn cờ tướng chơi với máy để dán vào trang web của bạn.",
-    nhungH1: "Nhúng cờ tướng vào web của bạn",
+    nhungTieuDe: "Mã nhúng bàn cờ",
+    nhungMoTa: "Lấy mã nhúng bàn cờ tướng hoặc cờ vua chơi với máy để dán vào trang web của bạn.",
+    nhungH1: "Nhúng bàn cờ vào web của bạn",
     nhungGioiThieu: "Dán đoạn mã dưới đây vào nơi bạn muốn hiện bàn cờ (trang HTML, hoặc khối \"HTML tùy chỉnh\" của WordPress, Blogger, Wix...). Khung tự cao theo nội dung. Người chơi muốn lưu tên và xem bảng xếp hạng sẽ bấm link ở cuối bàn để sang ChoiCo.",
     nhungSaoChep: "Sao chép mã",
     nhungDaChep: "Đã sao chép",
@@ -227,6 +233,18 @@ export const CHU = {
     dnVe: "Về bàn cờ",
     dnHuy: "Bạn đã hủy đăng nhập.",
     dnLoi: "Chưa đăng nhập được. Hãy quay lại bàn cờ và thử lại.",
+    // Nhiều loại cờ
+    menuCoVua: "Cờ vua",
+    tenCo: "Cờ tướng",
+    homeCo2: "Cờ vua",
+    chonPhong: "Chọn quân phong cấp",
+    trLyHetNuocHoa: "đủ {n} nước",
+    trLyChieuHet: "chiếu hết",
+    trLyHoaPat: "hết nước đi mà không bị chiếu",
+    trLyLap3: "lặp thế cờ 3 lần",
+    trLyLuat50: "50 nước không ăn quân, không đi tốt",
+    trLyThieuQuan: "không đủ quân để chiếu hết",
+    homeCo2Mo: "Chơi với máy, chơi với bạn bè, hoặc thượng đài đấu người khác.",
   },
 
   en: {
@@ -239,7 +257,7 @@ export const CHU = {
     chanTrangVe: "← ChoiCo home",
     chanTrangMoTa: "Board games online, free.",
     homeTieuDe: "ChoiCo: play board games online",
-    homeMoTa: "Play board games online for free in your browser, starting with xiangqi (Chinese chess).",
+    homeMoTa: "Play xiangqi (Chinese chess) and chess online for free in your browser.",
     homeKhauHieu: "Board games, right in your browser.",
     homeGioiThieu: "Pick a game to play. Everything runs in your browser, no installation needed.",
     homeCo1: "Xiangqi",
@@ -364,7 +382,7 @@ export const CHU = {
     kqThua: "lost",
     kqHoa: "drawn",
     xvTieuDe: "Replay a game",
-    xvMoTa: "Replay the moves of a finished Xiangqi game.",
+    xvMoTa: "Replay the moves of a finished game.",
     amThanh: "Sound",
     batAm: "Turn sound on",
     tatAm: "Turn sound off",
@@ -407,9 +425,9 @@ export const CHU = {
     loiMang: "Could not change the name: unable to reach the server.",
     tenKhongHop: "Names may contain only letters and digits, up to 50 characters.",
     loiDangNhap: "Could not sign in with Google. Try again later.",
-    nhungTieuDe: "Xiangqi embed code",
-    nhungMoTa: "Get the embed code for the xiangqi board to paste into your website.",
-    nhungH1: "Embed xiangqi on your website",
+    nhungTieuDe: "Board embed code",
+    nhungMoTa: "Get the embed code for a xiangqi or chess board to play against the computer, to paste into your website.",
+    nhungH1: "Embed a board on your website",
     nhungGioiThieu: "Paste the code below where you want the board to appear (an HTML page, or the \"custom HTML\" block in WordPress, Blogger, Wix...). The frame resizes to fit its content. Players who want to save their name and see the leaderboard can use the link under the board to go to ChoiCo.",
     nhungSaoChep: "Copy code",
     nhungDaChep: "Copied",
@@ -425,6 +443,18 @@ export const CHU = {
     dnVe: "Back to the board",
     dnHuy: "You cancelled the sign-in.",
     dnLoi: "Could not sign in. Go back to the board and try again.",
+    // Nhiều loại cờ
+    menuCoVua: "Chess",
+    tenCo: "Xiangqi",
+    homeCo2: "Chess",
+    chonPhong: "Choose a piece to promote to",
+    trLyHetNuocHoa: "{n}-move limit",
+    trLyChieuHet: "checkmate",
+    trLyHoaPat: "stalemate",
+    trLyLap3: "threefold repetition",
+    trLyLuat50: "50-move rule",
+    trLyThieuQuan: "insufficient material",
+    homeCo2Mo: "Play the computer, play a friend privately, or step onto the arena against other players.",
   },
 
   "zh-tw": {
@@ -437,7 +467,7 @@ export const CHU = {
     chanTrangVe: "← ChoiCo 首頁",
     chanTrangMoTa: "免費線上棋類遊戲。",
     homeTieuDe: "ChoiCo：線上棋類遊戲",
-    homeMoTa: "直接在瀏覽器中免費線上下棋，從象棋開始。",
+    homeMoTa: "直接在瀏覽器中免費線上下象棋與西洋棋。",
     homeKhauHieu: "直接在瀏覽器中下棋。",
     homeGioiThieu: "選擇想玩的棋類。所有對局都在瀏覽器中進行，無需安裝。",
     homeCo1: "象棋",
@@ -562,7 +592,7 @@ export const CHU = {
     kqThua: "負",
     kqHoa: "和",
     xvTieuDe: "回放棋局",
-    xvMoTa: "回放一局已結束的象棋對局。",
+    xvMoTa: "回放一局已結束的對局。",
     amThanh: "音效",
     batAm: "開啟音效",
     tatAm: "關閉音效",
@@ -605,9 +635,9 @@ export const CHU = {
     loiMang: "無法更改名稱：無法連線到伺服器。",
     tenKhongHop: "名稱只能包含文字與數字，最多 50 個字元。",
     loiDangNhap: "無法使用 Google 登入，請稍後再試。",
-    nhungTieuDe: "象棋嵌入程式碼",
-    nhungMoTa: "取得象棋人機對戰棋盤的嵌入程式碼，貼到您的網站。",
-    nhungH1: "將象棋嵌入您的網站",
+    nhungTieuDe: "棋盤嵌入程式碼",
+    nhungMoTa: "取得象棋或西洋棋人機對戰棋盤的嵌入程式碼，貼到您的網站。",
+    nhungH1: "將棋盤嵌入您的網站",
     nhungGioiThieu: "將下方程式碼貼到您想顯示棋盤的位置（HTML 頁面，或 WordPress、Blogger、Wix 等的「自訂 HTML」區塊）。框架會依內容自動調整高度。想儲存名稱並查看排行榜的玩家，可點棋盤下方的連結前往 ChoiCo。",
     nhungSaoChep: "複製程式碼",
     nhungDaChep: "已複製",
@@ -623,6 +653,18 @@ export const CHU = {
     dnVe: "回到棋盤",
     dnHuy: "您已取消登入。",
     dnLoi: "無法登入。請回到棋盤再試一次。",
+    // Nhiều loại cờ
+    menuCoVua: "西洋棋",
+    tenCo: "象棋",
+    homeCo2: "西洋棋",
+    chonPhong: "選擇升變的棋子",
+    trLyHetNuocHoa: "達到 {n} 步",
+    trLyChieuHet: "將死",
+    trLyHoaPat: "逼和",
+    trLyLap3: "三次重複局面",
+    trLyLuat50: "五十步規則",
+    trLyThieuQuan: "子力不足以將死",
+    homeCo2Mo: "與電腦對弈、與朋友私下對弈，或登上擂台挑戰其他玩家。",
   },
 
   ko: {
@@ -635,7 +677,7 @@ export const CHU = {
     chanTrangVe: "← ChoiCo 홈",
     chanTrangMoTa: "무료 온라인 보드게임.",
     homeTieuDe: "ChoiCo: 온라인 보드게임",
-    homeMoTa: "브라우저에서 무료로 온라인 보드게임을 즐기세요. 샹치(중국 장기)부터 시작합니다.",
+    homeMoTa: "브라우저에서 무료로 샹치(중국 장기)와 체스를 즐기세요.",
     homeKhauHieu: "브라우저에서 바로 보드게임을.",
     homeGioiThieu: "즐기고 싶은 게임을 고르세요. 모든 대국은 브라우저에서 바로 진행되며 설치가 필요 없습니다.",
     homeCo1: "샹치",
@@ -760,7 +802,7 @@ export const CHU = {
     kqThua: "패",
     kqHoa: "무승부",
     xvTieuDe: "대국 다시 보기",
-    xvMoTa: "끝난 장기 대국의 수를 다시 봅니다.",
+    xvMoTa: "끝난 대국의 수를 다시 봅니다.",
     amThanh: "소리",
     batAm: "소리 켜기",
     tatAm: "소리 끄기",
@@ -803,9 +845,9 @@ export const CHU = {
     loiMang: "이름을 바꾸지 못했습니다. 서버에 연결할 수 없습니다.",
     tenKhongHop: "이름은 글자와 숫자만 쓸 수 있으며 최대 50자입니다.",
     loiDangNhap: "Google 로그인에 실패했습니다. 나중에 다시 시도하세요.",
-    nhungTieuDe: "샹치 삽입 코드",
-    nhungMoTa: "컴퓨터 대전 샹치 판의 삽입 코드를 받아 내 웹사이트에 붙여 넣으세요.",
-    nhungH1: "내 웹사이트에 샹치 삽입하기",
+    nhungTieuDe: "판 삽입 코드",
+    nhungMoTa: "컴퓨터 대전 샹치 판이나 체스판의 삽입 코드를 받아 내 웹사이트에 붙여 넣으세요.",
+    nhungH1: "내 웹사이트에 판 삽입하기",
     nhungGioiThieu: "아래 코드를 판을 표시하려는 위치에 붙여 넣으세요(HTML 페이지, 또는 WordPress, Blogger, Wix 등의 \"사용자 지정 HTML\" 블록). 프레임은 내용에 맞게 높이가 자동으로 조절됩니다. 이름을 저장하고 순위표를 보려는 플레이어는 판 아래 링크를 눌러 ChoiCo로 이동할 수 있습니다.",
     nhungSaoChep: "코드 복사",
     nhungDaChep: "복사됨",
@@ -821,6 +863,18 @@ export const CHU = {
     dnVe: "판으로 돌아가기",
     dnHuy: "로그인을 취소했습니다.",
     dnLoi: "로그인하지 못했습니다. 판으로 돌아가 다시 시도하세요.",
+    // Nhiều loại cờ
+    menuCoVua: "체스",
+    tenCo: "샹치",
+    homeCo2: "체스",
+    chonPhong: "승진할 기물을 고르세요",
+    trLyHetNuocHoa: "{n}수 도달",
+    trLyChieuHet: "체크메이트",
+    trLyHoaPat: "스테일메이트",
+    trLyLap3: "같은 국면 3회 반복",
+    trLyLuat50: "50수 규칙",
+    trLyThieuQuan: "체크메이트할 기물 부족",
+    homeCo2Mo: "컴퓨터와 대국하거나, 친구와 비공개로 두거나, 무대에 올라 다른 사람과 겨루세요.",
   },
 
   ja: {
@@ -833,7 +887,7 @@ export const CHU = {
     chanTrangVe: "← ChoiCo ホーム",
     chanTrangMoTa: "無料のオンライン盤ゲーム。",
     homeTieuDe: "ChoiCo：オンライン盤ゲーム",
-    homeMoTa: "ブラウザで無料のオンライン盤ゲームを楽しめます。まずはシャンチー（中国象棋）から。",
+    homeMoTa: "ブラウザで無料のシャンチー（中国象棋）とチェスを楽しめます。",
     homeKhauHieu: "ブラウザですぐに盤ゲームを。",
     homeGioiThieu: "遊びたいゲームを選んでください。すべての対局はブラウザ上で動き、インストールは不要です。",
     homeCo1: "シャンチー",
@@ -958,7 +1012,7 @@ export const CHU = {
     kqThua: "負け",
     kqHoa: "引き分け",
     xvTieuDe: "対局を見直す",
-    xvMoTa: "終了した将棋・象棋の対局を見直します。",
+    xvMoTa: "終了した対局を見直します。",
     amThanh: "サウンド",
     batAm: "サウンドをオン",
     tatAm: "サウンドをオフ",
@@ -1001,9 +1055,9 @@ export const CHU = {
     loiMang: "名前を変更できませんでした。サーバーに接続できません。",
     tenKhongHop: "名前には文字と数字のみ使え、最大50文字です。",
     loiDangNhap: "Google でログインできませんでした。後でもう一度お試しください。",
-    nhungTieuDe: "シャンチー埋め込みコード",
-    nhungMoTa: "コンピューターと対戦するシャンチー盤の埋め込みコードを取得して、サイトに貼り付けます。",
-    nhungH1: "サイトにシャンチーを埋め込む",
+    nhungTieuDe: "盤面の埋め込みコード",
+    nhungMoTa: "コンピューターと対戦するシャンチー盤またはチェス盤の埋め込みコードを取得して、サイトに貼り付けます。",
+    nhungH1: "サイトに盤面を埋め込む",
     nhungGioiThieu: "下のコードを、盤面を表示したい場所に貼り付けてください（HTML ページ、または WordPress・Blogger・Wix などの「カスタム HTML」ブロック）。フレームは内容に合わせて高さが自動調整されます。名前を保存してランキングを見たいプレイヤーは、盤面の下のリンクから ChoiCo へ移動できます。",
     nhungSaoChep: "コードをコピー",
     nhungDaChep: "コピーしました",
@@ -1019,5 +1073,17 @@ export const CHU = {
     dnVe: "盤面に戻る",
     dnHuy: "ログインをキャンセルしました。",
     dnLoi: "ログインできませんでした。盤面に戻ってもう一度お試しください。",
+    // Nhiều loại cờ
+    menuCoVua: "チェス",
+    tenCo: "シャンチー",
+    homeCo2: "チェス",
+    chonPhong: "昇格する駒を選んでください",
+    trLyHetNuocHoa: "{n}手に到達",
+    trLyChieuHet: "チェックメイト",
+    trLyHoaPat: "ステイルメイト",
+    trLyLap3: "同一局面3回",
+    trLyLuat50: "50手ルール",
+    trLyThieuQuan: "チェックメイトに必要な駒の不足",
+    homeCo2Mo: "コンピューターと対戦、友だちと非公開で対局、またはアリーナで他の人と対局できます。",
   },
 };

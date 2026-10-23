@@ -1,38 +1,48 @@
 ---
-// Trang lấy mã nhúng bàn cờ tướng vào web bất kỳ, dùng chung cho mọi ngôn ngữ.
+// Trang lấy mã nhúng bàn cờ vào web bất kỳ, dùng chung cho mọi ngôn ngữ: mỗi loại cờ một đoạn mã và một khung xem trước.
 // Mã nhúng trỏ tới bản nhúng cùng ngôn ngữ với trang này.
 import Layout from "../layouts/Layout.astro";
 import { t, duongDan } from "../i18n/strings.js";
+import { TRO_CHOI } from "../lib/tro-choi.js";
 
 const { lang = "vi" } = Astro.props;
-const src = new URL(duongDan(lang, "/nhung/co-tuong/"), Astro.site);
 // Mã nhúng: một iframe và một đoạn script nhỏ để khung tự cao theo nội dung
-const ma = [
-  `<iframe src="${src.href}" title="${t(lang, "nhungKhungTieuDe")}" allow="fullscreen" style="width:100%;border:0;height:640px" loading="lazy"></iframe>`,
-  `<script>`,
-  `addEventListener("message", (e) => {`,
-  `  if (e.origin !== "${src.origin}" || !e.data?.choicoCao) return;`,
-  `  for (const f of document.querySelectorAll("iframe")) if (f.contentWindow === e.source) f.style.height = e.data.choicoCao + "px";`,
-  `});`,
-  `</script>`,
-].join("\n");
+const cacBan = Object.values(TRO_CHOI).map((tc) => {
+  const src = new URL(duongDan(lang, tc.duong.nhung), Astro.site);
+  const tieuDe = t(lang, "nhungKhungTieuDe", {}, tc.ma);
+  const ma = [
+    `<iframe src="${src.href}" title="${tieuDe}" allow="fullscreen" style="width:100%;border:0;height:640px" loading="lazy"></iframe>`,
+    `<script>`,
+    `addEventListener("message", (e) => {`,
+    `  if (e.origin !== "${src.origin}" || !e.data?.choicoCao) return;`,
+    `  for (const f of document.querySelectorAll("iframe")) if (f.contentWindow === e.source) f.style.height = e.data.choicoCao + "px";`,
+    `});`,
+    `</script>`,
+  ].join("\n");
+  return { ma: tc.ma, ten: t(lang, "tenCo", {}, tc.ma), src, tieuDe, maNhung: ma };
+});
 const nhanChep = t(lang, "nhungSaoChep");
 ---
 <Layout lang={lang} tieuDe={t(lang, "nhungTieuDe")} moTa={t(lang, "nhungMoTa")}>
   <h1>{t(lang, "nhungH1")}</h1>
   <p class="phu">{t(lang, "nhungGioiThieu")}</p>
 
-  <div class="khung-ma">
-    <pre id="ma-nhung"><code>{ma}</code></pre>
-    <button type="button" id="chep" class="nut-chep" aria-label={nhanChep} title={nhanChep} data-nhan={nhanChep} data-da={t(lang, "nhungDaChep")} data-tay={t(lang, "nhungChonTay")}>
-      <svg class="bt-chep" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <svg class="bt-xong" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-  </div>
-  <p class="hang-lien-ket"><a href={src.href} target="_blank" rel="noopener">{t(lang, "nhungXem")} ↗</a></p>
+  {cacBan.map((b) => (
+    <section class="mot-ban">
+      <h2>{b.ten}</h2>
+      <div class="khung-ma">
+        <pre><code>{b.maNhung}</code></pre>
+        <button type="button" class="nut-chep" aria-label={nhanChep} title={nhanChep} data-nhan={nhanChep} data-da={t(lang, "nhungDaChep")} data-tay={t(lang, "nhungChonTay")}>
+          <svg class="bt-chep" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="bt-xong" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <p class="hang-lien-ket"><a href={b.src.href} target="_blank" rel="noopener">{t(lang, "nhungXem")} ↗</a></p>
 
-  <h2>{t(lang, "nhungXemTruoc")}</h2>
-  <iframe id="xem-truoc" src={src.href} title={t(lang, "nhungKhungTieuDe")} allow="fullscreen" style="width:100%;border:0;height:640px"></iframe>
+      <h3>{t(lang, "nhungXemTruoc")}</h3>
+      <iframe class="xem-truoc" src={b.src.href} title={b.tieuDe} allow="fullscreen" loading="lazy" style="width:100%;border:0;height:640px"></iframe>
+    </section>
+  ))}
 </Layout>
 
 <style>
@@ -57,39 +67,44 @@ const nhanChep = t(lang, "nhungSaoChep");
   .nut-chep.da-chep .bt-chep { display: none; }
   .nut-chep.da-chep .bt-xong { display: block; }
   .hang-lien-ket { margin: .7rem 0 0; }
+  .mot-ban + .mot-ban { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--vien); }
+  h3 { font-size: 1rem; margin: 1.4rem 0 .5rem; }
 </style>
 
 <script>
-  const ma = document.getElementById("ma-nhung") as HTMLElement;
-  const nut = document.getElementById("chep") as HTMLButtonElement;
-  function datNhan(chu: string) {
-    nut.title = chu;
-    nut.setAttribute("aria-label", chu);
+  // Mỗi khung mã có một nút sao chép riêng
+  for (const nut of document.querySelectorAll<HTMLButtonElement>(".nut-chep")) {
+    const ma = nut.parentElement!.querySelector("pre") as HTMLElement;
+    const datNhan = (chu: string) => {
+      nut.title = chu;
+      nut.setAttribute("aria-label", chu);
+    };
+    nut.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(ma.textContent || "");
+        nut.classList.add("da-chep");
+        datNhan(nut.dataset.da!);
+      } catch {
+        // Không ghi được vào bộ nhớ tạm: chọn sẵn mã để người dùng tự sao chép
+        const vung = document.createRange();
+        vung.selectNodeContents(ma);
+        const chon = getSelection();
+        chon?.removeAllRanges();
+        chon?.addRange(vung);
+        datNhan(nut.dataset.tay!);
+      }
+      setTimeout(() => {
+        nut.classList.remove("da-chep");
+        datNhan(nut.dataset.nhan!);
+      }, 2000);
+    });
   }
-  nut.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(ma.textContent || "");
-      nut.classList.add("da-chep");
-      datNhan(nut.dataset.da!);
-    } catch {
-      // Không ghi được vào bộ nhớ tạm: chọn sẵn mã để người dùng tự sao chép
-      const vung = document.createRange();
-      vung.selectNodeContents(ma);
-      const chon = getSelection();
-      chon?.removeAllRanges();
-      chon?.addRange(vung);
-      datNhan(nut.dataset.tay!);
-    }
-    setTimeout(() => {
-      nut.classList.remove("da-chep");
-      datNhan(nut.dataset.nhan!);
-    }, 2000);
-  });
 
   // Xem trước cũng tự cao theo nội dung
   addEventListener("message", (e) => {
     if (e.origin !== location.origin || !e.data?.choicoCao) return;
-    const khung = document.getElementById("xem-truoc") as HTMLIFrameElement;
-    if (khung.contentWindow === e.source) khung.style.height = e.data.choicoCao + "px";
+    for (const khung of document.querySelectorAll<HTMLIFrameElement>(".xem-truoc")) {
+      if (khung.contentWindow === e.source) khung.style.height = e.data.choicoCao + "px";
+    }
   });
 </script>

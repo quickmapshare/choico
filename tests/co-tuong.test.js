@@ -1,32 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
-  khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu,
-  timNuoc, nuocTot, xepHangNuoc, banVanBan, lamSachTen, tenHopLe, tenBangDiem,
-  xacMinhVan, xepHangTheoThoiGian, quanBiAn, biChieu, diemCongVan, HOAN_TOI_DA, taoTenTam,
-} from "../src/lib/co-tuong.js";
+  khoiTao, nuocThuVi, nuocHopLe, vuaDoiMat, apDung, kyHieu, timNuoc, banVanBan, quanBiAn, biChieu,
+} from "../src/lib/co-tuong/luat.js";
+import { nuocTot, xepHangNuoc, xepHangTheoThoiGian } from "../src/lib/co-tuong/minimax.js";
+import { xacMinhVan as xacMinh } from "../src/lib/chung/van.js";
+import coTuong from "../src/lib/co-tuong/index.js";
 
-describe("tên tạm", () => {
-  it("tên tạm luôn hợp lệ, có 4 chữ cái và ngày chơi lần đầu", () => {
-    for (let i = 0; i < 50; i++) {
-      const t = taoTenTam();
-      expect(tenHopLe(t)).toBe(true);
-      expect(t).toMatch(/^Kỳ thủ [A-Z]{4} \d{8}$/);
-      expect(t.length).toBeLessThanOrEqual(50);
-    }
-  });
-
-  it("chọn đúng chữ cái theo số ngẫu nhiên và ghép ngày theo giờ Việt Nam", () => {
-    // 2026-10-22 23:30 UTC là 2026-10-23 06:30 giờ Việt Nam
-    const luc = new Date("2026-10-22T23:30:00Z");
-    expect(taoTenTam(() => 0, luc)).toBe("Kỳ thủ AAAA 23102026");
-    expect(taoTenTam(() => 0.999999, luc)).toBe("Kỳ thủ ZZZZ 23102026");
-  });
-
-  it("tên có chữ số được chấp nhận, tên tạm có ngày vẫn hợp lệ", () => {
-    expect(tenHopLe("Kỳ thủ KQMA 23102026")).toBe(true);
-    expect(tenHopLe("0912345678")).toBe(true);
-  });
-});
+const xacMinhVan = (nuoc) => xacMinh(coTuong, nuoc);
 
 describe("quân đã bị ăn", () => {
   it("thế mở đầu chưa có quân nào bị ăn", () => {
@@ -93,55 +73,6 @@ describe("xác minh ván để tính điểm", () => {
     expect(xacMinhVan(["a3a4"])).toEqual({ hop_le: false });
     // Ván chưa kết thúc (mới 1 nước)
     expect(xacMinhVan(["a6a5"])).toEqual({ hop_le: false });
-  });
-});
-
-describe("điểm và nước hoãn", () => {
-  it("không hoãn thì giữ nguyên điểm theo kết quả", () => {
-    expect(diemCongVan("thang", 0)).toBe(3);
-    expect(diemCongVan("hoa", 0)).toBe(1);
-    expect(diemCongVan("thua", 0)).toBe(-1);
-  });
-
-  it("mỗi nước hoãn trừ 0,5 điểm, tối đa 3 nước", () => {
-    expect(diemCongVan("thang", 1)).toBe(2.5);
-    expect(diemCongVan("thang", 3)).toBe(1.5);
-    expect(diemCongVan("thua", 3)).toBe(-2.5);
-    expect(HOAN_TOI_DA).toBe(3);
-  });
-});
-
-describe("tên người chơi", () => {
-  it("chấp nhận chữ cái, có dấu tiếng Việt và khoảng trắng giữa các từ", () => {
-    expect(tenHopLe("Nguyễn Văn An")).toBe(true);
-    expect(tenHopLe("Đỗ")).toBe(true);
-  });
-
-  it("từ chối ký tự đặc biệt, khoảng trắng đầu hoặc cuối, chuỗi rỗng", () => {
-    expect(tenHopLe("An!")).toBe(false);
-    expect(tenHopLe("An-Bình")).toBe(false);
-    expect(tenHopLe(" An")).toBe(false);
-    expect(tenHopLe("An ")).toBe(false);
-    expect(tenHopLe("")).toBe(false);
-  });
-
-  it("giới hạn 50 ký tự", () => {
-    expect(tenHopLe("a".repeat(50))).toBe(true);
-    expect(tenHopLe("a".repeat(51))).toBe(false);
-  });
-
-  it("bảng xếp hạng che mọi chữ số bằng dấu *", () => {
-    expect(tenBangDiem("0912345678")).toBe("**********");
-    expect(tenBangDiem("Kỳ thủ KQMA 23102026")).toBe("Kỳ thủ KQMA ********");
-    expect(tenBangDiem("Lê Hoài")).toBe("Lê Hoài");
-  });
-
-  it("làm sạch khi gõ: bỏ ký tự đặc biệt, giữ chữ số, gộp khoảng trắng, cắt 50 ký tự", () => {
-    expect(lamSachTen("An2!3")).toBe("An23");
-    expect(lamSachTen("  Lê   Hoài")).toBe("Lê Hoài");
-    expect(lamSachTen("Lê ")).toBe("Lê "); // giữ khoảng trắng cuối khi đang gõ, cắt khi lưu
-    expect(lamSachTen("a".repeat(60))).toHaveLength(50);
-    expect(tenHopLe(lamSachTen("Trần #1 Bình 99").trim())).toBe(true); // trang cắt khoảng trắng cuối khi lưu
   });
 });
 

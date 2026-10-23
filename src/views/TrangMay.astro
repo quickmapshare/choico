@@ -1,0 +1,11 @@
+---
+// Trang chơi với máy đầy đủ (bàn cờ, ô tên, bảng điểm), dùng chung cho mọi ngôn ngữ và mọi loại cờ.
+import Layout from "../layouts/Layout.astro";
+import ChoiVoiMay from "../components/ChoiVoiMay.astro";
+import { t } from "../i18n/strings.js";
+
+const { lang = "vi", troChoi = "co_tuong" } = Astro.props;
+---
+<Layout lang={lang} tieuDe={t(lang, "ctTieuDe", {}, troChoi)} moTa={t(lang, "ctMoTa", {}, troChoi)}>
+  <ChoiVoiMay lang={lang} troChoi={troChoi} />
+</Layout>

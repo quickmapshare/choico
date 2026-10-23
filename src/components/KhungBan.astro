@@ -1,0 +1,25 @@
+---
+// Khung bàn cờ dùng chung: khay quân bị ăn phía trên, bàn, khay phía dưới, ô chọn quân phong cấp (cờ vua) và nút thu nhỏ
+// cố định (khi phóng to bằng CSS trên iPhone). Bàn và khay do JavaScript vẽ (src/lib/chung/ban.js); id cố định.
+// Khay nằm đúng phía của mỗi bên: bên có quân ở phía trên bàn thì khay của bên đó nằm trên (xoay bàn thì đảo lại).
+const { T, hidden = false } = Astro.props;
+---
+<div id="co-khung" class="co-khung" hidden={hidden}>
+  <div class="co-an-nua" id="co-khay-tren">
+    <div id="co-an-tren"></div>
+  </div>
+  <div class="co-ban-boc">
+    <div id="co-ban" class="co-ban" aria-label={T.banCo}></div>
+    <!-- Đi tốt tới hàng cuối (cờ vua): chọn quân phong cấp, các nút do JavaScript tạo -->
+    <div id="co-chon-quan" class="co-chon-quan" role="dialog" aria-label={T.chonPhong} hidden>
+      <p>{T.chonPhong}</p>
+      <div id="co-chon-quan-nut" class="co-chon-quan-nut"></div>
+    </div>
+  </div>
+  <div class="co-an-nua" id="co-khay-duoi">
+    <div id="co-an-duoi"></div>
+  </div>
+</div>
+<button type="button" id="co-thu-nho" class="co-nut-icon co-thu-nho" aria-label={T.thuNhoBan} title={T.thuNhoBan} hidden>
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>

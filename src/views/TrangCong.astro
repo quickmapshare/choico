@@ -1,0 +1,53 @@
+---
+// Trang cổng của một loại cờ (các cách chơi loại cờ đó), dùng chung cho mọi ngôn ngữ và mọi loại cờ.
+import Layout from "../layouts/Layout.astro";
+import Logo from "../components/Logo.astro";
+import { t, duongDan } from "../i18n/strings.js";
+import { TRO_CHOI } from "../lib/tro-choi.js";
+
+const { lang = "vi", troChoi = "co_tuong" } = Astro.props;
+const d = TRO_CHOI[troChoi].duong;
+const c = (khoa) => t(lang, khoa, {}, troChoi);
+const trang = [
+  { href: duongDan(lang, d.may), ten: c("ctcThe1"), mo: c("ctcThe1Mo") },
+  { href: duongDan(lang, d.tran), ten: c("ctcThe5"), mo: c("ctcThe5Mo") },
+  { href: duongDan(lang, d.dai), ten: c("ctcThe4"), mo: c("ctcThe4Mo") },
+  { href: duongDan(lang, d.may) + "#co-bang-diem-tieu-de", ten: c("ctcThe2"), mo: c("ctcThe2Mo") },
+  { href: duongDan(lang, "/nhung/"), ten: c("ctcThe3"), mo: c("ctcThe3Mo") },
+];
+---
+<Layout lang={lang} tieuDe={c("ctcTieuDe")} moTa={c("ctcMoTa")}>
+  <div class="dau-trang">
+    <Logo size={72} />
+    <div>
+      <h1>{c("tenCo")}</h1>
+      <p class="phu khau-hieu">{c("ctcKhauHieu")}</p>
+    </div>
+  </div>
+  <p>{c("ctcGioiThieu")}</p>
+
+  <ul class="danh-sach">
+    {trang.map((x) => (
+      <li>
+        <a class="the-lien-ket" href={x.href}>
+          <strong>{x.ten}</strong>
+          <span class="phu">{x.mo}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</Layout>
+
+<style>
+  .dau-trang { display: flex; align-items: center; gap: 1.1rem; margin: .5rem 0 1rem; }
+  .dau-trang h1 { margin: 0; font-size: clamp(2rem, 7vw, 2.8rem); letter-spacing: -.03em; }
+  .khau-hieu { margin: .1rem 0 0; font-size: 1rem; }
+  .danh-sach { list-style: none; padding: 0; margin: 1.2rem 0; display: grid; gap: .75rem; }
+  .danh-sach li { margin: 0; }
+  .the-lien-ket {
+    display: block; padding: .9rem 1.1rem; background: var(--mat); border: 1px solid var(--vien);
+    border-radius: 14px; box-shadow: var(--bong); color: var(--chu); text-decoration: none;
+  }
+  .the-lien-ket:hover { border-color: var(--nhan); text-decoration: none; }
+  .the-lien-ket strong { display: block; color: var(--nhan); }
+</style>
