@@ -120,6 +120,8 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
       .ten-web span span { color: var(--nhan); }
       .thanh-tren-phai { display: flex; align-items: center; gap: .9rem; }
       .thanh-tren nav { display: flex; gap: 1rem; font-size: .93rem; font-weight: 600; }
+      /* Điện thoại: ẩn menu chữ cho thanh đầu gọn, vẫn còn logo về trang chủ, nút giao diện và ngôn ngữ */
+      @media (max-width: 640px) { .thanh-tren nav { display: none; } }
       .thanh-tren nav a { color: var(--phu); }
       .thanh-tren nav a:hover, .thanh-tren nav a[aria-current="page"] { color: var(--nhan); }
       .chan-trang { max-width: 46rem; margin: 0 auto; padding: 1rem 1rem 2rem; border-top: 1px solid var(--vien); color: var(--phu); font-size: .85rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }

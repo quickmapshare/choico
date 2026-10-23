@@ -53,7 +53,9 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
       <div id="co-an-do"></div>
     </div>
   </div>
-  <button type="button" id="co-thu-nho" class="co-thu-nho" hidden>{T.thuNho}</button>
+  <button type="button" id="co-thu-nho" class="co-nut-icon co-thu-nho" aria-label={T.thuNhoBan} title={T.thuNhoBan} hidden>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
 
   <section class="co-bang-diem" aria-labelledby="co-bang-diem-tieu-de" hidden={nhung}>
     <h2 id="co-bang-diem-tieu-de">{T.bangDiem}</h2>
@@ -149,10 +151,8 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   }
   .co-ban.co-phong-to-css .co-svg { width: auto; height: 100%; max-width: 100%; }
   /* Nút thu nhỏ nằm ngoài bàn cờ, luôn trên lớp phủ, chỉ hiện khi bàn đang phóng to bằng CSS */
-  .co-thu-nho {
-    position: fixed; top: .6rem; right: .6rem; z-index: 1001; padding: .4rem .8rem; border-radius: .3rem;
-    font: inherit; font-weight: 600; cursor: pointer; background: var(--nhan); color: var(--nen); border: 1px solid var(--nhan);
-  }
+  /* Kiểu nút giống nút phóng to (co-nut-icon, tròn có biểu tượng), chỉ khác là cố định ở góc trên bên phải */
+  .co-thu-nho { position: fixed; top: .6rem; right: .6rem; z-index: 1001; }
   .co-thu-nho[hidden] { display: none; }
   /* Khi phóng to bàn cờ thì ẩn nút chat (widget bên thứ ba: nút và khung chat) để không che bàn */
   body.co-dang-phong-to #formmailhub-widget-container,
