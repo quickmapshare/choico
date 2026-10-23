@@ -61,6 +61,20 @@ describe("máy đứng sẵn trên đài", () => {
   });
 });
 
+describe("dọn máy trùng với số lượng lớn", () => {
+  it("mỗi lần tải sảnh chỉ dọn một ít (để không quá giới hạn lời gọi), nhiều lần thì dọn hết", async () => {
+    const trans = taoPocketBase();
+    await bamDanhMay("http://pb", {});
+    for (let i = 0; i < 200; i++) trans[`d${i}`] = { id: `d${i}`, loai: "dai", trang_thai: "cho", do: "may_1", cap_do: 1, tin_hieu: "" };
+    expect(Object.keys(trans).length).toBe(205);
+    await bamDanhMay("http://pb", {});
+    const conLai = Object.keys(trans).length;
+    expect(conLai).toBeGreaterThan(190); // một lần chỉ xóa vài bản, không xóa cả trăm bản một lúc
+    for (let i = 0; i < 60 && Object.keys(trans).length > 5; i++) await bamDanhMay("http://pb", {});
+    expect(Object.values(trans).map((t) => t.cap_do).sort()).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
 describe("lượt đi trong trận với máy", () => {
   it("máy đỏ đi trước: lượt chẵn là của máy, lượt lẻ là của người", () => {
     expect(denLuotMay(tranMay([]))).toBe(true);

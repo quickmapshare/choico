@@ -8,6 +8,7 @@ import { BANG_TRAN, BANG_TIN_HIEU, TIN_HIEU_SANH, taoTran } from "./tran.js";
 export { laMay };
 export const MUC_MAY = [1, 2, 3, 4, 5];
 export const tenMay = (muc) => `Máy mức ${muc}`;
+const TOI_DA_DON_MOI_LAN = 5;
 
 // Xóa một trận máy thừa kèm chuông của nó (chuông chung của sảnh thì giữ)
 async function xoaTran(pb, H, t) {
@@ -32,7 +33,9 @@ export async function bamDanhMay(pb, H) {
     if (dangCho.has(t.cap_do)) thua.push(t);
     else dangCho.set(t.cap_do, t);
   }
-  await Promise.all(thua.map((t) => xoaTran(pb, H, t)));
+  // Dọn dần: mỗi lần tối đa vài bản, vì mỗi lần xóa là hai lời gọi PocketBase và một yêu cầu Cloudflare chỉ được gọi ra ngoài
+  // một số lượng có hạn. Dọn hàng trăm bản một lúc làm cả sảnh lỗi; nhiều lần tải sảnh sẽ dọn hết.
+  await Promise.all(thua.slice(0, TOI_DA_DON_MOI_LAN).map((t) => xoaTran(pb, H, t)));
   await Promise.all(
     MUC_MAY.filter((muc) => !dangCho.has(muc)).map((muc) =>
       taoTran(pb, H, {
