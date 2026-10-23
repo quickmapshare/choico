@@ -1,6 +1,8 @@
 // Tiện ích dùng chung cho trận giữa hai người (khép kín và thượng đài). Không phải route.
 // Người chơi là tài khoản (header Authorization) hoặc khách (header x-khach-id, khép kín không cần tài khoản).
 import { dangNhap, xacThuc } from "./pocketbase.js";
+import { capNhatDiem } from "./diem.js";
+import { ketQuaChoBen } from "../../src/lib/co-tuong-tran.js";
 
 export const BANG_TRAN = "co_tuong_tran";
 export const MAU_MA = /^[a-f0-9]{32}$/; // mã trận sinh bằng crypto.randomUUID() bỏ dấu gạch
@@ -50,3 +52,23 @@ export function taoTran(pb, H, data) {
 }
 
 export const sauPhut = (giay) => new Date(Date.now() + giay * 1000).toISOString();
+
+// Cộng điểm cho cả hai người của một trận thượng đài đã có kết quả. Điểm tính như đấu máy (xem diem.js), không hoãn nước.
+async function tinhDiemTran(pb, H, tran, ketQua) {
+  const ben = [["r", tran.do, tran.ten_do], ["b", tran.den, tran.ten_den]];
+  for (const [s, id, ten] of ben) {
+    await capNhatDiem(pb, H, { id }, ten, ketQuaChoBen(ketQua, s), 0);
+  }
+}
+
+// Kết thúc trận (hết nước, đầu hàng, hết giờ bị xử thua, bỏ dở). Chỉ trận thượng đài ("dai") mới tính điểm.
+// Cờ da_tinh_diem được ghi cùng lúc với kết quả để giữ chỗ trước, tránh cộng điểm hai lần nếu hai yêu cầu kết thúc trận cùng lúc.
+export async function ketThucTran(pb, H, tran, { ket_qua, ly_do, nuoc }) {
+  const data = { trang_thai: "ket_thuc", ket_qua, ly_do, han_nuoc: "" };
+  if (nuoc) data.nuoc = nuoc;
+  const tinhDiem = tran.loai === "dai" && !tran.da_tinh_diem;
+  if (tinhDiem) data.da_tinh_diem = true;
+  const r = await capNhatTran(pb, H, tran.id, data);
+  if (r.ok && tinhDiem) await tinhDiemTran(pb, H, tran, ket_qua);
+  return r;
+}

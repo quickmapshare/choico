@@ -6,21 +6,21 @@
 // nước này) hoặc xử thua. Trong lúc chưa ai quyết định, bên chậm vẫn đi nước được.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
-import { layNguoi, headerAdmin, docTran, capNhatTran, sauPhut, MAU_MA } from "../_lib/tran.js";
+import { layNguoi, headerAdmin, docTran, capNhatTran, ketThucTran, sauPhut, MAU_MA } from "../_lib/tran.js";
 import { timNuoc } from "../../src/lib/co-tuong.js";
 import {
   duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo,
 } from "../../src/lib/co-tuong-tran.js";
 
-// Kết thúc trận (hết giờ, đầu hàng, hết nước). Khép kín không tính điểm.
-async function ketThuc(pb, H, tran, { ket_qua, ly_do, nuoc }) {
-  const data = { trang_thai: "ket_thuc", ket_qua, ly_do, han_nuoc: "" };
-  if (nuoc) data.nuoc = nuoc;
-  return capNhatTran(pb, H, tran.id, data);
-}
-
-// Trận bị bỏ dở (quá hạn mà không ai quyết định): đóng lại, không có bên thắng thua
+// Trận bị bỏ dở (quá hạn mà không ai quyết định).
+//  - Thượng đài: bên đang đến lượt mà bỏ đi thì bị xử thua và có tính điểm, để không ai tránh bị trừ điểm bằng cách bỏ đi.
+//  - Khép kín: đóng trận, không có bên thắng thua.
 async function dongBoDo(pb, H, tran) {
+  if (tran.loai === "dai") {
+    const ketQua = benDenLuot((tran.nuoc || []).length) === "r" ? "den" : "do";
+    await ketThucTran(pb, H, tran, { ket_qua: ketQua, ly_do: "bo_do", nuoc: null });
+    return { ...tran, trang_thai: "ket_thuc", ket_qua: ketQua, ly_do: "bo_do", han_nuoc: "" };
+  }
   await capNhatTran(pb, H, tran.id, { trang_thai: "huy", ly_do: "bo_do", han_nuoc: "" });
   return { ...tran, trang_thai: "huy", ly_do: "bo_do", han_nuoc: "" };
 }
@@ -105,7 +105,7 @@ export async function onRequestPost({ request, env }) {
     const kq = xuLyHetGio(tran, benCua, body.lua_chon);
     if (kq.loi) return tra(409, { loi: kq.loi });
     if (kq.ket_thuc) {
-      await ketThuc(pb, H, tran, { ket_qua: kq.ket_thuc.ket_qua, ly_do: kq.ket_thuc.ly_do, nuoc: null });
+      await ketThucTran(pb, H, tran, { ket_qua: kq.ket_thuc.ket_qua, ly_do: kq.ket_thuc.ly_do, nuoc: null });
       return tra(200, ban({ ...tran, trang_thai: "ket_thuc", ket_qua: kq.ket_thuc.ket_qua, ly_do: kq.ket_thuc.ly_do, han_nuoc: "" }, benCua));
     }
     const r = await capNhatTran(pb, H, tran.id, kq.cap_nhat);
@@ -115,7 +115,7 @@ export async function onRequestPost({ request, env }) {
 
   if (body.hanh_dong === "dau_hang") {
     const ket = benCua === "r" ? "den" : "do";
-    await ketThuc(pb, H, tran, { ket_qua: ket, ly_do: "dau_hang", nuoc: null });
+    await ketThucTran(pb, H, tran, { ket_qua: ket, ly_do: "dau_hang", nuoc: null });
     return tra(200, ban({ ...tran, trang_thai: "ket_thuc", ket_qua: ket, ly_do: "dau_hang", han_nuoc: "" }, benCua));
   }
 
@@ -134,7 +134,7 @@ export async function onRequestPost({ request, env }) {
   if (!sau.hop_le) return tra(422, { loi: "nuoc_sai_luat" });
 
   if (sau.ket_thuc) {
-    await ketThuc(pb, H, tran, { ket_qua: sau.ket_qua, ly_do: sau.ly_do, nuoc: nuocMoi });
+    await ketThucTran(pb, H, tran, { ket_qua: sau.ket_qua, ly_do: sau.ly_do, nuoc: nuocMoi });
     return tra(200, ban({ ...tran, nuoc: nuocMoi, trang_thai: "ket_thuc", ket_qua: sau.ket_qua, ly_do: sau.ly_do, han_nuoc: "" }, benCua));
   }
   // Trả luôn trạng thái mới để trình duyệt không phải gọi thêm một lượt đọc

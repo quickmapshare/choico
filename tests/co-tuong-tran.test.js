@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc, xuLyHetGio, kiemBoDo } from "../src/lib/co-tuong-tran.js";
+import { duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc, xuLyHetGio, kiemBoDo, soDaiConHieuLuc } from "../src/lib/co-tuong-tran.js";
 import { khoiTao, nuocHopLe, kyHieu } from "../src/lib/co-tuong.js";
 
 // Một nước hợp lệ đầu tiên của đỏ, rồi của đen (lấy từ luật, không viết tay)
@@ -140,5 +140,23 @@ describe("kiemBoDo", () => {
     const t = { trang_thai: "dang_dau", han_nuoc: "", updated: "2026-10-23 12:00:00.000Z" };
     expect(kiemBoDo(t, han + 59 * 60_000)).toBe(false);
     expect(kiemBoDo(t, han + 61 * 60_000)).toBe(true);
+  });
+});
+
+describe("soDaiConHieuLuc", () => {
+  const luc = Date.parse("2026-10-23T12:00:00Z");
+  const dai = { loai: "dai", trang_thai: "cho", created: "2026-10-23 12:00:00.000Z" };
+  it("mới lên đài thì còn hiệu lực", () => {
+    expect(soDaiConHieuLuc(dai, luc + 29 * 60_000)).toBe(true);
+  });
+  it("quá 30 phút không ai thách đấu thì hết hiệu lực", () => {
+    expect(soDaiConHieuLuc(dai, luc + 31 * 60_000)).toBe(false);
+  });
+  it("đã có người vào hoặc không phải thượng đài thì không còn trên đài", () => {
+    expect(soDaiConHieuLuc({ ...dai, trang_thai: "dang_dau" }, luc)).toBe(false);
+    expect(soDaiConHieuLuc({ ...dai, loai: "khep_kin" }, luc)).toBe(false);
+  });
+  it("thiếu thời gian tạo thì không tin được, coi như hết hiệu lực", () => {
+    expect(soDaiConHieuLuc({ loai: "dai", trang_thai: "cho" }, luc)).toBe(false);
   });
 });

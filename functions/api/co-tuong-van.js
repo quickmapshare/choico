@@ -1,8 +1,9 @@
 // Cloudflare Pages Function: nhận nhật ký một ván cờ tướng đã kết thúc, chạy lại ván để kiểm tra, rồi cộng điểm.
 // Điểm chỉ được tính khi cả ván hợp lệ. Mỗi ván (ma_van) chỉ được tính một lần.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
-import { xacMinhVan, diemCongVan, NUOC_TOI_DA, HOAN_TOI_DA } from "../../src/lib/co-tuong.js";
+import { xacMinhVan, NUOC_TOI_DA, HOAN_TOI_DA } from "../../src/lib/co-tuong.js";
 import { tra, dangNhap, xacThuc } from "../_lib/pocketbase.js";
+import { tinhDiem, ghiDiem } from "../_lib/diem.js";
 
 const NGUON_CHO_PHEP = ["https://choico.pages.dev"];
 const MAU_MA_VAN = /^[A-Za-z0-9-]{16,64}$/;
@@ -35,7 +36,6 @@ export async function onRequestPost({ request, env }) {
   // Chạy lại ván: nếu nhật ký sai hoặc ván chưa kết thúc thì không tính điểm
   const kq = xacMinhVan(nuoc);
   if (!kq.hop_le) return tra(422, { loi: "van_khong_hop_le" });
-  const diemCong = diemCongVan(kq.ket_qua, so_hoan); // mỗi nước hoãn trừ điểm
 
   const pb = env.PB_URL;
   let token;
@@ -51,56 +51,24 @@ export async function onRequestPost({ request, env }) {
   if (!daCo.ok) return tra(502, { loi: "khong_doc_duoc_van" });
   if ((await daCo.json()).totalItems > 0) return tra(409, { loi: "van_da_tinh_diem" });
 
-  // Đọc điểm hiện tại của tên này trước, để điểm không xuống dưới 0
-  const timTen = await fetch(`${pb}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`nguoi_choi="${nguoi.id}"`)}`, { headers: H });
-  if (!timTen.ok) return tra(502, { loi: "khong_doc_duoc_diem" });
-  const dong = (await timTen.json()).items?.[0] ?? null;
-  const diemCu = dong ? dong.diem : 0;
-  const diemMoi = Math.max(0, diemCu + diemCong); // điểm tối thiểu là 0
-  const thayDoi = diemMoi - diemCu; // phần điểm thực tế được cộng hoặc trừ
-  // Mức chơi lưu theo tài khoản (không theo trình duyệt): thắng lên một mức, thua xuống một mức, hòa giữ nguyên
-  const mucMoi = Math.min(5, Math.max(1, (dong?.muc || 1) + (kq.ket_qua === "thang" ? 1 : kq.ket_qua === "thua" ? -1 : 0)));
+  // Tính điểm trước để ghi điểm thực nhận (không xuống dưới 0) vào nhật ký ván; chưa ghi điểm
+  const ke = await tinhDiem(pb, H, nguoi, kq.ket_qua, so_hoan);
+  if (ke.loi) return tra(502, { loi: ke.loi });
 
   const ghiVan = await fetch(`${pb}/api/collections/cho_phien_co_van/records`, {
     method: "POST",
     headers: H,
-    body: JSON.stringify({ ma_van, ten, nguoi_choi: nguoi.id, ket_qua: kq.ket_qua, diem_cong: thayDoi, nuoc, so_hoan }),
+    body: JSON.stringify({ ma_van, ten, nguoi_choi: nguoi.id, ket_qua: kq.ket_qua, diem_cong: ke.thayDoi, nuoc, so_hoan }),
   });
   if (!ghiVan.ok) return tra(502, { loi: "khong_ghi_duoc_van" });
   const idVan = (await ghiVan.json()).id;
   // Nếu không cộng được điểm thì xóa nhật ký ván, để lần gửi lại sau còn tính được
   const boVan = () => fetch(`${pb}/api/collections/cho_phien_co_van/records/${idVan}`, { method: "DELETE", headers: H });
 
-  const ghiDiem = dong
-    ? await fetch(`${pb}/api/collections/cho_phien_co_diem/records/${dong.id}`, {
-      method: "PATCH",
-      headers: H,
-      body: JSON.stringify({
-        diem: diemMoi,
-        muc: mucMoi,
-        so_van: dong.so_van + 1,
-        thang: dong.thang + (kq.ket_qua === "thang" ? 1 : 0),
-        hoa: dong.hoa + (kq.ket_qua === "hoa" ? 1 : 0),
-        thua: dong.thua + (kq.ket_qua === "thua" ? 1 : 0),
-      }),
-    })
-    : await fetch(`${pb}/api/collections/cho_phien_co_diem/records`, {
-      method: "POST",
-      headers: H,
-      body: JSON.stringify({
-        ten,
-        nguoi_choi: nguoi.id,
-        diem: diemMoi,
-        muc: mucMoi,
-        so_van: 1,
-        thang: kq.ket_qua === "thang" ? 1 : 0,
-        hoa: kq.ket_qua === "hoa" ? 1 : 0,
-        thua: kq.ket_qua === "thua" ? 1 : 0,
-      }),
-    });
-  if (!ghiDiem.ok) {
+  const diem = await ghiDiem(pb, H, nguoi, ten, kq.ket_qua, ke);
+  if (diem.loi) {
     await boVan();
-    return tra(502, { loi: "khong_cong_duoc_diem" });
+    return tra(502, { loi: diem.loi });
   }
-  return tra(200, { ket_qua: kq.ket_qua, diem_cong: thayDoi, tong_diem: diemMoi, muc: mucMoi });
+  return tra(200, { ket_qua: kq.ket_qua, diem_cong: diem.diem_cong, tong_diem: diem.tong_diem, muc: diem.muc });
 }

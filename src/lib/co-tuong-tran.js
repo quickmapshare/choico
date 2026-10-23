@@ -88,3 +88,10 @@ export function kiemBoDo(tran, now = Date.now()) {
   const cuoi = Date.parse(String(tran.updated || "").replace(" ", "T")); // PocketBase ghi "2026-10-23 12:00:00.000Z"
   return Number.isFinite(cuoi) && now > cuoi + BO_DO_KHONG_GIOI_HAN_PHUT * 60_000;
 }
+
+// Người lên đài còn đứng trên đài: đang chờ đối thủ và chưa quá 30 phút kể từ lúc lên đài
+export function soDaiConHieuLuc(tran, now = Date.now()) {
+  if (tran.loai !== "dai" || tran.trang_thai !== "cho") return false;
+  const tao = Date.parse(String(tran.created || "").replace(" ", "T")); // PocketBase ghi "2026-10-23 12:00:00.000Z"
+  return Number.isFinite(tao) && now < tao + HAN_SANH_PHUT * 60_000;
+}
