@@ -64,7 +64,7 @@ export async function onRequestPost({ request, env }) {
   const ghiVan = await fetch(`${pb}/api/collections/cho_phien_co_van/records`, {
     method: "POST",
     headers: H,
-    body: JSON.stringify({ ma_van, ten, nguoi_choi: nguoi.id, ket_qua: kq.ket_qua, diem_cong: thayDoi }),
+    body: JSON.stringify({ ma_van, ten, nguoi_choi: nguoi.id, ket_qua: kq.ket_qua, diem_cong: thayDoi, nuoc, so_hoan }),
   });
   if (!ghiVan.ok) return tra(502, { loi: "khong_ghi_duoc_van" });
   const idVan = (await ghiVan.json()).id;
