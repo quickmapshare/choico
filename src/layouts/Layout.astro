@@ -134,6 +134,11 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
         .thanh-tren nav a { padding: .7rem 0; border-top: 1px solid var(--vien); }
         .thanh-tren nav a:first-child { border-top: 0; }
       }
+      /* Màn hình rất hẹp: ẩn chữ ChoiCo, chỉ giữ logo để các nút vừa cùng một hàng với logo */
+      @media (max-width: 420px) {
+        .thanh-tren-noi { flex-wrap: nowrap; }
+        .ten-web span { display: none; }
+      }
       .thanh-tren nav a { color: var(--phu); }
       .thanh-tren nav a:hover, .thanh-tren nav a[aria-current="page"] { color: var(--nhan); }
       .chan-trang { max-width: 46rem; margin: 0 auto; padding: 1rem 1rem 2rem; border-top: 1px solid var(--vien); color: var(--phu); font-size: .85rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
