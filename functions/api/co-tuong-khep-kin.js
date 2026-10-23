@@ -9,24 +9,41 @@ import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, MAU_MA, 
 import { lamSachTen, tenHopLe } from "../../src/lib/co-tuong.js";
 import { maKhepKinConHieuLuc, GIAY_MOI_NUOC, HAN_KHEP_KIN_GIO } from "../../src/lib/co-tuong-tran.js";
 
-// Giới hạn link do khách tạo: mỗi mã khách tối đa 5 link đang chờ trong 10 phút, toàn hệ thống tối đa 200 link khách trong
-// 10 phút (mã khách do trình duyệt tự sinh nên chỉ giới hạn theo mã thì đổi mã là lách được).
-const KHACH_MOI_MA = 5;
-const KHACH_TOAN_BO = 200;
+// Giới hạn link do khách tạo trong 10 phút, ba mức:
+//  - mỗi mã khách trên một IP: 10 (người dùng chung mạng như 4G, wifi trường không chặn lẫn nhau)
+//  - mỗi IP: 50 (mã khách do trình duyệt tự sinh, đổi mã liên tục cũng chỉ tới đây)
+//  - toàn hệ thống: 150 (khoảng 1/3 sức chứa ước tính của VPS, phòng khi dùng nhiều IP)
+// Tài khoản không bị giới hạn. IP lấy từ header CF-Connecting-IP (Cloudflare gắn, người gọi không giả được), chỉ lưu mã băm.
+const KHACH_MOI_MA = 10;
+const KHACH_MOI_IP = 50;
+const KHACH_TOAN_BO = 150;
 const KHUNG_KHACH_MS = 10 * 60 * 1000;
 
-async function khachTaoQuaNhieu(pb, H, idKhach) {
+// Mã băm IP: HMAC-SHA256 với khóa bí mật (mật khẩu admin, không nằm trong mã nguồn) để không dò ngược ra IP được.
+// Đổi khóa thì mã băm đổi theo, chỉ làm bộ đếm 10 phút bắt đầu lại.
+async function bamIp(request, khoa) {
+  const ip = request.headers.get("cf-connecting-ip") || "";
+  if (!ip) return "";
+  const enc = new TextEncoder();
+  const k = await crypto.subtle.importKey("raw", enc.encode(khoa), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const ky = new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode(ip)));
+  return [...ky.slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function khachTaoQuaNhieu(pb, H, idKhach, ipBam) {
   const tu = new Date(Date.now() - KHUNG_KHACH_MS).toISOString().replace("T", " ");
   const dem = async (loc) => {
-    const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records?perPage=1&fields=id&filter=${encodeURIComponent(loc)}`, { headers: H });
+    const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records?perPage=1&fields=id&filter=${encodeURIComponent(`loai="khep_kin" && created>="${tu}" && ${loc}`)}`, { headers: H });
     if (!r.ok) throw new Error("khong_doc_duoc");
     return (await r.json()).totalItems;
   };
-  const [cuaMa, toanBo] = await Promise.all([
-    dem(`loai="khep_kin" && do="${idKhach}" && trang_thai="cho" && created>="${tu}"`),
-    dem(`loai="khep_kin" && do~"k_%" && created>="${tu}"`),
+  // Không có IP (chạy thử ở máy) thì chỉ đếm theo mã khách và toàn hệ thống
+  const [cuaMa, cuaIp, toanBo] = await Promise.all([
+    dem(ipBam ? `do="${idKhach}" && ip_bam="${ipBam}"` : `do="${idKhach}"`),
+    ipBam ? dem(`ip_bam="${ipBam}"`) : 0,
+    dem(`do~"k_%"`),
   ]);
-  return cuaMa >= KHACH_MOI_MA || toanBo >= KHACH_TOAN_BO;
+  return cuaMa >= KHACH_MOI_MA || cuaIp >= KHACH_MOI_IP || toanBo >= KHACH_TOAN_BO;
 }
 
 export async function onRequestPost({ request, env }) {
@@ -52,9 +69,11 @@ export async function onRequestPost({ request, env }) {
     // Tài khoản thì dùng tên hồ sơ (chưa có thì trình duyệt tạo tên rồi thử lại), khách thì tự nhập (không bắt buộc)
     if (nguoi.tai_khoan && !nguoi.ten) return tra(409, { loi: "chua_co_ten" });
     let ten = nguoi.ten;
+    let ipBam = "";
     if (!nguoi.tai_khoan) {
       try {
-        if (await khachTaoQuaNhieu(pb, H, nguoi.id)) return tra(429, { loi: "tao_qua_nhieu" });
+        ipBam = await bamIp(request, env.PB_ADMIN_PASSWORD);
+        if (await khachTaoQuaNhieu(pb, H, nguoi.id, ipBam)) return tra(429, { loi: "tao_qua_nhieu" });
       } catch {
         return tra(502, { loi: "khong_ket_noi_pocketbase" });
       }
@@ -71,6 +90,7 @@ export async function onRequestPost({ request, env }) {
       nuoc: [],
       het_han: sauPhut(HAN_KHEP_KIN_GIO * 3600),
       da_tinh_diem: false,
+      ip_bam: ipBam,
     });
     if (!r.ok) return tra(502, { loi: "khong_tao_duoc" });
     return tra(200, { ma });
