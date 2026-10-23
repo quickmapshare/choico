@@ -81,7 +81,17 @@ const T = chuCaTrang(lang);
   /* Mức và kiểu đài hiện thành viên nhỏ, viền mảnh */
   .td-nhan { font-size: .78rem; color: var(--phu); padding: .05rem .6rem; border: 1px solid var(--vien); border-radius: 999px; white-space: nowrap; }
   /* Nút thách đấu căn phải, rộng đủ và cách xa phần tên */
-  .td-thach { flex: none; margin-left: auto; min-width: 7.5rem; max-width: 100%; justify-content: center; text-align: center; line-height: 1.25; }
+  /* Nút thách đấu: nổi hơn các nút khác, có biểu tượng hai thanh kiếm chéo (vẽ bằng CSS nên không mất khi đổi chữ lúc đang gửi) */
+  .td-thach {
+    flex: none; margin-left: auto; min-width: 8rem; max-width: 100%; min-height: 2.6rem; padding: .5rem 1.2rem; gap: .45rem;
+    justify-content: center; text-align: center; line-height: 1.25; font-weight: 700; letter-spacing: .02em;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .22);
+  }
+  .td-thach::before {
+    content: ""; flex: none; width: 1rem; height: 1rem; background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M4 20L20 4M4 4l16 16M3 9l3-3M18 6l3-3M3 15l6 6M15 3l6 6'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M4 20L20 4M4 4l16 16M3 9l3-3M18 6l3-3M3 15l6 6M15 3l6 6'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
   .td-thong-bao { min-height: 1.5em; font-weight: 600; border-radius: .4rem; }
   /* Thông báo mới nháy nền một lần để người chơi nhận ra kết quả của nút vừa bấm */
   @media (prefers-reduced-motion: no-preference) {
