@@ -25,6 +25,10 @@ const T = chuCaTrang(lang);
     <button type="button" id="tr-nut-vo-hieu" class="tr-nut tr-nut-phu">{T.trVoHieu}</button>
   </section>
 
+  <section id="tr-roi-dai" class="tr-khoi" hidden>
+    <button type="button" id="tr-nut-roi-dai" class="tr-nut tr-nut-phu">{T.tdRoiDai}</button>
+  </section>
+
   <section id="tr-vao" class="tr-khoi" hidden>
     <p id="tr-moi-vao"></p>
     <label class="tr-hang">
@@ -66,8 +70,8 @@ const T = chuCaTrang(lang);
 </style>
 
 <script>
-  import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu } from "../lib/co-tuong.js";
-  import { duyetNuoc, benDenLuot, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
+  import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu, diemCongVan } from "../lib/co-tuong.js";
+  import { duyetNuoc, benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
   import { docToken, headerXacThuc, batDauDangNhap } from "../lib/co-tuong-tai-khoan.js";
 
@@ -439,6 +443,7 @@ const T = chuCaTrang(lang);
   function hienKhoi() {
     $("tr-tao").hidden = true;
     $("tr-link").hidden = true;
+    $("tr-roi-dai").hidden = true;
     $("tr-vao").hidden = true;
     $("tr-dieu-khien").hidden = true;
     $("tr-het-gio").hidden = true;
@@ -447,6 +452,7 @@ const T = chuCaTrang(lang);
 
     // Người ngoài: link còn chờ thì hiện nút vào chơi
     if (!tran.ban_cua) {
+      if (tran.loai === "dai") return batTrangThai(T.trVaoTuSanh); // trận thượng đài chỉ vào từ sảnh, không qua link
       if (tran.trang_thai === "cho") {
         $("tr-vao").hidden = false;
         $("tr-moi-vao").textContent = f(T.trMoiVao, { ten: tran.ten_do || "" });
@@ -457,6 +463,11 @@ const T = chuCaTrang(lang);
     }
 
     // Người tạo đang chờ người vào: hiện link để gửi (và tự cập nhật khi có người vào)
+    if (tran.trang_thai === "cho" && tran.loai === "dai") {
+      $("tr-roi-dai").hidden = false;
+      batTrangThai(T.trChoDoiThu);
+      return datPoll();
+    }
     if (tran.trang_thai === "cho") {
       $("tr-link").hidden = false;
       ($("tr-link-o") as HTMLInputElement).value = `${location.origin}${location.pathname}?ma=${ma}`;
@@ -484,8 +495,13 @@ const T = chuCaTrang(lang);
     const ten = minhDo ? tran.ten_den : tran.ten_do;
     doiEl.textContent = ten ? f(T.trDoi, { ten }) : "";
     const kq = tran.ket_qua === "do" ? T.trKetDo : tran.ket_qua === "den" ? T.trKetDen : T.trKetHoa;
-    const ly = tran.ly_do === "het_gio" ? T.trLyHetGio : tran.ly_do === "dau_hang" ? T.trLyDauHang : T.trLyHetNuoc;
-    batTrangThai(`${kq}${tran.ly_do ? ` (${ly})` : ""}. ${T.trKhongTinh}`);
+    const ly = tran.ly_do === "het_gio" ? T.trLyHetGio : tran.ly_do === "dau_hang" ? T.trLyDauHang : tran.ly_do === "bo_do" ? T.trLyBoDo : T.trLyHetNuoc;
+    let diem = T.trKhongTinh;
+    if (tran.loai === "dai") {
+      const d = diemCongVan(ketQuaChoBen(tran.ket_qua, tran.ban_cua), 0);
+      diem = f(T.trDiemTran, { diem: `${d > 0 ? "+" : ""}${d}` });
+    }
+    batTrangThai(`${kq}${tran.ly_do ? ` (${ly})` : ""}. ${diem}`);
     if (!daBaoKetThuc) {
       daBaoKetThuc = true;
       const thang = (tran.ket_qua === "do" && minhDo) || (tran.ket_qua === "den" && !minhDo);
@@ -604,6 +620,12 @@ const T = chuCaTrang(lang);
   $("tr-nut-them").addEventListener("click", () => void xuHetGio("them_1_phut"));
   $("tr-nut-thoai").addEventListener("click", () => void xuHetGio("thoai_mai"));
   $("tr-nut-xu").addEventListener("click", () => void xuHetGio("xu_thua"));
+
+  // Rời đài khi chưa có ai thách đấu, rồi về sảnh
+  $("tr-nut-roi-dai").addEventListener("click", async () => {
+    await goi("/api/co-tuong-dai", { method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "roi_dai", ma }) });
+    location.href = `${document.documentElement.dataset.tienTo || ""}/thuong-dai/`;
+  });
 
   // Nút đăng nhập ngay trong thông báo cần đăng nhập
   $("tr-can-dang-nhap").addEventListener("click", () => void batDauDangNhap());

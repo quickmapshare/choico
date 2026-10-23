@@ -1,0 +1,191 @@
+---
+// Sảnh thượng đài: lên đài (cùng mức hoặc mở rộng) và thách đấu người đang trên đài. Cần đăng nhập. Ván tính điểm như đấu máy.
+import Layout from "../layouts/Layout.astro";
+import { t, chuCaTrang } from "../i18n/strings.js";
+
+const { lang = "vi" } = Astro.props;
+const T = chuCaTrang(lang);
+---
+<Layout lang={lang} tieuDe={t(lang, "tdTieuDe")} moTa={t(lang, "tdMoTa")}>
+  <script is:inline type="application/json" id="td-chu" set:html={JSON.stringify(T)}></script>
+  <h1>{T.tdTieuDe}</h1>
+  <p class="phu">{T.tdMoTa}</p>
+
+  <p id="td-dang-nhap" class="phu" hidden>
+    <a href="#" id="td-nut-dang-nhap">{T.tdCanDangNhap}</a>
+  </p>
+
+  <section id="td-chinh" hidden>
+    <p id="td-muc" class="td-muc"></p>
+
+    <div id="td-co-tran" class="td-khoi" hidden>
+      <p>{T.tdBanDangCoTran}</p>
+      <div class="td-hang">
+        <a id="td-vao-tran" class="td-nut td-nut-chinh" href="#">{T.tdVaoTran}</a>
+        <button type="button" id="td-roi-dai" class="td-nut td-nut-phu" hidden>{T.tdRoiDai}</button>
+      </div>
+    </div>
+
+    <div id="td-len-dai" class="td-khoi">
+      <div class="td-lua-chon">
+        <button type="button" id="td-cung-muc" class="td-nut td-nut-chinh">{T.tdCungMuc}</button>
+        <p class="phu">{T.tdMoTaCungMuc}</p>
+      </div>
+      <div class="td-lua-chon">
+        <button type="button" id="td-mo-rong" class="td-nut">{T.tdMoRong}</button>
+        <p class="phu">{T.tdMoTaMoRong}</p>
+      </div>
+    </div>
+
+    <h2>{T.tdDanhSach}</h2>
+    <p id="td-trong" class="phu" hidden>{T.tdTrong}</p>
+    <ul id="td-ds" class="td-ds"></ul>
+  </section>
+  <p id="td-thong-bao" class="td-thong-bao" role="status" aria-live="polite"></p>
+
+<style>
+  .td-muc { font-weight: 600; margin: 1rem 0 .5rem; }
+  .td-khoi { margin: 1rem 0; display: flex; flex-direction: column; gap: .8rem; align-items: flex-start; }
+  .td-khoi[hidden], #td-chinh[hidden], #td-trong[hidden], #td-dang-nhap[hidden] { display: none; }
+  .td-lua-chon { display: flex; flex-direction: column; gap: .3rem; align-items: flex-start; }
+  .td-lua-chon p { margin: 0; }
+  .td-hang { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .td-nut {
+    font: inherit; font-weight: 600; min-height: 2.4rem; padding: .4rem 1.1rem; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--nhan); background: transparent; color: var(--nhan); text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .td-nut-chinh { background: var(--nhan); color: #fff; }
+  .td-nut-phu { color: var(--phu); border-color: var(--vien); }
+  .td-nut:disabled { opacity: .45; cursor: default; }
+  .td-ds { list-style: none; padding: 0; margin: .5rem 0; max-width: 32rem; }
+  .td-ds li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .5rem 0; border-bottom: 1px dotted var(--vien); }
+  .td-ten { font-weight: 600; }
+  .td-nhan { color: var(--phu); font-size: .85rem; margin-left: .5rem; }
+  .td-thong-bao { min-height: 1.5em; font-weight: 600; }
+</style>
+
+<script>
+  import { docToken, headerXacThuc, batDauDangNhap } from "../lib/co-tuong-tai-khoan.js";
+
+  const T = JSON.parse(document.getElementById("td-chu")?.textContent || "{}");
+  const f = (mau: string, v: Record<string, string | number> = {}) => mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
+  const $ = (id: string) => document.getElementById(id) as HTMLElement;
+  const tienTo = document.documentElement.dataset.tienTo || "";
+  const linkTran = (ma: string) => `${tienTo}/tran/?ma=${ma}`;
+  const yeuCau = (): Record<string, string> => ({ "content-type": "application/json", ...headerXacThuc() });
+
+  let pollId: number | undefined;
+  let dangLam = false; // đang gửi một yêu cầu, tạm dừng đọc lại để không đè trạng thái
+
+  async function goi(url: string, init?: RequestInit) {
+    const r = await fetch(url, init);
+    const data = await r.json().catch(() => ({}));
+    return { ok: r.ok, status: r.status, data };
+  }
+
+  function baoLoi(loi: string | undefined) {
+    const mau: Record<string, string> = {
+      khac_muc: T.tdKhacMuc, da_co_nguoi_vao: T.tdDaCoNguoi, dang_co_tran: T.tdBanDangCoTran,
+    };
+    $("td-thong-bao").textContent = (loi && mau[loi]) || T.tdLoi;
+  }
+
+  function veDanhSach(ds: any[]) {
+    const ul = $("td-ds");
+    ul.replaceChildren();
+    $("td-trong").hidden = ds.length > 0;
+    for (const it of ds) {
+      const li = document.createElement("li");
+      const trai = document.createElement("span");
+      const ten = document.createElement("span");
+      ten.className = "td-ten";
+      ten.textContent = it.ten || "";
+      const nhan = document.createElement("span");
+      nhan.className = "td-nhan";
+      nhan.textContent = f(T.tdMucNhan, { m: it.cap_do }) + (it.che_do === "moi" ? ` · ${T.tdMoRongNhan}` : "");
+      trai.append(ten, nhan);
+      const nut = document.createElement("button");
+      nut.type = "button";
+      nut.className = "td-nut td-nut-chinh";
+      nut.textContent = T.tdThachDau;
+      nut.addEventListener("click", () => void thachDau(it.ma));
+      li.append(trai, nut);
+      ul.appendChild(li);
+    }
+  }
+
+  async function tai() {
+    if (!docToken()) {
+      $("td-dang-nhap").hidden = false;
+      $("td-chinh").hidden = true;
+      return;
+    }
+    const { ok, status, data } = await goi("/api/co-tuong-dai", { headers: yeuCau() });
+    if (status === 401) {
+      $("td-dang-nhap").hidden = false;
+      $("td-chinh").hidden = true;
+      return;
+    }
+    if (!ok) return baoLoi(data.loi);
+    $("td-dang-nhap").hidden = true;
+    $("td-chinh").hidden = false;
+    $("td-muc").textContent = f(T.tdMucCuaBan, { m: data.muc });
+    const coTran = !!data.cua_toi;
+    $("td-co-tran").hidden = !coTran;
+    $("td-len-dai").hidden = coTran;
+    if (coTran) {
+      ($("td-vao-tran") as HTMLAnchorElement).href = linkTran(data.cua_toi.ma);
+      $("td-roi-dai").hidden = data.cua_toi.trang_thai !== "cho"; // chỉ rời đài được khi chưa có đối thủ
+      $("td-roi-dai").dataset.ma = data.cua_toi.ma;
+    }
+    veDanhSach(coTran ? [] : data.danh_sach || []);
+  }
+
+  async function lenDai(cheDo: string) {
+    dangLam = true;
+    const { ok, data } = await goi("/api/co-tuong-dai", {
+      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "len_dai", che_do: cheDo }),
+    });
+    dangLam = false;
+    if (ok) location.href = linkTran(data.ma);
+    else if (data.loi === "dang_co_tran" && data.ma) location.href = linkTran(data.ma);
+    else baoLoi(data.loi);
+  }
+
+  async function thachDau(ma: string) {
+    dangLam = true;
+    const { ok, data } = await goi("/api/co-tuong-dai", {
+      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "vao_dai", ma }),
+    });
+    dangLam = false;
+    if (ok) location.href = linkTran(data.ma);
+    else {
+      baoLoi(data.loi);
+      void tai(); // danh sách đã đổi (người đó vừa có đối thủ khác hoặc rời đài)
+    }
+  }
+
+  $("td-cung-muc").addEventListener("click", () => void lenDai("cung"));
+  $("td-mo-rong").addEventListener("click", () => void lenDai("moi"));
+  $("td-roi-dai").addEventListener("click", async () => {
+    const ma = $("td-roi-dai").dataset.ma || "";
+    await goi("/api/co-tuong-dai", { method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "roi_dai", ma }) });
+    void tai();
+  });
+  $("td-nut-dang-nhap").addEventListener("click", (e) => {
+    e.preventDefault();
+    void batDauDangNhap();
+  });
+
+  // Đọc lại danh sách đều đặn để thấy người mới lên đài; chậm lại khi tab ẩn
+  function vong() {
+    clearTimeout(pollId);
+    pollId = window.setTimeout(async () => {
+      if (!dangLam) await tai();
+      vong();
+    }, document.hidden ? 8000 : 3000);
+  }
+  void tai();
+  vong();
+</script>
+</Layout>

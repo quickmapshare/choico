@@ -7,7 +7,7 @@
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
 import { layNguoi, headerAdmin, docTran, capNhatTran, ketThucTran, sauPhut, MAU_MA } from "../_lib/tran.js";
-import { timNuoc } from "../../src/lib/co-tuong.js";
+import { timNuoc, tenBangDiem } from "../../src/lib/co-tuong.js";
 import {
   duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo,
 } from "../../src/lib/co-tuong-tran.js";
@@ -30,7 +30,7 @@ function ban(tran, benCua) {
   const co = {
     loai: tran.loai,
     trang_thai: tran.trang_thai,
-    ten_do: tran.ten_do,
+    ten_do: tenBangDiem(tran.ten_do || ""), // che chữ số trong tên như bảng điểm, để không lộ số điện thoại
     het_han: tran.het_han,
     bay_gio: new Date().toISOString(), // giờ server, để trình duyệt đếm ngược đúng dù đồng hồ máy lệch
   };
@@ -38,7 +38,7 @@ function ban(tran, benCua) {
   return {
     ...co,
     ma: tran.ma,
-    ten_den: tran.ten_den || "",
+    ten_den: tenBangDiem(tran.ten_den || ""),
     nuoc: tran.nuoc || [],
     han_nuoc: tran.han_nuoc || "",
     ket_qua: tran.ket_qua || null,

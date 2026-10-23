@@ -6,6 +6,7 @@
 // Mỗi người chỉ có một trận thượng đài chưa xong cùng lúc. Lên đài mà 30 phút không ai thách đấu thì tự rời đài.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
+import { tenBangDiem } from "../../src/lib/co-tuong.js";
 import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, BANG_TRAN, MAU_MA } from "../_lib/tran.js";
 import { GIAY_MOI_NUOC, HAN_SANH_PHUT, soDaiConHieuLuc } from "../../src/lib/co-tuong-tran.js";
 
@@ -65,7 +66,7 @@ export async function onRequestGet({ request, env }) {
   return tra(200, {
     muc,
     cua_toi: dangCo.tran ? { ma: dangCo.tran.ma, trang_thai: dangCo.tran.trang_thai } : null,
-    danh_sach: ds.map((t) => ({ ma: t.ma, ten: t.ten_do, cap_do: t.cap_do, che_do: t.che_do })),
+    danh_sach: ds.map((t) => ({ ma: t.ma, ten: tenBangDiem(t.ten_do || ""), cap_do: t.cap_do, che_do: t.che_do })),
   });
 }
 
