@@ -67,12 +67,10 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   <div class="co-khung">
     <!-- Phía trên bàn là quân đen bị ăn, phía dưới bàn là quân đỏ bị ăn (đúng phía của mỗi bên) -->
     <div class="co-an-nua" aria-label={T.quanDenBiAn}>
-      <h3>{T.quanDenBiAn}</h3>
       <div id="co-an-den"></div>
     </div>
     <div id="co-ban" class="co-ban" aria-label={T.banCo}></div>
     <div class="co-an-nua" aria-label={T.quanDoBiAn}>
-      <h3>{T.quanDoBiAn}</h3>
       <div id="co-an-do"></div>
     </div>
   </div>
@@ -163,8 +161,8 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   /* Hai khay quân bị ăn và bàn cờ nằm giữa trang; phần chữ và nút vẫn căn trái */
   .co-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; margin: 0 auto; }
   .co-khung .co-ban { max-width: none; margin: .4rem 0; }
-  .co-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .4rem .6rem; background: var(--mat); min-height: 3.2rem; }
-  .co-an-nua h3 { font-size: .85rem; margin: 0 0 .3rem; color: var(--phu); font-weight: 600; }
+  /* Khay quân bị ăn mờ đi để không tranh sự chú ý với bàn cờ; không có tiêu đề chữ */
+  .co-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .4rem .6rem; background: var(--mat); min-height: 3.2rem; opacity: .55; }
   .co-an-nua > div { display: flex; flex-wrap: wrap; gap: .3rem; }
   .co-chip {
     width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 2px solid currentColor; background: #fbf6e6;

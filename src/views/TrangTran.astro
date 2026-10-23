@@ -52,13 +52,11 @@ const T = chuCaTrang(lang);
         <svg id="tr-phong-dong" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
-    <div class="tr-an-nua">
-      <h3 id="tr-nhan-an-tren"></h3>
+    <div class="tr-an-nua" id="tr-khay-tren">
       <div id="tr-an-tren"></div>
     </div>
     <div id="tr-ban" class="tr-ban"></div>
-    <div class="tr-an-nua">
-      <h3 id="tr-nhan-an-duoi"></h3>
+    <div class="tr-an-nua" id="tr-khay-duoi">
       <div id="tr-an-duoi"></div>
     </div>
   </div>
@@ -106,8 +104,8 @@ const T = chuCaTrang(lang);
   /* Khung gồm khay trên, bàn, khay dưới; cùng kích thước và kiểu với khung ở chơi với máy */
   .tr-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; margin: 0 auto; }
   .tr-khung .tr-ban { max-width: none; margin: .4rem 0; }
-  .tr-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .4rem .6rem; background: var(--mat); min-height: 3.2rem; }
-  .tr-an-nua h3 { font-size: .85rem; margin: 0 0 .3rem; color: var(--phu); font-weight: 600; }
+  /* Khay quân bị ăn mờ đi để không tranh sự chú ý với bàn cờ; không có tiêu đề chữ */
+  .tr-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .4rem .6rem; background: var(--mat); min-height: 3.2rem; opacity: .55; }
   .tr-an-nua > div { display: flex; flex-wrap: wrap; gap: .3rem; }
   .tr-chip {
     width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 2px solid currentColor; background: #fbf6e6;
@@ -349,8 +347,9 @@ const T = chuCaTrang(lang);
         el.appendChild(chip);
       });
     };
-    $("tr-nhan-an-tren").textContent = benTren === "r" ? T.quanDoBiAn : T.quanDenBiAn;
-    $("tr-nhan-an-duoi").textContent = benDuoi === "r" ? T.quanDoBiAn : T.quanDenBiAn;
+    // Khay không có chữ tiêu đề, chỉ đặt nhãn cho trình đọc màn hình
+    $("tr-khay-tren").setAttribute("aria-label", benTren === "r" ? T.quanDoBiAn : T.quanDenBiAn);
+    $("tr-khay-duoi").setAttribute("aria-label", benDuoi === "r" ? T.quanDoBiAn : T.quanDenBiAn);
     dien("tr-an-tren", ket[benTren], benTren);
     dien("tr-an-duoi", ket[benDuoi], benDuoi);
   }
