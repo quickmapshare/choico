@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { laMay, duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc, xuLyHetGio, kiemBoDo, soDaiConHieuLuc } from "../src/lib/co-tuong-tran.js";
-import { khoiTao, nuocHopLe, kyHieu } from "../src/lib/co-tuong.js";
+import { laMay, duyetNuoc, themNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc, xuLyHetGio, kiemBoDo, soDaiConHieuLuc } from "../src/lib/co-tuong-tran.js";
+import { khoiTao, nuocHopLe, kyHieu, apDung, NUOC_TOI_DA } from "../src/lib/co-tuong.js";
 
 // Một nước hợp lệ đầu tiên của đỏ, rồi của đen (lấy từ luật, không viết tay)
 function nuocDauCuaBen(nuoc, s) {
@@ -34,6 +34,58 @@ describe("duyetNuoc", () => {
     const d = duyetNuoc([n1, n2]);
     expect(d.hop_le).toBe(true);
     expect(d.s).toBe("r");
+  });
+});
+
+describe("themNuoc", () => {
+  // Ván ngẫu nhiên hợp luật (hạt giống cố định để test lặp lại được)
+  function vanNgauNhien(hat, toiDa = 130) {
+    let x = hat;
+    const ngauNhien = () => (x = (Math.imul(x, 1103515245) + 12345) >>> 0) / 4294967296;
+    const b = khoiTao();
+    let s = "r";
+    const nuoc = [];
+    while (nuoc.length < toiDa) {
+      const ds = nuocHopLe(b, s);
+      if (!ds.length) break;
+      const m = ds[Math.floor(ngauNhien() * ds.length)];
+      nuoc.push(kyHieu(m));
+      apDung(b, m);
+      s = s === "r" ? "b" : "r";
+    }
+    return nuoc;
+  }
+
+  it("cho kết quả giống duyetNuoc dọc theo nhiều ván", () => {
+    for (let hat = 1; hat <= 3; hat++) {
+      const van = vanNgauNhien(hat);
+      const cacNuoc = [...Array.from({ length: Math.ceil(van.length / 7) }, (_, k) => 1 + 7 * k), van.length]; // mỗi 7 nước và nước cuối
+      for (const i of cacNuoc) {
+        const { b: b1, ...a } = themNuoc(van.slice(0, i - 1), van[i - 1]);
+        const { b: b2, ...d } = duyetNuoc(van.slice(0, i));
+        expect(a).toEqual(d);
+        expect(b1).toEqual(b2);
+      }
+    }
+  });
+
+  it("có ván chạm giới hạn số nước thì xử hòa như duyetNuoc", () => {
+    const van = Array.from({ length: 40 }, (_, i) => vanNgauNhien(100 + i)).find((v) => v.length >= NUOC_TOI_DA);
+    expect(van).toBeTruthy();
+    const kq = themNuoc(van.slice(0, NUOC_TOI_DA - 1), van[NUOC_TOI_DA - 1]);
+    expect(kq).toMatchObject(duyetNuoc(van.slice(0, NUOC_TOI_DA)));
+  });
+
+  it("từ chối nước sai luật, không coi là ván hỏng", () => {
+    const n1 = nuocDauCuaBen([], "r");
+    expect(themNuoc([], "a0a1")).toEqual({ hop_le: false });
+    expect(themNuoc([n1], n1)).toEqual({ hop_le: false }); // đen không đi được quân đỏ
+  });
+
+  it("danh sách nước cũ không dựng lại được thì báo ván hỏng", () => {
+    const n1 = nuocDauCuaBen([], "r");
+    expect(themNuoc(["a0a1"], n1).van_hong).toBe(true); // nước đầu đi quân đen
+    expect(themNuoc(["zz99"], n1).van_hong).toBe(true);
   });
 });
 

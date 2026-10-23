@@ -286,6 +286,12 @@ export function kyHieu(m) {
   return CAC_COT[m.tu[1]] + m.tu[0] + CAC_COT[m.den[1]] + m.den[0];
 }
 
+// Đọc ký hiệu thành nước đi { tu, den }, không kiểm tra luật. Ký hiệu sai dạng thì trả về null.
+export function nuocTuKy(ky) {
+  if (!/^[a-i][0-9][a-i][0-9]$/.test(ky)) return null;
+  return { tu: [Number(ky[1]), CAC_COT.indexOf(ky[0])], den: [Number(ky[3]), CAC_COT.indexOf(ky[2])] };
+}
+
 // Tìm nước hợp lệ theo ký hiệu, trả về null nếu không có.
 export function timNuoc(b, s, ky) {
   return nuocHopLe(b, s).find((m) => kyHieu(m) === ky) || null;

@@ -7,9 +7,9 @@
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
 import { docNguoiVaTran, capNhatTran, ketThucTran, sauPhut, MAU_MA } from "../_lib/tran.js";
-import { timNuoc, tenBangDiem } from "../../src/lib/co-tuong.js";
+import { tenBangDiem } from "../../src/lib/co-tuong.js";
 import {
-  duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo, laMay, denLuotMay, duocDiNuoc,
+  themNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo, laMay, denLuotMay, duocDiNuoc,
 } from "../../src/lib/co-tuong-tran.js";
 
 // Trận bị bỏ dở (quá hạn mà không ai quyết định).
@@ -121,16 +121,12 @@ export async function onRequestPost({ request, env }) {
   if (!MAU_KY_HOP_LE.test(ky)) return tra(400, { loi: "nuoc_khong_hop_le" });
 
   const nuocCu = tran.nuoc || [];
-  const hienTai = duyetNuoc(nuocCu);
-  if (!hienTai.hop_le) return tra(500, { loi: "van_hong" });
   // Đến lượt máy (trận với máy) thì người thách đấu gửi nước do trình duyệt của họ tính cho máy; server chỉ kiểm luật như mọi nước
   if (!duocDiNuoc(tran, benCua)) return tra(409, { loi: "chua_den_luot" });
-  const benDi = benDenLuot(nuocCu.length);
-  if (!timNuoc(hienTai.b, benDi, ky)) return tra(422, { loi: "nuoc_sai_luat" });
-
-  const nuocMoi = [...nuocCu, ky];
-  const sau = duyetNuoc(nuocMoi);
+  const sau = themNuoc(nuocCu, ky);
+  if (sau.van_hong) return tra(500, { loi: "van_hong" });
   if (!sau.hop_le) return tra(422, { loi: "nuoc_sai_luat" });
+  const nuocMoi = [...nuocCu, ky];
 
   if (sau.ket_thuc) {
     await ketThucTran(pb, H, tran, { ket_qua: sau.ket_qua, ly_do: sau.ly_do, nuoc: nuocMoi });

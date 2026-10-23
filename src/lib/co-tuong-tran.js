@@ -1,6 +1,6 @@
 // Luật của trận thượng đài và khép kín (hai người thật đấu với nhau). Hàm thuần, dùng chung cho server và test.
 // Nước đi lưu dưới dạng ký hiệu (ví dụ "a3a4"), đỏ đi trước. Trạng thái bàn luôn được dựng lại từ danh sách nước.
-import { khoiTao, nuocHopLe, apDung, timNuoc, NUOC_TOI_DA } from "./co-tuong.js";
+import { khoiTao, nuocHopLe, apDung, timNuoc, nuocTuKy, NUOC_TOI_DA } from "./co-tuong.js";
 
 export const GIAY_MOI_NUOC = 60; // mỗi nước có 60 giây, hết giờ thì bên đó thua
 export const HAN_KHEP_KIN_GIO = 24; // mã khép kín hết hạn sau 24 giờ nếu chưa có người vào
@@ -20,12 +20,35 @@ export function duyetNuoc(nuoc) {
     apDung(b, m);
     s = s === "r" ? "b" : "r";
   }
+  return trangThaiBan(b, s, nuoc.length);
+}
+
+// Bàn đã dựng xong sau soNuoc nước, bên s đến lượt: ván kết thúc chưa
+function trangThaiBan(b, s, soNuoc) {
   if (nuocHopLe(b, s).length === 0) {
     // Bên đến lượt hết nước đi (hết cờ hoặc bị chiếu bí): bên kia thắng
     return { hop_le: true, b, s, ket_thuc: true, ket_qua: s === "b" ? "do" : "den", ly_do: "het_nuoc" };
   }
-  if (nuoc.length >= NUOC_TOI_DA) return { hop_le: true, b, s, ket_thuc: true, ket_qua: "hoa", ly_do: "het_nuoc_hoa" };
+  if (soNuoc >= NUOC_TOI_DA) return { hop_le: true, b, s, ket_thuc: true, ket_qua: "hoa", ly_do: "het_nuoc_hoa" };
   return { hop_le: true, b, s, ket_thuc: false, ket_qua: null, ly_do: null };
+}
+
+// Thêm một nước vào ván (server dùng mỗi lần đi nước). Các nước cũ đã được kiểm luật lúc ghi nên chỉ áp lên bàn, không sinh
+// lại nước hợp lệ cho từng bước như duyetNuoc: chi phí không tăng theo độ dài ván. Chỉ nước mới được kiểm luật đầy đủ.
+// Trả về như duyetNuoc([...nuocCu, ky]); danh sách cũ không dựng lại được thì { hop_le: false, van_hong: true }.
+export function themNuoc(nuocCu, ky) {
+  const b = khoiTao();
+  let s = "r";
+  for (const k of nuocCu) {
+    const m = nuocTuKy(k);
+    if (!m || b[m.tu[0]][m.tu[1]]?.[0] !== s) return { hop_le: false, van_hong: true };
+    apDung(b, m);
+    s = s === "r" ? "b" : "r";
+  }
+  const m = timNuoc(b, s, ky);
+  if (!m) return { hop_le: false };
+  apDung(b, m);
+  return trangThaiBan(b, s === "r" ? "b" : "r", nuocCu.length + 1);
 }
 
 // Hết giờ: bên đến lượt thua. Trả về null nếu chưa hết giờ.
