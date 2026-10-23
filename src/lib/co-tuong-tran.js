@@ -51,3 +51,10 @@ export function ketQuaChoBen(ketQua, s) {
   if (ketQua === "hoa") return "hoa";
   return benThang(ketQua) === s ? "thang" : "thua";
 }
+
+// Mã khép kín còn dùng được để người khác vào: chưa có người vào, chưa bị người tạo vô hiệu hóa, chưa hết 24 giờ
+export function maKhepKinConHieuLuc(tran, now = Date.now()) {
+  if (tran.loai !== "khep_kin" || tran.trang_thai !== "cho") return false;
+  if (!tran.het_han) return false;
+  return now < Date.parse(tran.het_han);
+}

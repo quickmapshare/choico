@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC } from "../src/lib/co-tuong-tran.js";
+import { duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc } from "../src/lib/co-tuong-tran.js";
 import { khoiTao, nuocHopLe, kyHieu } from "../src/lib/co-tuong.js";
 
 // Một nước hợp lệ đầu tiên của đỏ, rồi của đen (lấy từ luật, không viết tay)
@@ -71,5 +71,25 @@ describe("benCuaToi và điểm", () => {
     expect(benDenLuot(0)).toBe("r");
     expect(benDenLuot(1)).toBe("b");
     expect(GIAY_MOI_NUOC).toBe(60);
+  });
+});
+
+describe("maKhepKinConHieuLuc", () => {
+  const han = Date.parse("2026-10-23T12:00:00Z");
+  const ma = { loai: "khep_kin", trang_thai: "cho", het_han: new Date(han).toISOString() };
+  it("còn trong 24 giờ và chưa ai vào thì dùng được", () => {
+    expect(maKhepKinConHieuLuc(ma, han - 1)).toBe(true);
+  });
+  it("hết hạn thì không dùng được", () => {
+    expect(maKhepKinConHieuLuc(ma, han)).toBe(false);
+  });
+  it("người tạo vô hiệu hóa (huy) thì không dùng được", () => {
+    expect(maKhepKinConHieuLuc({ ...ma, trang_thai: "huy" }, han - 1)).toBe(false);
+  });
+  it("đã có người vào (dang_dau) thì không nhận thêm người", () => {
+    expect(maKhepKinConHieuLuc({ ...ma, trang_thai: "dang_dau" }, han - 1)).toBe(false);
+  });
+  it("ván đấu thượng đài không có mã khép kín", () => {
+    expect(maKhepKinConHieuLuc({ ...ma, loai: "dai" }, han - 1)).toBe(false);
   });
 });
