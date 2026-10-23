@@ -73,3 +73,14 @@ export async function hoanTatDangNhap() {
   const diaChi = (luu.quayLai || "/co-tuong/").replace("/nhung/co-tuong/", "/co-tuong/");
   return /^\/(?!\/)/.test(diaChi) ? diaChi : "/co-tuong/"; // chỉ quay về đường dẫn trong site
 }
+
+// Người mới đăng nhập chưa có tên hiển thị. GET hồ sơ sẽ tạo tên từ tên Google (trang chơi với máy gọi việc này khi mở trang).
+// Các trang khác (thượng đài, trận khép kín) gọi khi máy chủ trả "chua_co_ten", rồi thử lại. Trả về true nếu đã có tên.
+export async function damBaoCoTen() {
+  try {
+    const r = await fetch("/api/co-tuong-ho-so", { headers: headerXacThuc() });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}

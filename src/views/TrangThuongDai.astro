@@ -11,9 +11,17 @@ const T = chuCaTrang(lang);
   <h1>{T.tdTieuDe}</h1>
   <p class="phu">{T.tdMoTa}</p>
 
-  <p id="td-dang-nhap" class="phu" hidden>
-    <a href="#" id="td-nut-dang-nhap">{T.tdCanDangNhap}</a>
-  </p>
+  <!-- Hiện ngay khi vào trang cho đến khi biết kết quả đọc sảnh, để trang không trống lúc chờ máy chủ -->
+  <p id="td-dang-tai" class="phu">{T.trDangTai}</p>
+
+  <!-- Chưa đăng nhập: lời nhắc và nút đăng nhập Google, giống trang trận -->
+  <div id="td-dang-nhap" class="td-dang-nhap" hidden>
+    <p class="phu">{T.tdCanDangNhap}</p>
+    <button type="button" id="td-nut-dang-nhap" class="td-nut-google">
+      <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span>{T.dangNhapNut}</span>
+    </button>
+  </div>
 
   <section id="td-chinh" hidden>
     <p id="td-muc" class="td-muc"></p>
@@ -50,6 +58,21 @@ const T = chuCaTrang(lang);
   .td-muc { font-weight: 600; margin: 1rem 0 .5rem; }
   .td-khoi { margin: 1rem 0; display: flex; flex-direction: column; gap: .8rem; align-items: flex-start; }
   .td-khoi[hidden], #td-chinh[hidden], #td-trong[hidden], #td-dang-nhap[hidden] { display: none; }
+  .td-dang-nhap { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; margin: 1rem 0; }
+  .td-dang-nhap[hidden], #td-dang-tai[hidden] { display: none; }
+  /* Nút đăng nhập Google, kiểu giống trang chơi với máy và trang trận */
+  .td-nut-google {
+    display: inline-flex; align-items: center; gap: .6rem; min-height: 2.4rem; padding: .4rem 1.1rem .4rem .85rem; font: inherit; font-weight: 500;
+    border-radius: 999px; border: 1px solid #dadce0; transition: background-color .15s, box-shadow .15s, opacity .15s; background: #fff; color: #3c4043; cursor: pointer;
+  }
+  .td-nut-google:hover:not(:disabled) { background: #f8f9fa; border-color: #d2e3fc; box-shadow: 0 1px 2px rgba(60, 64, 67, .2); }
+  .td-nut-google:disabled { opacity: .6; cursor: progress; }
+  :root[data-theme="dark"] .td-nut-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
+  :root[data-theme="dark"] .td-nut-google:hover:not(:disabled) { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .td-nut-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
+    :root:not([data-theme="light"]) .td-nut-google:hover:not(:disabled) { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
+  }
   .td-lua-chon { display: flex; flex-direction: column; gap: .3rem; align-items: flex-start; }
   .td-lua-chon p { margin: 0; }
   .td-hang { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
@@ -102,7 +125,7 @@ const T = chuCaTrang(lang);
 </style>
 
 <script>
-  import { docToken, headerXacThuc, batDauDangNhap } from "../lib/co-tuong-tai-khoan.js";
+  import { docToken, headerXacThuc, batDauDangNhap, damBaoCoTen, xoaToken } from "../lib/co-tuong-tai-khoan.js";
   import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
 
   const T = JSON.parse(document.getElementById("td-chu")?.textContent || "{}");
@@ -182,17 +205,22 @@ const T = chuCaTrang(lang);
     }
   }
 
-  async function tai() {
-    if (!docToken()) {
-      $("td-dang-nhap").hidden = false;
-      $("td-chinh").hidden = true;
-      return;
-    }
+  // Hiện khối đăng nhập (chưa có token, hoặc máy chủ báo token hết hạn)
+  function hienDangNhap() {
+    $("td-dang-nhap").hidden = false;
+    $("td-chinh").hidden = true;
+  }
+
+  // Đọc sảnh một lần. Người mới chưa có tên thì tạo tên từ tên Google (như trang chơi với máy) rồi đọc lại.
+  async function taiMot(daThuTen = false): Promise<void> {
+    if (!docToken()) return hienDangNhap();
     const { ok, status, data } = await goi("/api/co-tuong-dai", { headers: yeuCau() });
     if (status === 401) {
-      $("td-dang-nhap").hidden = false;
-      $("td-chinh").hidden = true;
-      return;
+      xoaToken(); // token hết hạn: bỏ đi để lần sau không gọi vô ích
+      return hienDangNhap();
+    }
+    if (status === 409 && data.loi === "chua_co_ten" && !daThuTen) {
+      if (await damBaoCoTen()) return taiMot(true);
     }
     if (!ok) return baoLoi(data.loi);
     $("td-dang-nhap").hidden = true;
@@ -207,6 +235,31 @@ const T = chuCaTrang(lang);
       $("td-roi-dai").dataset.ma = data.cua_toi.ma;
     }
     veDanhSach(coTran ? [] : data.danh_sach || []);
+  }
+
+  // Chỉ một lần đọc chạy tại một thời điểm: chuông, vòng đọc dự phòng và thao tác có thể gọi gần nhau,
+  // gọi chồng thì đánh dấu để đọc lại một lần sau khi lần đang chạy xong (tránh kết quả cũ đè kết quả mới).
+  let dangTai = false;
+  let canTaiLai = false;
+  async function tai() {
+    if (dangTai) {
+      canTaiLai = true;
+      return;
+    }
+    dangTai = true;
+    try {
+      do {
+        canTaiLai = false;
+        try {
+          await taiMot();
+        } catch {
+          baoLoi(undefined); // mất mạng hoặc máy chủ không trả lời: báo lỗi thay vì để trang trống
+        }
+      } while (canTaiLai);
+    } finally {
+      dangTai = false;
+      $("td-dang-tai").hidden = true;
+    }
   }
 
   // Các hàm trả về true khi trang sắp chuyển sang trận (giữ nút ở trạng thái chờ cho đến khi đổi trang)
@@ -245,9 +298,16 @@ const T = chuCaTrang(lang);
     await goi("/api/co-tuong-dai", { method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "roi_dai", ma }) });
     await tai();
   }));
-  $("td-nut-dang-nhap").addEventListener("click", (e) => {
-    e.preventDefault();
-    void batDauDangNhap();
+  // Đăng nhập: lấy địa chỉ Google mất một lúc nên nút khóa lại và báo lỗi nếu không chuyển trang được
+  const nutDangNhap = $("td-nut-dang-nhap") as HTMLButtonElement;
+  nutDangNhap.addEventListener("click", async () => {
+    nutDangNhap.disabled = true;
+    try {
+      await batDauDangNhap(); // thành công thì trang chuyển sang Google, giữ nút khóa
+    } catch {
+      nutDangNhap.disabled = false;
+      baoLoi(undefined);
+    }
   });
 
   // Chuông chung của sảnh: có người lên đài, rời đài hoặc vào trận thì chuông rung và danh sách tải lại ngay.

@@ -39,31 +39,30 @@ async function tranDangCo(pb, H, id) {
 async function dauVao(request, env) {
   if (!env.PB_URL || !env.PB_ADMIN_EMAIL || !env.PB_ADMIN_PASSWORD) return { loiTra: tra(503, { loi: "chua_cau_hinh" }) };
   const pb = env.PB_URL;
-  const nguoi = await layNguoi(pb, request);
+  // Kiểm tra người chơi và lấy token admin cùng lúc (hai việc độc lập), đỡ một lượt chờ nối tiếp
+  const [nguoi, H] = await Promise.all([layNguoi(pb, request), headerAdmin(env).catch(() => null)]);
   if (!nguoi?.tai_khoan) return { loiTra: tra(401, { loi: "can_dang_nhap" }) };
   if (!nguoi.ten) return { loiTra: tra(409, { loi: "chua_co_ten" }) };
-  let H;
-  try {
-    H = await headerAdmin(env);
-  } catch {
-    return { loiTra: tra(502, { loi: "khong_ket_noi_pocketbase" }) };
-  }
+  if (!H) return { loiTra: tra(502, { loi: "khong_ket_noi_pocketbase" }) };
   return { pb, nguoi, H };
 }
 
 export async function onRequestGet({ request, env }) {
   const { loiTra, pb, nguoi, H } = await dauVao(request, env);
   if (loiTra) return loiTra;
-  const muc = await mucCuaToi(pb, H, nguoi.id);
+  // Ba lượt đọc độc lập nên chạy song song (trước đây nối tiếp nên trang tải lâu). Lọc theo mức làm ở đây, sau khi biết mức.
+  const dieuKien = `loai="dai" && trang_thai="cho" && do!="${nguoi.id}"`;
+  const [muc, dangCo, r] = await Promise.all([
+    mucCuaToi(pb, H, nguoi.id),
+    tranDangCo(pb, H, nguoi.id),
+    fetch(`${pb}/api/collections/${BANG_TRAN}/records?perPage=50&sort=-created&filter=${loc(dieuKien)}`, { headers: H }),
+  ]);
   if (muc === null) return tra(502, { loi: "khong_doc_duoc_diem" });
-  const dangCo = await tranDangCo(pb, H, nguoi.id);
   if (dangCo.loi) return tra(502, { loi: dangCo.loi });
+  if (!r.ok) return tra(502, { loi: "khong_doc_duoc_sanh" });
 
   // Người đang chờ mà mình thách đấu được: cùng mức, hoặc đã chọn mở rộng cho mọi người
-  const dieuKien = `loai="dai" && trang_thai="cho" && do!="${nguoi.id}" && (che_do="moi" || cap_do=${muc})`;
-  const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records?perPage=30&sort=-created&filter=${loc(dieuKien)}`, { headers: H });
-  if (!r.ok) return tra(502, { loi: "khong_doc_duoc_sanh" });
-  const ds = ((await r.json()).items || []).filter((t) => soDaiConHieuLuc(t));
+  const ds = ((await r.json()).items || []).filter((t) => (t.che_do === "moi" || t.cap_do === muc) && soDaiConHieuLuc(t));
   return tra(200, {
     muc,
     cua_toi: dangCo.tran ? { ma: dangCo.tran.ma, trang_thai: dangCo.tran.trang_thai } : null,

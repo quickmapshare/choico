@@ -183,7 +183,7 @@ const T = chuCaTrang(lang);
   import { duyetNuoc, benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
   import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
-  import { docToken, headerXacThuc, batDauDangNhap } from "../lib/co-tuong-tai-khoan.js";
+  import { docToken, headerXacThuc, batDauDangNhap, damBaoCoTen } from "../lib/co-tuong-tai-khoan.js";
 
   const T = JSON.parse(document.getElementById("tran-chu")?.textContent || "{}");
   const f = (mau: string, v: Record<string, string | number> = {}) => mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
@@ -863,9 +863,12 @@ const T = chuCaTrang(lang);
 
   // Tạo link: cần đăng nhập, xong thì chuyển sang trang có mã
   nut("tr-nut-tao").addEventListener("click", () => void chay(nut("tr-nut-tao"), T.trDangTao, async () => {
-    const { ok, status, data } = await goi("/api/co-tuong-khep-kin", {
+    const tao = () => goi("/api/co-tuong-khep-kin", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "tao" }),
     });
+    let { ok, status, data } = await tao();
+    // Người mới đăng nhập chưa có tên: tạo tên từ tên Google (như trang chơi với máy) rồi tạo link lại
+    if (status === 409 && data.loi === "chua_co_ten" && (await damBaoCoTen())) ({ ok, status, data } = await tao());
     if (ok && data.ma) {
       location.href = `${location.pathname}?ma=${data.ma}`;
       return true;
