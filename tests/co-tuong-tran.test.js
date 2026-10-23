@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc, xuLyHetGio } from "../src/lib/co-tuong-tran.js";
+import { duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc, xuLyHetGio, kiemBoDo } from "../src/lib/co-tuong-tran.js";
 import { khoiTao, nuocHopLe, kyHieu } from "../src/lib/co-tuong.js";
 
 // Một nước hợp lệ đầu tiên của đỏ, rồi của đen (lấy từ luật, không viết tay)
@@ -120,5 +120,25 @@ describe("xuLyHetGio", () => {
   });
   it("lựa chọn lạ bị từ chối", () => {
     expect(xuLyHetGio(tran, "r", "gi_do", sau)).toEqual({ loi: "lua_chon_khong_hop_le" });
+  });
+});
+
+describe("kiemBoDo", () => {
+  const han = Date.parse("2026-10-23T12:00:00Z");
+  const tran = { trang_thai: "dang_dau", han_nuoc: new Date(han).toISOString(), updated: "2026-10-23 11:59:00.000Z" };
+  it("mới hết giờ thì chưa đóng", () => {
+    expect(kiemBoDo(tran, han + 60_000)).toBe(false);
+  });
+  it("quá hạn 5 phút mà không ai quyết định thì đóng", () => {
+    expect(kiemBoDo(tran, han + 5 * 60_000 + 1)).toBe(true);
+  });
+  it("trận đã xong hoặc đang chờ thì không đóng kiểu bỏ dở", () => {
+    expect(kiemBoDo({ ...tran, trang_thai: "ket_thuc" }, han + 9e6)).toBe(false);
+    expect(kiemBoDo({ ...tran, trang_thai: "cho" }, han + 9e6)).toBe(false);
+  });
+  it("nước nghĩ thoải mái: đóng sau 60 phút không ai thao tác", () => {
+    const t = { trang_thai: "dang_dau", han_nuoc: "", updated: "2026-10-23 12:00:00.000Z" };
+    expect(kiemBoDo(t, han + 59 * 60_000)).toBe(false);
+    expect(kiemBoDo(t, han + 61 * 60_000)).toBe(true);
   });
 });

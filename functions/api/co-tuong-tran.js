@@ -9,7 +9,7 @@ import { tra } from "../_lib/pocketbase.js";
 import { layNguoi, headerAdmin, docTran, capNhatTran, sauPhut, MAU_MA } from "../_lib/tran.js";
 import { timNuoc } from "../../src/lib/co-tuong.js";
 import {
-  duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio,
+  duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo,
 } from "../../src/lib/co-tuong-tran.js";
 
 // Kết thúc trận (hết giờ, đầu hàng, hết nước). Khép kín không tính điểm.
@@ -17,6 +17,12 @@ async function ketThuc(pb, H, tran, { ket_qua, ly_do, nuoc }) {
   const data = { trang_thai: "ket_thuc", ket_qua, ly_do, han_nuoc: "" };
   if (nuoc) data.nuoc = nuoc;
   return capNhatTran(pb, H, tran.id, data);
+}
+
+// Trận bị bỏ dở (quá hạn mà không ai quyết định): đóng lại, không có bên thắng thua
+async function dongBoDo(pb, H, tran) {
+  await capNhatTran(pb, H, tran.id, { trang_thai: "huy", ly_do: "bo_do", han_nuoc: "" });
+  return { ...tran, trang_thai: "huy", ly_do: "bo_do", han_nuoc: "" };
 }
 
 // Trả về cho người chơi (đủ thông tin) hoặc cho người ngoài (chỉ đủ để xem link)
@@ -55,9 +61,10 @@ export async function onRequestGet({ request, env }) {
   } catch {
     return tra(502, { loi: "khong_ket_noi_pocketbase" });
   }
-  const { tran, loi } = await docTran(pb, H, ma);
+  const { tran: tranGoc, loi } = await docTran(pb, H, ma);
   if (loi) return tra(502, { loi });
-  if (!tran) return tra(404, { loi: "khong_tim_thay" });
+  if (!tranGoc) return tra(404, { loi: "khong_tim_thay" });
+  const tran = kiemBoDo(tranGoc) ? await dongBoDo(pb, H, tranGoc) : tranGoc;
 
   return tra(200, ban(tran, nguoi && benCuaToi(tran, nguoi.id)));
 }
@@ -87,6 +94,10 @@ export async function onRequestPost({ request, env }) {
   if (!tran) return tra(404, { loi: "khong_tim_thay" });
   const benCua = benCuaToi(tran, nguoi.id);
   if (!benCua) return tra(403, { loi: "khong_trong_tran" });
+  if (kiemBoDo(tran)) {
+    await dongBoDo(pb, H, tran);
+    return tra(409, { loi: "tran_da_dong" });
+  }
   if (tran.trang_thai !== "dang_dau") return tra(409, { loi: "tran_khong_dang_dau" });
 
   // Bên đang chờ quyết định khi đối thủ hết giờ

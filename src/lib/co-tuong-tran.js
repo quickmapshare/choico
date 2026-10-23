@@ -76,3 +76,15 @@ export function xuLyHetGio(tran, benCua, luaChon, now = Date.now()) {
   if (luaChon === "thoai_mai") return { cap_nhat: { han_nuoc: "" } };
   return { ket_thuc: { ket_qua: het.ket_qua, ly_do: "het_gio" } };
 }
+
+// Trận bị bỏ dở: quá hạn nước đi 5 phút mà không ai quyết định (người chậm bỏ đi, đối thủ cũng không bấm gì) thì đóng trận.
+// Nước đã chọn "nghĩ thoải mái" không có hạn, nên tính từ lần cập nhật cuối: sau 60 phút không ai thao tác cũng đóng.
+export const BO_DO_PHUT = 5;
+export const BO_DO_KHONG_GIOI_HAN_PHUT = 60;
+
+export function kiemBoDo(tran, now = Date.now()) {
+  if (tran.trang_thai !== "dang_dau") return false;
+  if (tran.han_nuoc) return now > Date.parse(tran.han_nuoc) + BO_DO_PHUT * 60_000;
+  const cuoi = Date.parse(String(tran.updated || "").replace(" ", "T")); // PocketBase ghi "2026-10-23 12:00:00.000Z"
+  return Number.isFinite(cuoi) && now > cuoi + BO_DO_KHONG_GIOI_HAN_PHUT * 60_000;
+}

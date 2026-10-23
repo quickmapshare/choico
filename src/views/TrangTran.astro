@@ -362,7 +362,7 @@ const T = chuCaTrang(lang);
     // Server từ chối (sai luật, hết giờ, đối thủ đã đầu hàng...): bỏ hiệu ứng, tải trạng thái thật và báo
     hieuUng = null;
     await taiTran();
-    baoLoi(T.trNuocSai);
+    if (tran.trang_thai === "dang_dau") baoLoi(T.trNuocSai); // trận đã đóng thì thông báo đóng trận đã hiện rồi
   }
 
   // Nhấp vào bàn: chọn quân của mình, rồi nhấp vào ô đích để đi
@@ -462,6 +462,12 @@ const T = chuCaTrang(lang);
       ($("tr-link-o") as HTMLInputElement).value = `${location.origin}${location.pathname}?ma=${ma}`;
       batTrangThai(T.trChoBan);
       return datPoll();
+    }
+
+    // Trận đã đóng: link bị người tạo vô hiệu hóa, hoặc bị bỏ dở quá lâu
+    if (tran.trang_thai === "huy") {
+      if (tran.nuoc?.length) veBan();
+      return batTrangThai(tran.ly_do === "bo_do" ? T.trTranDong : T.trDaVoHieu);
     }
 
     // Trận đang đi hoặc đã xong
