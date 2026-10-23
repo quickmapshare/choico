@@ -58,7 +58,7 @@ export const CHU = {
     ctcThe3Mo: "Lấy đoạn mã ngắn để dán vào trang web bất kỳ.",
     ctcThe4: "Thượng đài: đấu với người khác",
     ctcThe4Mo: "Lên đài để người chơi cùng mức (hoặc mọi người) thách đấu. Tính điểm như đấu máy.",
-    ctcThe5: "Đấu riêng với bạn bè",
+    ctcThe5: "Chơi với bạn bè",
     ctcThe5Mo: "Tạo link mời, bạn chỉ cần mở link là hai người chơi với nhau. Không cần tài khoản để vào, không tính điểm.",
     // Trang cờ tướng
     ctTieuDe: "Cờ tướng với máy",
