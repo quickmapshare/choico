@@ -188,15 +188,17 @@ const T = chuCaTrang(lang);
     $("td-trong").hidden = ds.length > 0;
     for (const it of ds) {
       const li = document.createElement("li");
+      // Máy: tên theo ngôn ngữ đang chọn (tên lưu trên server là tiếng Việt)
+      const tenHienThi: string = it.may ? f(T.tenMay, { c: it.cap_do }) : it.ten || "";
       const avatar = document.createElement("span");
       avatar.className = "td-avatar";
       avatar.setAttribute("aria-hidden", "true");
-      avatar.textContent = (it.ten || "?").trim().charAt(0).toUpperCase();
+      avatar.textContent = (tenHienThi || "?").trim().charAt(0).toUpperCase();
       const thongTin = document.createElement("span");
       thongTin.className = "td-thong-tin";
       const ten = document.createElement("span");
       ten.className = "td-ten";
-      ten.textContent = it.ten || "";
+      ten.textContent = tenHienThi;
       const nhan = document.createElement("span");
       nhan.className = "td-nhan";
       nhan.textContent = f(T.tdMucNhan, { m: it.cap_do }) + (it.che_do === "moi" ? ` · ${T.tdMoRongNhan}` : "");
