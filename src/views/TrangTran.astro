@@ -8,7 +8,7 @@ const T = chuCaTrang(lang);
 ---
 <Layout lang={lang} tieuDe={t(lang, "trTieuDe")} moTa={t(lang, "trMoTaChung")} khongLapChiMuc>
   <script is:inline type="application/json" id="tran-chu" set:html={JSON.stringify(T)}></script>
-  <h1>{T.trTieuDe}</h1>
+  <h1 id="tr-h1">{T.trTieuDe}</h1>
   <p id="tr-mo-ta" class="phu">{T.trMoTa}</p>
 
   <section id="tr-tao" class="tr-khoi" hidden>
@@ -500,6 +500,10 @@ const T = chuCaTrang(lang);
     $("tr-tiep").hidden = true;
     $("tr-het-gio").hidden = true;
     $("tr-mo-ta").hidden = tran?.loai === "dai"; // đoạn mô tả nói về trận khép kín, không đúng với trận thượng đài
+    // Tiêu đề theo loại trận để người chơi biết mình đang ở trận nào; chưa rõ loại thì dùng tiêu đề chung
+    const tieuDe = tran?.loai === "dai" ? T.tdTieuDe : tran?.loai === "khep_kin" ? T.trTieuDeKhepKin : T.trTieuDe;
+    $("tr-h1").textContent = tieuDe;
+    document.title = tieuDe;
     if (tran?.loai === "dai") danhDauMenu();
     doiEl.textContent = "";
     clearInterval(gioTimer);
