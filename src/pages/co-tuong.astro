@@ -6,9 +6,14 @@ import Layout from "../layouts/Layout.astro";
   <p class="phu">Bạn cầm quân đỏ và đi trước. Bắt đầu ở mức 1/5: thắng thì lên một mức, hòa giữ nguyên, thua thì xuống một mức. Ván hòa khi đi quá 120 nước.</p>
 
   <div class="co-dieu-khien">
-    <label class="co-ten">Tên của bạn
-      <input id="co-ten" type="text" maxlength="50" autocomplete="nickname" placeholder="Tối đa 50 ký tự" />
-    </label>
+    <span class="co-ten-o">
+      <label class="co-ten">Tên của bạn
+        <input id="co-ten" type="text" maxlength="50" autocomplete="nickname" placeholder="Tối đa 50 ký tự" />
+      </label>
+      <button type="button" id="co-doi-ten" class="co-doi-ten" aria-label="Lưu tên mới" title="Lưu tên mới">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </span>
     <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
     <button type="button" id="co-moi">Ván mới</button>
     <button type="button" id="co-hoan">Hoãn nước (còn 3)</button>
@@ -50,7 +55,11 @@ import Layout from "../layouts/Layout.astro";
   /* Nút bật tắt tiếng: đang bật thì đổi sang kiểu viền */
   .co-dieu-khien button[aria-pressed="true"] { background: var(--nen); color: var(--nhan); }
   .co-muc-hien-tai { font-weight: 600; }
+  .co-ten-o { display: inline-flex; align-items: center; gap: .3rem; }
   .co-ten input { font: inherit; padding: .35rem .5rem; border: 1px solid var(--vien); border-radius: .3rem; background: var(--nen); color: var(--chu); width: 12rem; }
+  /* Nút dấu check lưu tên: chỉ có biểu tượng, nhỏ nằm ngay cuối ô nhập */
+  .co-doi-ten { display: inline-flex; align-items: center; justify-content: center; width: 1.9rem; height: 1.9rem; padding: 0; border-radius: .3rem; border: 1px solid var(--nhan); background: var(--nhan); color: var(--nen); cursor: pointer; }
+  .co-doi-ten:disabled { opacity: .5; cursor: default; }
   .co-trang-thai { min-height: 1.5em; font-weight: 600; }
   .co-ban { width: 100%; max-width: 460px; margin: .5rem 0 1.5rem; }
   .co-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; }
@@ -795,7 +804,7 @@ import Layout from "../layouts/Layout.astro";
     document.addEventListener("fullscreenchange", capNhatPhongTo);
   }
 
-  // Gõ tên: bỏ ký tự đặc biệt, khi rời ô thì kiểm tra và lưu
+  // Gõ tên: bỏ ký tự đặc biệt
   tenEl.addEventListener("input", () => {
     tenEl.value = lamSachTen(tenEl.value);
   });
@@ -815,7 +824,11 @@ import Layout from "../layouts/Layout.astro";
     }
   }
 
-  tenEl.addEventListener("change", async () => {
+  // Lưu tên mới khi bấm dấu check hoặc nhấn Enter. Tên mới được đổi trên server rồi tải lại bảng điểm (đã che số).
+  const doiTenEl = document.getElementById("co-doi-ten") as HTMLButtonElement;
+  let dangDoiTen = false;
+  async function doiTen() {
+    if (dangDoiTen) return;
     const t = tenEl.value.trim();
     // Xóa trắng ô thì giữ tên đang dùng
     if (!t) {
@@ -828,18 +841,32 @@ import Layout from "../layouts/Layout.astro";
     }
     if (t === ten) return;
     const tenCu = ten;
-    const loi = await doiTenTrenServer(tenCu, t);
-    if (loi) {
-      hienTrangThai(loi);
-      tenEl.value = tenCu;
-      return;
+    dangDoiTen = true;
+    doiTenEl.disabled = true;
+    try {
+      const loi = await doiTenTrenServer(tenCu, t);
+      if (loi) {
+        hienTrangThai(loi);
+        tenEl.value = tenCu;
+        return;
+      }
+      ten = t;
+      tenEl.value = t;
+      luuTen(t);
+      // Ván đã kết thúc nhưng chưa ghi điểm: ghi ngay bây giờ bằng tên mới
+      if (ketThuc && !daNop) void nopDiem();
+      void taiBangDiem();
+    } finally {
+      dangDoiTen = false;
+      doiTenEl.disabled = false;
     }
-    ten = t;
-    tenEl.value = t;
-    luuTen(t);
-    // Ván đã kết thúc nhưng chưa ghi điểm: ghi ngay bây giờ bằng tên mới
-    if (ketThuc && !daNop) void nopDiem();
-    void taiBangDiem();
+  }
+  doiTenEl.addEventListener("click", () => void doiTen());
+  tenEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void doiTen();
+    }
   });
 
   ten = docTen();
