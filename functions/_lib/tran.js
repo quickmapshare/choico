@@ -2,7 +2,7 @@
 // Người chơi là tài khoản (header Authorization) hoặc khách (header x-khach-id, khép kín không cần tài khoản).
 import { dangNhap, xacThuc, tra } from "./pocketbase.js";
 import { capNhatDiem } from "./diem.js";
-import { ketQuaChoBen } from "../../src/lib/co-tuong-tran.js";
+import { ketQuaChoBen, laMay } from "../../src/lib/co-tuong-tran.js";
 
 export const BANG_TRAN = "co_tuong_tran";
 export const MAU_MA = /^[a-f0-9]{32}$/; // mã trận sinh bằng crypto.randomUUID() bỏ dấu gạch
@@ -147,7 +147,8 @@ export async function donTranCu(pb, H) {
     tim(`do~"k_%" && updated<"${ngayTruoc(7)}"`),
   ]);
   // "k_%" trong LIKE còn khớp mã tài khoản bắt đầu bằng "k" ("_" là ký tự đại diện), nên lọc lại cho đúng mã khách
-  const canDon = new Map([...khongAiVao, ...cuaKhach.filter((t) => t.do.startsWith("k_"))].map((t) => [t.id, t]));
+  // Máy trên sảnh thượng đài luôn đứng sẵn, không dọn
+  const canDon = new Map([...khongAiVao.filter((t) => !laMay(t.do)), ...cuaKhach.filter((t) => t.do.startsWith("k_"))].map((t) => [t.id, t]));
   await Promise.all([...canDon.values()].map(async (t) => {
     const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records/${t.id}`, { method: "DELETE", headers: H });
     if (r.ok && t.tin_hieu && t.tin_hieu !== TIN_HIEU_SANH) {
@@ -161,6 +162,7 @@ export async function donTranCu(pb, H) {
 async function tinhDiemTran(pb, H, tran, ketQua) {
   const ben = [["r", tran.do, tran.ten_do], ["b", tran.den, tran.ten_den]];
   for (const [s, id, ten] of ben) {
+    if (laMay(id)) continue; // máy không có tài khoản, không cộng điểm
     await capNhatDiem(pb, H, { id }, ten, ketQuaChoBen(ketQua, s), 0);
   }
 }

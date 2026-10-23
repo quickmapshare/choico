@@ -4,11 +4,13 @@
 //  - POST "roi_dai" {ma}: rời đài khi chưa có ai thách đấu.
 //  - POST "vao_dai" {ma}: thách đấu một người đang trên đài. Ai vào trước thì trận bắt đầu.
 // Mỗi người chỉ có một trận thượng đài chưa xong cùng lúc. Lên đài mà 30 phút không ai thách đấu thì tự rời đài.
+// Mỗi mức có sẵn một máy đứng trên đài (xem _lib/may-dai.js): thách đấu máy thì đánh như trận với máy, chỉ người chơi được cộng trừ điểm.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
 import { tenBangDiem } from "../../src/lib/co-tuong.js";
 import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, baoTinHieu, donTranCu, BANG_TRAN, MAU_MA, TIN_HIEU_SANH } from "../_lib/tran.js";
-import { GIAY_MOI_NUOC, HAN_SANH_PHUT, soDaiConHieuLuc } from "../../src/lib/co-tuong-tran.js";
+import { GIAY_MOI_NUOC, HAN_SANH_PHUT, soDaiConHieuLuc, laMay } from "../../src/lib/co-tuong-tran.js";
+import { bamDanhMay, diNuocMay } from "../_lib/may-dai.js";
 
 const loc = (c) => encodeURIComponent(c);
 
@@ -52,6 +54,7 @@ export async function onRequestGet({ request, env }) {
   if (loiTra) return loiTra;
   // Ba lượt đọc độc lập nên chạy song song (trước đây nối tiếp nên trang tải lâu). Lọc theo mức làm ở đây, sau khi biết mức.
   const dieuKien = `loai="dai" && trang_thai="cho" && do!="${nguoi.id}"`;
+  await bamDanhMay(pb, H); // mỗi mức có sẵn một máy đứng trên đài, trước khi đọc danh sách để máy mới tạo cũng hiện
   const [muc, dangCo, r] = await Promise.all([
     mucCuaToi(pb, H, nguoi.id),
     tranDangCo(pb, H, nguoi.id),
@@ -66,7 +69,7 @@ export async function onRequestGet({ request, env }) {
   return tra(200, {
     muc,
     cua_toi: dangCo.tran ? { ma: dangCo.tran.ma, trang_thai: dangCo.tran.trang_thai } : null,
-    danh_sach: ds.map((t) => ({ ma: t.ma, ten: tenBangDiem(t.ten_do || ""), cap_do: t.cap_do, che_do: t.che_do })),
+    danh_sach: ds.map((t) => ({ ma: t.ma, ten: laMay(t.do) ? t.ten_do : tenBangDiem(t.ten_do || ""), cap_do: t.cap_do, che_do: t.che_do, may: laMay(t.do) })),
   });
 }
 
@@ -143,6 +146,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     // Hai người cùng thách đấu một lúc: đọc lại, chỉ người ghi cuối được coi là đã vào
     const sau = await docTran(pb, H, ma);
     if (sau.loi || sau.tran?.den !== nguoi.id) return tra(409, { loi: "da_co_nguoi_vao" });
+    await diNuocMay(pb, H, sau.tran); // thách đấu máy: máy (bên đỏ, đi trước) đi nước đầu ngay
     return tra(200, { ma });
   }
 

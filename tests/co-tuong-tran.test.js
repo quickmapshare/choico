@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc, xuLyHetGio, kiemBoDo, soDaiConHieuLuc } from "../src/lib/co-tuong-tran.js";
+import { laMay, duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc, xuLyHetGio, kiemBoDo, soDaiConHieuLuc } from "../src/lib/co-tuong-tran.js";
 import { khoiTao, nuocHopLe, kyHieu } from "../src/lib/co-tuong.js";
 
 // Một nước hợp lệ đầu tiên của đỏ, rồi của đen (lấy từ luật, không viết tay)
@@ -158,5 +158,18 @@ describe("soDaiConHieuLuc", () => {
   });
   it("thiếu thời gian tạo thì không tin được, coi như hết hiệu lực", () => {
     expect(soDaiConHieuLuc({ loai: "dai", trang_thai: "cho" }, luc)).toBe(false);
+  });
+});
+
+describe("máy trên thượng đài", () => {
+  const luc = Date.parse("2026-10-23T12:00:00Z");
+  it("nhận diện mã máy, không nhầm với người chơi", () => {
+    expect(laMay("may_3")).toBe(true);
+    expect(laMay("abc123")).toBe(false);
+    expect(laMay(null)).toBe(false);
+  });
+  it("máy đứng trên đài mãi, không hết hạn như người chơi", () => {
+    const may = { loai: "dai", trang_thai: "cho", do: "may_3", created: "2026-10-23 12:00:00.000Z" };
+    expect(soDaiConHieuLuc(may, luc + 10 * 3600_000)).toBe(true);
   });
 });

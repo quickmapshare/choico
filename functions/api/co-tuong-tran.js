@@ -7,9 +7,10 @@
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
 import { docNguoiVaTran, capNhatTran, ketThucTran, sauPhut, MAU_MA } from "../_lib/tran.js";
+import { diNuocMay } from "../_lib/may-dai.js";
 import { timNuoc, tenBangDiem } from "../../src/lib/co-tuong.js";
 import {
-  duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo,
+  duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo, laMay,
 } from "../../src/lib/co-tuong-tran.js";
 
 // Trận bị bỏ dở (quá hạn mà không ai quyết định).
@@ -30,7 +31,7 @@ function ban(tran, benCua) {
   const co = {
     loai: tran.loai,
     trang_thai: tran.trang_thai,
-    ten_do: tenBangDiem(tran.ten_do || ""), // che chữ số trong tên như bảng điểm, để không lộ số điện thoại
+    ten_do: laMay(tran.do) ? tran.ten_do : tenBangDiem(tran.ten_do || ""), // che chữ số trong tên như bảng điểm, để không lộ số điện thoại (tên máy thì giữ)
     het_han: tran.het_han,
     bay_gio: new Date().toISOString(), // giờ server, để trình duyệt đếm ngược đúng dù đồng hồ máy lệch
   };
@@ -57,7 +58,8 @@ export async function onRequestGet({ request, env }) {
   const pb = env.PB_URL;
   const { loiTra, nguoi, H, tran: tranGoc } = await docNguoiVaTran(env, request, ma);
   if (loiTra) return loiTra;
-  const tran = kiemBoDo(tranGoc) ? await dongBoDo(pb, H, tranGoc) : tranGoc;
+  // Đến lượt máy mà máy chưa đi (ví dụ phản hồi trước bị mất) thì máy đi bây giờ
+  const tran = kiemBoDo(tranGoc) ? await dongBoDo(pb, H, tranGoc) : await diNuocMay(pb, H, tranGoc);
 
   return tra(200, ban(tran, nguoi && benCuaToi(tran, nguoi.id)));
 }
@@ -127,5 +129,7 @@ export async function onRequestPost({ request, env }) {
   const gui = Number.isFinite(body.gui) && Math.abs(Date.now() - body.gui) < 60000 ? Math.round(body.gui) : 0;
   const r = await capNhatTran(pb, H, tran, { nuoc: nuocMoi, han_nuoc: hanMoi }, { gui });
   if (!r.ok) return tra(502, { loi: "khong_luu_duoc_nuoc" });
-  return tra(200, ban({ ...tran, nuoc: nuocMoi, han_nuoc: hanMoi }, benCua));
+  // Trận với máy: máy đáp lại ngay trong yêu cầu này, người chơi thấy cả nước đi của máy
+  const sauMay = await diNuocMay(pb, H, { ...tran, nuoc: nuocMoi, han_nuoc: hanMoi });
+  return tra(200, ban(sauMay, benCua));
 }

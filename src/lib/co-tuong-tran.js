@@ -89,9 +89,14 @@ export function kiemBoDo(tran, now = Date.now()) {
   return Number.isFinite(cuoi) && now > cuoi + BO_DO_KHONG_GIOI_HAN_PHUT * 60_000;
 }
 
-// Người lên đài còn đứng trên đài: đang chờ đối thủ và chưa quá 30 phút kể từ lúc lên đài
+// Máy trên sảnh thượng đài có tiền tố này trong mã người chơi (xem functions/_lib/may-dai.js). Máy không có tài khoản.
+export const TIEN_TO_MAY = "may_";
+export const laMay = (id) => typeof id === "string" && id.startsWith(TIEN_TO_MAY);
+
+// Người lên đài còn đứng trên đài: đang chờ đối thủ và chưa quá 30 phút kể từ lúc lên đài. Máy thì luôn đứng sẵn trên đài.
 export function soDaiConHieuLuc(tran, now = Date.now()) {
   if (tran.loai !== "dai" || tran.trang_thai !== "cho") return false;
+  if (laMay(tran.do)) return true;
   const tao = Date.parse(String(tran.created || "").replace(" ", "T")); // PocketBase ghi "2026-10-23 12:00:00.000Z"
   return Number.isFinite(tao) && now < tao + HAN_SANH_PHUT * 60_000;
 }
