@@ -42,6 +42,16 @@ const T = chuCaTrang(lang);
   <p id="tr-doi" class="phu"></p>
   <!-- Khay quân bị ăn đặt trên và dưới bàn, giống chơi với máy. Bên nào có quân ở phía trên bàn thì khay đó nằm trên -->
   <div class="tr-khung">
+    <div class="tr-thanh-nut">
+      <button type="button" id="tr-tieng" class="tr-nut-icon" aria-label={T.amThanh} aria-pressed="false" title={T.batAm}>
+        <svg id="tr-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg id="tr-loa-tat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button type="button" id="tr-phong-to" class="tr-nut-icon" aria-label={T.phongTo} title={T.phongTo}>
+        <svg id="tr-phong-mo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg id="tr-phong-dong" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
     <div class="tr-an-nua">
       <h3 id="tr-nhan-an-tren"></h3>
       <div id="tr-an-tren"></div>
@@ -52,6 +62,9 @@ const T = chuCaTrang(lang);
       <div id="tr-an-duoi"></div>
     </div>
   </div>
+  <button type="button" id="tr-thu-nho" class="tr-nut-icon tr-thu-nho" aria-label={T.thuNhoBan} title={T.thuNhoBan} hidden>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
   <div id="tr-het-gio" class="tr-khoi" hidden>
     <button type="button" id="tr-nut-them" class="tr-nut tr-nut-chinh">{T.trThem1Phut}</button>
     <button type="button" id="tr-nut-thoai" class="tr-nut">{T.trThoaiMai}</button>
@@ -103,6 +116,34 @@ const T = chuCaTrang(lang);
   .tr-chip-r { color: #b3261e; }
   .tr-chip-b { color: #1f1f1f; }
   .tr-chip-moi { background: #fff3c4; box-shadow: 0 0 0 3px #e0a100; }
+  /* Nút âm thanh và phóng to: kiểu giống trang chơi với máy */
+  .tr-thanh-nut { display: flex; justify-content: flex-end; gap: .5rem; width: 100%; }
+  .tr-nut-icon {
+    flex: none; width: 2.4rem; height: 2.4rem; min-width: 2.4rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 1px solid var(--vien); background: var(--mat); color: var(--chu); box-shadow: var(--bong); cursor: pointer;
+    transition: border-color .15s, color .15s, background-color .15s;
+  }
+  .tr-nut-icon:hover { border-color: var(--nhan); color: var(--nhan); }
+  .tr-nut-icon:focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; }
+  /* Nút loa đang bật thì nền nhạt màu nhấn, để nhìn ra trạng thái dù biểu tượng là hành động */
+  #tr-tieng.tr-dang-bat { background: var(--nhan-nhe); border-color: var(--nhan); color: var(--nhan); }
+  /* Thuộc tính hidden không luôn ẩn phần tử SVG trên mọi trình duyệt: mỗi nút chỉ hiện một biểu tượng */
+  .tr-nut-icon > svg[hidden] { display: none; }
+  .tr-thu-nho { position: fixed; top: .6rem; right: .6rem; z-index: 1001; }
+  .tr-thu-nho[hidden] { display: none; }
+  /* Khi phóng to bàn cờ thì ẩn nút chat (widget bên thứ ba) để không che bàn */
+  body.tr-dang-phong-to #formmailhub-widget-container,
+  body.tr-dang-phong-to iframe[title="AI Chat Assistant"] { display: none !important; }
+  /* Chế độ toàn màn hình: chỉ bàn cờ, căn giữa, cao bằng màn hình */
+  .tr-ban:fullscreen { max-width: none; margin: 0; padding: 1rem; box-sizing: border-box; background: var(--nen); display: flex; align-items: center; justify-content: center; }
+  .tr-ban:fullscreen svg { width: auto; height: 100%; max-width: 100%; max-height: 100vh; }
+  /* iPhone Safari không có Fullscreen API cho phần tử: phủ kín màn hình bằng CSS */
+  .tr-ban.tr-phong-to-css {
+    position: fixed; inset: 0; z-index: 1000; width: 100%; max-width: none; height: 100vh; height: 100dvh;
+    margin: 0; padding: .5rem; box-sizing: border-box; background: var(--nen); border-radius: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tr-ban.tr-phong-to-css svg { width: auto; height: 100%; max-width: 100%; }
   .tr-ban svg { width: 100%; height: auto; display: block; user-select: none; overflow: visible; }
   .tr-ban .o { cursor: pointer; }
   .tr-ban .khoa .o { cursor: default; }
@@ -166,11 +207,34 @@ const T = chuCaTrang(lang);
 
   // Âm thanh theo lựa chọn đã lưu ở trang chơi với máy (mặc định tắt)
   const am = taoAmThanh();
+  // Nút loa: đang bật thì hiện loa gạch chéo (bấm để tắt), đang tắt thì hiện loa có sóng (bấm để bật)
+  const tiengEl = $("tr-tieng");
+  const loaBatEl = $("tr-loa-bat") as unknown as SVGElement;
+  const loaTatEl = $("tr-loa-tat") as unknown as SVGElement;
+  function hienTieng() {
+    const bat = am.dangBat();
+    tiengEl.setAttribute("aria-pressed", String(bat));
+    tiengEl.title = bat ? T.tatAm : T.batAm;
+    tiengEl.classList.toggle("tr-dang-bat", bat);
+    loaBatEl.toggleAttribute("hidden", bat); // SVG không có thuộc tính hidden như phần tử HTML, đặt trực tiếp
+    loaTatEl.toggleAttribute("hidden", !bat);
+  }
   try {
     am.datBat(localStorage.getItem("co-tuong-tieng") === "1", false);
   } catch {
     // Trình duyệt chặn localStorage: giữ mặc định tắt
   }
+  hienTieng();
+  tiengEl.addEventListener("click", () => {
+    am.mo();
+    am.datBat(!am.dangBat());
+    try {
+      localStorage.setItem("co-tuong-tieng", am.dangBat() ? "1" : "0"); // dùng chung lựa chọn với trang chơi với máy
+    } catch {
+      // không nhớ được lựa chọn, vẫn dùng bình thường
+    }
+    hienTieng();
+  });
   function phatTiengNuoc(anQuan: boolean, chieu: boolean) {
     am.phat(anQuan ? "an" : "di", THOI_GIAN_DI);
     if (chieu) am.phat("chieu", THOI_GIAN_DI);
@@ -496,6 +560,40 @@ const T = chuCaTrang(lang);
     }
     veBan();
   });
+
+  // Phóng to: chỉ bàn cờ chiếm toàn màn hình. Trình duyệt có Fullscreen API thì dùng nó, iPhone Safari thì phủ bằng CSS.
+  const phongEl = $("tr-phong-to");
+  const thuNhoEl = $("tr-thu-nho");
+  const coFullscreen = !!banEl.requestFullscreen;
+  const phongMoEl = $("tr-phong-mo") as unknown as SVGElement;
+  const phongDongEl = $("tr-phong-dong") as unknown as SVGElement;
+  const dangPhong = () => document.fullscreenElement === banEl || banEl.classList.contains("tr-phong-to-css");
+  const nhanPhong = () => (dangPhong() ? T.thuNhoBan : T.phongTo);
+  const capNhatPhongTo = () => {
+    const dang = dangPhong();
+    document.body.classList.toggle("tr-dang-phong-to", dang);
+    phongEl.setAttribute("aria-label", nhanPhong());
+    phongEl.title = nhanPhong();
+    phongMoEl.toggleAttribute("hidden", dang);
+    phongDongEl.toggleAttribute("hidden", !dang);
+  };
+  // Đổi phóng to bằng CSS (iPhone): cập nhật nút và nút thu nhỏ cố định
+  const datPhongCss = (bat: boolean) => {
+    banEl.classList.toggle("tr-phong-to-css", bat);
+    thuNhoEl.hidden = !bat;
+    capNhatPhongTo();
+  };
+  phongEl.addEventListener("click", () => {
+    if (coFullscreen) {
+      if (document.fullscreenElement === banEl) void document.exitFullscreen();
+      else void banEl.requestFullscreen().catch(() => {});
+    } else {
+      datPhongCss(!banEl.classList.contains("tr-phong-to-css"));
+    }
+  });
+  thuNhoEl.addEventListener("click", () => datPhongCss(false));
+  if (coFullscreen) document.addEventListener("fullscreenchange", capNhatPhongTo);
+  capNhatPhongTo();
 
   // Đọc trạng thái trận, dựng lại bàn và hiện đúng khối việc
   async function taiTran() {
