@@ -1,0 +1,10 @@
+---
+// Logo ChoiCo: quân cờ tròn viền đỏ, bên trong là hình chữ X của cung tướng trên bàn cờ tướng.
+const { size = 32 } = Astro.props;
+---
+<svg class="logo" viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" focusable="false">
+  <circle cx="32" cy="32" r="30" fill="#fbf6e6" stroke="#b3261e" stroke-width="3" />
+  <circle cx="32" cy="32" r="24" fill="none" stroke="#b3261e" stroke-width="1.5" />
+  <path d="M21 21 43 43M43 21 21 43" stroke="#b3261e" stroke-width="4" stroke-linecap="round" />
+  <circle cx="32" cy="32" r="5" fill="#fbf6e6" stroke="#b3261e" stroke-width="3" />
+</svg>
