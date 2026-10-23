@@ -8,7 +8,7 @@ const { lang = "vi" } = Astro.props;
 const src = new URL(duongDan(lang, "/nhung/co-tuong/"), Astro.site);
 // Mã nhúng: một iframe và một đoạn script nhỏ để khung tự cao theo nội dung
 const ma = [
-  `<iframe src="${src.href}" title="${t(lang, "nhungKhungTieuDe")}" allow="fullscreen" style="width:100%;max-width:480px;border:0;height:640px" loading="lazy"></iframe>`,
+  `<iframe src="${src.href}" title="${t(lang, "nhungKhungTieuDe")}" allow="fullscreen" style="width:100%;border:0;height:640px" loading="lazy"></iframe>`,
   `<script>`,
   `addEventListener("message", (e) => {`,
   `  if (e.origin !== "${src.origin}" || !e.data?.choicoCao) return;`,
@@ -32,7 +32,7 @@ const nhanChep = t(lang, "nhungSaoChep");
   <p class="hang-lien-ket"><a href={src.href} target="_blank" rel="noopener">{t(lang, "nhungXem")} ↗</a></p>
 
   <h2>{t(lang, "nhungXemTruoc")}</h2>
-  <iframe id="xem-truoc" src={src.href} title={t(lang, "nhungKhungTieuDe")} allow="fullscreen" style="width:100%;max-width:480px;border:0;height:640px"></iframe>
+  <iframe id="xem-truoc" src={src.href} title={t(lang, "nhungKhungTieuDe")} allow="fullscreen" style="width:100%;border:0;height:640px"></iframe>
 </Layout>
 
 <style>
