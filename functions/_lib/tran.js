@@ -126,6 +126,37 @@ export async function taoTran(pb, H, data) {
 
 export const sauPhut = (giay) => new Date(Date.now() + giay * 1000).toISOString();
 
+// Dọn bản ghi trận cũ (kèm chuông của trận). Chỉ dọn hai loại, trận thượng đài có người chơi được giữ lại:
+//  - link không ai vào: đã đóng hơn 1 ngày, hoặc còn "cho" sau 2 ngày (link khép kín hết hạn 24 giờ, đài tự rời sau 30 phút)
+//  - trận do khách tạo (mã "k_..."): không thao tác gì hơn 7 ngày
+// Không có lịch chạy định kỳ nên gọi kèm lúc tạo link / lên đài (sau khi đã trả lời), mỗi worker tối đa một lần mỗi 5 phút,
+// mỗi lần tối đa 20 trận mỗi loại.
+const DON_CACH_MS = 5 * 60 * 1000;
+let donLanCuoi = 0;
+const ngayTruoc = (n) => new Date(Date.now() - n * 86400000).toISOString().replace("T", " ");
+
+export async function donTranCu(pb, H) {
+  if (Date.now() - donLanCuoi < DON_CACH_MS) return 0;
+  donLanCuoi = Date.now();
+  const tim = async (loc) => {
+    const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records?perPage=20&fields=id,do,tin_hieu&filter=${encodeURIComponent(loc)}`, { headers: H });
+    return r.ok ? (await r.json()).items || [] : [];
+  };
+  const [khongAiVao, cuaKhach] = await Promise.all([
+    tim(`den="" && ((trang_thai="huy" && updated<"${ngayTruoc(1)}") || (trang_thai="cho" && created<"${ngayTruoc(2)}"))`),
+    tim(`do~"k_%" && updated<"${ngayTruoc(7)}"`),
+  ]);
+  // "k_%" trong LIKE còn khớp mã tài khoản bắt đầu bằng "k" ("_" là ký tự đại diện), nên lọc lại cho đúng mã khách
+  const canDon = new Map([...khongAiVao, ...cuaKhach.filter((t) => t.do.startsWith("k_"))].map((t) => [t.id, t]));
+  await Promise.all([...canDon.values()].map(async (t) => {
+    const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records/${t.id}`, { method: "DELETE", headers: H });
+    if (r.ok && t.tin_hieu && t.tin_hieu !== TIN_HIEU_SANH) {
+      await fetch(`${pb}/api/collections/${BANG_TIN_HIEU}/records/${t.tin_hieu}`, { method: "DELETE", headers: H });
+    }
+  }));
+  return canDon.size;
+}
+
 // Cộng điểm cho cả hai người của một trận thượng đài đã có kết quả. Điểm tính như đấu máy (xem diem.js), không hoãn nước.
 async function tinhDiemTran(pb, H, tran, ketQua) {
   const ben = [["r", tran.do, tran.ten_do], ["b", tran.den, tran.ten_den]];

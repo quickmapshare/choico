@@ -5,7 +5,7 @@
 //  - "huy": người tạo vô hiệu hóa link khi chưa có ai vào.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
-import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, MAU_MA, BANG_TRAN } from "../_lib/tran.js";
+import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, donTranCu, MAU_MA, BANG_TRAN } from "../_lib/tran.js";
 import { lamSachTen, tenHopLe } from "../../src/lib/co-tuong.js";
 import { maKhepKinConHieuLuc, GIAY_MOI_NUOC, HAN_KHEP_KIN_GIO } from "../../src/lib/co-tuong-tran.js";
 
@@ -41,12 +41,12 @@ async function khachTaoQuaNhieu(pb, H, idKhach, ipBam) {
   const [cuaMa, cuaIp, toanBo] = await Promise.all([
     dem(ipBam ? `do="${idKhach}" && ip_bam="${ipBam}"` : `do="${idKhach}"`),
     ipBam ? dem(`ip_bam="${ipBam}"`) : 0,
-    dem(`do~"k_%"`),
+    dem(`ip_bam!=""`), // chỉ link khách mới có ip_bam ("k_%" trong LIKE còn khớp cả mã tài khoản bắt đầu bằng "k")
   ]);
   return cuaMa >= KHACH_MOI_MA || cuaIp >= KHACH_MOI_IP || toanBo >= KHACH_TOAN_BO;
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   if (!env.PB_URL || !env.PB_ADMIN_EMAIL || !env.PB_ADMIN_PASSWORD) return tra(503, { loi: "chua_cau_hinh" });
   let body;
   try {
@@ -93,6 +93,7 @@ export async function onRequestPost({ request, env }) {
       ip_bam: ipBam,
     });
     if (!r.ok) return tra(502, { loi: "khong_tao_duoc" });
+    waitUntil(donTranCu(pb, H).catch(() => {})); // dọn link cũ sau khi đã trả lời, lỗi thì để lần sau
     return tra(200, { ma });
   }
 

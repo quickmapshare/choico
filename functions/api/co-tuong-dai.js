@@ -7,7 +7,7 @@
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
 import { tenBangDiem } from "../../src/lib/co-tuong.js";
-import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, baoTinHieu, BANG_TRAN, MAU_MA, TIN_HIEU_SANH } from "../_lib/tran.js";
+import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, baoTinHieu, donTranCu, BANG_TRAN, MAU_MA, TIN_HIEU_SANH } from "../_lib/tran.js";
 import { GIAY_MOI_NUOC, HAN_SANH_PHUT, soDaiConHieuLuc } from "../../src/lib/co-tuong-tran.js";
 
 const loc = (c) => encodeURIComponent(c);
@@ -70,7 +70,7 @@ export async function onRequestGet({ request, env }) {
   });
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   let body;
   try {
     body = await request.json();
@@ -101,6 +101,7 @@ export async function onRequestPost({ request, env }) {
     });
     if (!r.ok) return tra(502, { loi: "khong_len_dai_duoc" });
     await baoTinHieu(pb, H, TIN_HIEU_SANH); // người khác trong sảnh thấy ngay người vừa lên đài
+    waitUntil(donTranCu(pb, H).catch(() => {})); // dọn link cũ sau khi đã trả lời, lỗi thì để lần sau
     return tra(200, { ma });
   }
 
