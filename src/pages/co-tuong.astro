@@ -188,8 +188,9 @@ import Layout from "../layouts/Layout.astro";
     tiengEl.setAttribute("aria-pressed", String(bat));
     tiengEl.title = nhan;
     tiengEl.classList.toggle("co-dang-bat", bat);
-    loaBatEl.hidden = bat;
-    loaTatEl.hidden = !bat;
+    // SVG không có thuộc tính hidden như phần tử HTML, phải đặt trực tiếp thuộc tính
+    loaBatEl.toggleAttribute("hidden", bat);
+    loaTatEl.toggleAttribute("hidden", !bat);
   }
   try {
     am.datBat(localStorage.getItem(KHOA_TIENG) === "1", false);
@@ -823,8 +824,8 @@ import Layout from "../layouts/Layout.astro";
     document.body.classList.toggle("co-dang-phong-to", dang);
     phongEl.setAttribute("aria-label", nhanPhong());
     phongEl.title = nhanPhong();
-    phongMoEl.hidden = dang;
-    phongDongEl.hidden = !dang;
+    phongMoEl.toggleAttribute("hidden", dang);
+    phongDongEl.toggleAttribute("hidden", !dang);
   };
   phongEl.addEventListener("click", () => {
     if (coFullscreen) {
