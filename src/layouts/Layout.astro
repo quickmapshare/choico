@@ -6,7 +6,8 @@ import ChuyenTheme from "../components/ChuyenTheme.astro";
 import ChonNgonNgu from "../components/ChonNgonNgu.astro";
 import { NGON_NGU, t, thongTin, duongDan, boTienTo } from "../i18n/strings.js";
 // khongDich: trang không có bản theo ngôn ngữ (ví dụ /dang-nhap/), không hiện bộ chọn ngôn ngữ và không có hreflang.
-const { tieuDe, moTa, lang = "vi", nhung = false, khongDich = false } = Astro.props;
+// khongLapChiMuc: trang có nội dung phụ thuộc mã trong địa chỉ (?ma=...), không nên xuất hiện trên công cụ tìm kiếm.
+const { tieuDe, moTa, lang = "vi", nhung = false, khongDich = false, khongLapChiMuc = false } = Astro.props;
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 const duongGoc = boTienTo(Astro.url.pathname); // đường dẫn tiếng Việt của cùng trang
 // Tự chọn ngôn ngữ chỉ ở trang tiếng Việt thường (không phải bản nhúng, không phải trang trung tính)
@@ -19,7 +20,7 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tieuDe}</title>
     <meta name="description" content={moTa} />
-    {nhung && <meta name="robots" content="noindex" />}
+    {(nhung || khongLapChiMuc) && <meta name="robots" content="noindex" />}
     {nhung && <base target="_blank" />}
     <link rel="canonical" href={duongCanhTac} />
     {!khongDich && NGON_NGU.map((n) => <link rel="alternate" hreflang={n.html} href={new URL(duongDan(n.ma, duongGoc), Astro.site)} />)}
@@ -120,8 +121,16 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
       .ten-web span span { color: var(--nhan); }
       .thanh-tren-phai { display: flex; align-items: center; gap: .9rem; }
       .thanh-tren nav { display: flex; gap: 1rem; font-size: .93rem; font-weight: 600; }
-      /* Điện thoại: ẩn menu chữ cho thanh đầu gọn, vẫn còn logo về trang chủ, nút giao diện và ngôn ngữ */
-      @media (max-width: 640px) { .thanh-tren nav { display: none; } }
+      .nut-menu { display: none; width: 2.1rem; height: 2.1rem; padding: 0; align-items: center; justify-content: center; border: 1px solid var(--vien); border-radius: 50%; background: var(--mat); color: var(--phu); cursor: pointer; transition: border-color .15s, color .15s; }
+      .nut-menu:hover, .thanh-tren[data-mo] .nut-menu { border-color: var(--nhan); color: var(--nhan); }
+      /* Điện thoại: menu gọn lại sau nút ☰, bấm vào thì thả xuống dưới thanh đầu (giữ cú pháp media query cũ cho iOS cũ) */
+      @media (max-width: 640px) {
+        .nut-menu { display: inline-flex; }
+        .thanh-tren nav { display: none; }
+        .thanh-tren[data-mo] nav { display: flex; flex-direction: column; gap: 0; position: absolute; left: 0; right: 0; top: 100%; padding: .3rem 1rem .6rem; background: var(--nen); border-bottom: 1px solid var(--vien); font-size: 1rem; }
+        .thanh-tren nav a { padding: .7rem 0; border-top: 1px solid var(--vien); }
+        .thanh-tren nav a:first-child { border-top: 0; }
+      }
       .thanh-tren nav a { color: var(--phu); }
       .thanh-tren nav a:hover, .thanh-tren nav a[aria-current="page"] { color: var(--nhan); }
       .chan-trang { max-width: 46rem; margin: 0 auto; padding: 1rem 1rem 2rem; border-top: 1px solid var(--vien); color: var(--phu); font-size: .85rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
@@ -159,7 +168,7 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
         <div class="thanh-tren-noi">
           <a class="ten-web" href={duongDan(lang, "/")} aria-label={t(lang, "logoAria")}><Logo size={30} /><span>Choi<span>Co</span></span></a>
           <div class="thanh-tren-phai">
-            <nav aria-label={t(lang, "menuAria")}>
+            <nav id="menu-chinh" aria-label={t(lang, "menuAria")}>
               <a href={duongDan(lang, "/co-tuong/")} aria-current={duongGoc === "/co-tuong/" ? "page" : undefined}>{t(lang, "menuCoTuong")}</a>
               <a href={duongDan(lang, "/thuong-dai/")} aria-current={duongGoc === "/thuong-dai/" ? "page" : undefined}>{t(lang, "menuThuongDai")}</a>
               <a href={duongDan(lang, "/tran/")} aria-current={duongGoc === "/tran/" ? "page" : undefined}>{t(lang, "menuKhepKin")}</a>
@@ -167,6 +176,9 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
             </nav>
             <ChuyenTheme lang={lang} />
             {!khongDich && <ChonNgonNgu lang={lang} duongGoc={duongGoc} />}
+            <button type="button" class="nut-menu" aria-expanded="false" aria-controls="menu-chinh" aria-label={t(lang, "menuNut")}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
           </div>
         </div>
       </header>
@@ -180,6 +192,22 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
         <span>{t(lang, "chanTrangMoTa")}</span>
       </footer>
     )}
+    <script is:inline>
+      // Menu trên điện thoại: bấm ☰ để mở/đóng; đóng khi chọn một mục, bấm ra ngoài hoặc nhấn Esc
+      (function () {
+        var thanh = document.querySelector(".thanh-tren");
+        var nut = document.querySelector(".nut-menu");
+        if (!thanh || !nut) return;
+        function dat(mo) {
+          if (mo) thanh.setAttribute("data-mo", ""); else thanh.removeAttribute("data-mo");
+          nut.setAttribute("aria-expanded", mo ? "true" : "false");
+        }
+        nut.addEventListener("click", function () { dat(!thanh.hasAttribute("data-mo")); });
+        document.addEventListener("click", function (e) { if (!thanh.contains(e.target)) dat(false); });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") dat(false); });
+        thanh.querySelectorAll("nav a").forEach(function (a) { a.addEventListener("click", function () { dat(false); }); });
+      })();
+    </script>
     <script is:inline>
       // Báo chiều cao cho trang cha để khung iframe vừa nội dung
       if (window.parent !== window) {

@@ -7,6 +7,8 @@ import { t, duongDan } from "../i18n/strings.js";
 const { lang = "vi" } = Astro.props;
 const trang = [
   { href: duongDan(lang, "/co-tuong/"), ten: t(lang, "homeThe1"), mo: t(lang, "homeThe1Mo") },
+  { href: duongDan(lang, "/thuong-dai/"), ten: t(lang, "homeThe4"), mo: t(lang, "homeThe4Mo") },
+  { href: duongDan(lang, "/tran/"), ten: t(lang, "homeThe5"), mo: t(lang, "homeThe5Mo") },
   { href: duongDan(lang, "/co-tuong/") + "#co-bang-diem-tieu-de", ten: t(lang, "homeThe2"), mo: t(lang, "homeThe2Mo") },
   { href: duongDan(lang, "/nhung/"), ten: t(lang, "homeThe3"), mo: t(lang, "homeThe3Mo") },
 ];

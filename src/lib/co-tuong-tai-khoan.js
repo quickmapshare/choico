@@ -43,7 +43,7 @@ export async function batDauDangNhap() {
     state: nhaCungCap.state,
     codeVerifier: nhaCungCap.codeVerifier,
     redirectUrl: redirectUrl(),
-    quayLai: location.pathname,
+    quayLai: location.pathname + location.search, // giữ cả ?ma=... để đăng nhập xong về đúng trận
   }));
   location.href = nhaCungCap.authURL + encodeURIComponent(redirectUrl());
 }
@@ -70,5 +70,6 @@ export async function hoanTatDangNhap() {
   localStorage.setItem(KHOA_TOKEN, (await r.json()).token);
   localStorage.removeItem(KHOA_DANG_NHAP);
   // Quay lại đúng trang (giữ tiền tố ngôn ngữ); bản nhúng thì về trang đầy đủ
-  return (luu.quayLai || "/co-tuong/").replace("/nhung/co-tuong/", "/co-tuong/");
+  const diaChi = (luu.quayLai || "/co-tuong/").replace("/nhung/co-tuong/", "/co-tuong/");
+  return /^\/(?!\/)/.test(diaChi) ? diaChi : "/co-tuong/"; // chỉ quay về đường dẫn trong site
 }

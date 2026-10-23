@@ -6,7 +6,7 @@ import { t, chuCaTrang } from "../i18n/strings.js";
 const { lang = "vi" } = Astro.props;
 const T = chuCaTrang(lang);
 ---
-<Layout lang={lang} tieuDe={t(lang, "trTieuDe")} moTa={t(lang, "trMoTa")}>
+<Layout lang={lang} tieuDe={t(lang, "trTieuDe")} moTa={t(lang, "trMoTa")} khongLapChiMuc>
   <script is:inline type="application/json" id="tran-chu" set:html={JSON.stringify(T)}></script>
   <h1>{T.trTieuDe}</h1>
   <p class="phu">{T.trMoTa}</p>
@@ -46,6 +46,7 @@ const T = chuCaTrang(lang);
     <button type="button" id="tr-nut-thoai" class="tr-nut">{T.trThoaiMai}</button>
     <button type="button" id="tr-nut-xu" class="tr-nut tr-nut-phu">{T.trXuThua}</button>
   </div>
+  <p id="tr-tiep" class="tr-khoi" hidden><a id="tr-tiep-a" href="#"></a></p>
   <div id="tr-dieu-khien" class="tr-khoi" hidden>
     <button type="button" id="tr-nut-dau-hang" class="tr-nut tr-nut-phu">{T.trDauHang}</button>
   </div>
@@ -475,13 +476,30 @@ const T = chuCaTrang(lang);
     }
   }
 
+  // Trận thượng đài cũng chạy ở trang này nên menu phải sáng mục Thượng đài thay vì Khép kín
+  function danhDauMenu() {
+    document.querySelector('nav a[href$="/tran/"]')?.removeAttribute("aria-current");
+    document.querySelector('nav a[href$="/thuong-dai/"]')?.setAttribute("aria-current", "page");
+  }
+
+  // Sau khi trận xong: đường đi tiếp (về sảnh thượng đài, hoặc tạo trận khép kín mới)
+  function hienBuocTiep() {
+    const tienTo = document.documentElement.dataset.tienTo || "";
+    const a = $("tr-tiep-a") as HTMLAnchorElement;
+    a.href = tran.loai === "dai" ? `${tienTo}/thuong-dai/` : `${tienTo}/tran/`;
+    a.textContent = tran.loai === "dai" ? T.trVeSanh : T.trTranMoi;
+    $("tr-tiep").hidden = false;
+  }
+
   function hienKhoi() {
     $("tr-tao").hidden = true;
     $("tr-link").hidden = true;
     $("tr-roi-dai").hidden = true;
     $("tr-vao").hidden = true;
     $("tr-dieu-khien").hidden = true;
+    $("tr-tiep").hidden = true;
     $("tr-het-gio").hidden = true;
+    if (tran?.loai === "dai") danhDauMenu();
     doiEl.textContent = "";
     clearInterval(gioTimer);
 
@@ -513,6 +531,7 @@ const T = chuCaTrang(lang);
     // Trận đã đóng: link bị người tạo vô hiệu hóa, hoặc bị bỏ dở quá lâu
     if (tran.trang_thai === "huy") {
       if (tran.nuoc?.length) veBan();
+      hienBuocTiep();
       return batTrangThai(tran.ly_do === "bo_do" ? T.trTranDong : T.trDaVoHieu);
     }
 
@@ -537,6 +556,7 @@ const T = chuCaTrang(lang);
       diem = f(T.trDiemTran, { diem: `${d > 0 ? "+" : ""}${d}` });
     }
     batTrangThai(`${kq}${tran.ly_do ? ` (${ly})` : ""}. ${diem}`);
+    hienBuocTiep();
     if (!daBaoKetThuc) {
       daBaoKetThuc = true;
       const thang = (tran.ket_qua === "do" && minhDo) || (tran.ket_qua === "den" && !minhDo);
