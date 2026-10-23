@@ -1,15 +1,6 @@
 ---
-// Khung chung cho mọi trang. lang: "vi" hoặc "en".
-import NgayHomNay from "../components/NgayHomNay.astro";
-import CoNgonNgu from "../components/CoNgonNgu.astro";
-import ChuyenTheme from "../components/ChuyenTheme.astro";
-import Logo from "../components/Logo.astro";
-import { t, duongDan } from "../i18n/strings.js";
-// nhung: trang con để nhúng vào web khác (iframe), không có thanh tiêu đề, không lập chỉ mục.
-const { tieuDe, moTa, lang = "vi", nhung = false } = Astro.props;
-// Đường dẫn cùng trang ở ngôn ngữ còn lại: /tinh/x/ <-> /en/tinh/x/
-const duongHienTai = Astro.url.pathname;
-const duongKhac = lang === "en" ? (duongHienTai.replace(/^\/en/, "") || "/") : ("/en" + duongHienTai);
+// Khung tối giản cho trang cờ tướng: chỉ có biến màu, giao diện sáng/tối theo máy và báo chiều cao cho trang cha khi nhúng iframe.
+const { tieuDe, moTa, lang = "vi" } = Astro.props;
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 ---
 <!doctype html>
@@ -19,24 +10,8 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tieuDe}</title>
     <meta name="description" content={moTa} />
-    {nhung && <meta name="robots" content="noindex" />}
-    {nhung && <base target="_blank" />}
     <link rel="canonical" href={duongCanhTac} />
-    <link rel="alternate" hreflang="vi" href={new URL(lang === "vi" ? Astro.url.pathname : duongKhac, Astro.site)} />
-    <link rel="alternate" hreflang="en" href={new URL(lang === "en" ? Astro.url.pathname : duongKhac, Astro.site)} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#f7f5f0" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#14161a" media="(prefers-color-scheme: dark)" />
-    <script is:inline>
-      // Áp giao diện đã chọn trước khi vẽ trang để không bị chớp sáng sang tối
-      try {
-        const luu = localStorage.getItem("chophien-theme");
-        if (luu === "light" || luu === "dark") document.documentElement.setAttribute("data-theme", luu);
-      } catch (err) {
-        // localStorage bị chặn thì theo giao diện của máy
-      }
-    </script>
-    <!-- is:global: các view nằm trong slot nên style có phạm vi của Layout không áp dụng cho link, chữ và nút trong view -->
     <style is:global>
       :root {
         color-scheme: light dark;
@@ -52,7 +27,7 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
         --bong: 0 1px 2px rgba(31, 36, 33, .06), 0 4px 16px rgba(31, 36, 33, .05);
       }
       @media (prefers-color-scheme: dark) {
-        :root:not([data-theme="light"]) {
+        :root {
           --nen: #14161a;
           --mat: #1d2026;
           --chu: #ecebe6;
@@ -65,19 +40,6 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
           --bong: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .2);
         }
       }
-      :root[data-theme="dark"] {
-        --nen: #14161a;
-        --mat: #1d2026;
-        --chu: #ecebe6;
-        --phu: #a3aaa6;
-        --vien: #2d3138;
-        --nhan: #e58a6b;
-        --nhan-nhe: #2e2420;
-        --xanh: #5fbf8a;
-        --do: #e0796b;
-        --bong: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .2);
-      }
-
       * { box-sizing: border-box; }
       body {
         margin: 0;
@@ -87,33 +49,6 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
       }
-
-      .thanh-tren {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: var(--nen);
-        border-bottom: 1px solid var(--vien);
-      }
-      .thanh-tren-noi {
-        max-width: 46rem;
-        margin: 0 auto;
-        padding: .7rem 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-      }
-      .ten-web { font-weight: 700; text-decoration: none; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: .5rem; color: var(--chu); }
-      /* :global vì SVG nằm trong component Logo nên không có data-astro-cid của khung này. Thiếu flex: none thì logo bị co và đè lên chữ. */
-      .ten-web .logo { color: var(--nhan); flex: none; }
-      /* Chữ "Chợ" có nón lá đặt trên đầu: khung chữ chừa chỗ phía trên, nón căn giữa theo chữ */
-      /* Tiếng Việt: căn theo đường đáy chữ nên "Chợ" và "phiên Việt Nam" thẳng hàng đáy. Nón đội lên giữa "Ch", mép nón chạm đỉnh chữ */
-      .ten-web-vi { align-items: baseline; gap: 0; }
-      .ten-web-vi .phien { margin-left: .3em; }
-      .chu-ch { position: relative; }
-      .chu-ch .logo { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, calc(.65em + 5px)); }
-
       main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
       a { color: var(--nhan); text-decoration: none; }
       a:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -138,64 +73,20 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
       }
       ul { padding-left: 1.2rem; }
       ul li { margin: .2rem 0; }
-      .vet { color: var(--phu); font-size: .88rem; }
-      .vet a { color: var(--phu); }
-      .chan-trang { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--vien); color: var(--phu); font-size: .85rem; }
-
       :focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; border-radius: 4px; }
-    </style>
-    <!-- Dùng is:global vì khung này nằm trong view, không nằm trong Layout nên style có phạm vi sẽ không áp dụng -->
-    <style is:global>
-      /* Tiêu đề và nút góp ý nằm cùng một dòng; form mở ra thì chiếm cả dòng dưới */
-      .dieu-khien { display: flex; align-items: center; gap: .5rem; }
-      .tieu-de-hang { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; }
-      .tieu-de-hang h1 { flex: 1 1 12rem; }
-      .tieu-de-hang > .gop-y-khung { margin-left: auto; }
-      .tieu-de-hang > .gop-y-khung:has(details[open]) { flex-basis: 100%; margin-left: 0; }
-      /* Widget "Thêm chợ" nằm riêng một dòng dưới tiêu đề */
-      .tieu-de-hang > .gop-y-widget { flex-basis: 100%; margin-left: 0; }
     </style>
   </head>
   <body>
-    {!nhung && (
-      <header class="thanh-tren">
-        <div class="thanh-tren-noi">
-          {lang === "en" ? (
-            <a class="ten-web" href={duongDan(lang, "/")}><Logo /><span>{t(lang, "tenTrang")}</span></a>
-          ) : (
-            // Nón lá đội lên chữ "Chợ"
-            <a class="ten-web ten-web-vi" href={duongDan(lang, "/")}><span class="cho-doi-non"><span class="chu-ch">Ch<Logo size={26} /></span>ợ</span><span class="phien">phiên Việt Nam</span></a>
-          )}
-          <div class="dieu-khien">
-            <ChuyenTheme lang={lang} />
-            <CoNgonNgu lang={lang} href={duongKhac} />
-          </div>
-        </div>
-      </header>
-    )}
     <main>
-      <NgayHomNay lang={lang} />
       <slot />
-      {!nhung && (
-        <footer class="chan-trang">
-          {lang === "en"
-            ? "Session schedules are shown only once verified. Other information cites its source."
-            : "Lịch phiên chỉ hiển thị khi đã xác minh. Thông tin còn lại có ghi nguồn."}
-        </footer>
-      )}
     </main>
-    {nhung && (
-      <script is:inline>
-        // Báo chiều cao cho trang cha để khung iframe vừa nội dung
-        if (window.parent !== window) {
-          const baoCao = () => window.parent.postMessage({ chophienCao: document.documentElement.scrollHeight }, "*");
-          new ResizeObserver(baoCao).observe(document.body);
-          baoCao();
-        }
-      </script>
-    )}
-    {!nhung && (
-      <script is:inline src="https://page.botgap.dev/widget.js" data-bot-id="ct5gfjlb6tsxnhp" data-theme="light" data-open="false" async></script>
-    )}
+    <script is:inline>
+      // Báo chiều cao cho trang cha để khung iframe vừa nội dung
+      if (window.parent !== window) {
+        const baoCao = () => window.parent.postMessage({ choicoCao: document.documentElement.scrollHeight }, "*");
+        new ResizeObserver(baoCao).observe(document.body);
+        baoCao();
+      }
+    </script>
   </body>
 </html>

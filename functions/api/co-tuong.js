@@ -2,7 +2,7 @@
 // Khóa ANTHROPIC_API_KEY đặt trong Cloudflare Pages (Settings > Environment variables, dạng secret).
 // Hàm chỉ trả về nước nằm trong danh sách gửi lên, nên Haiku không thể bịa nước đi.
 
-const NGUON_CHO_PHEP = ["https://chophien.pages.dev"];
+const NGUON_CHO_PHEP = ["https://choico.pages.dev"];
 const MODEL = "claude-haiku-5-5";
 const MAU_NUOC = /^[a-i][0-9][a-i][0-9]$/;
 const MAU_NUOC_TRONG_CAU = /[a-i][0-9][a-i][0-9]/;

@@ -4,7 +4,7 @@
 import { xacMinhVan, tenHopLe, diemCongVan, NUOC_TOI_DA, HOAN_TOI_DA } from "../../src/lib/co-tuong.js";
 import { tra, dangNhap } from "../_lib/pocketbase.js";
 
-const NGUON_CHO_PHEP = ["https://chophien.pages.dev"];
+const NGUON_CHO_PHEP = ["https://choico.pages.dev"];
 const MAU_MA_VAN = /^[A-Za-z0-9-]{16,64}$/;
 const MAU_NUOC = /^[a-i][0-9][a-i][0-9]$/;
 

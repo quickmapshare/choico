@@ -4,7 +4,7 @@
 import { tenHopLe } from "../../src/lib/co-tuong.js";
 import { tra, dangNhap } from "../_lib/pocketbase.js";
 
-const NGUON_CHO_PHEP = ["https://chophien.pages.dev"];
+const NGUON_CHO_PHEP = ["https://choico.pages.dev"];
 
 // Tìm một dòng theo tên trong collection. Trả về null nếu không có.
 async function timTheoTen(pb, H, collection, ten) {

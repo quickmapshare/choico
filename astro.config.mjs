@@ -2,6 +2,6 @@
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  site: "https://chophien.pages.dev",
+  site: "https://choico.pages.dev",
   output: "static",
 });

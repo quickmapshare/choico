@@ -1,6 +1,13 @@
 ---
-import TrangChu from "../views/TrangChu.astro";
-import { taiDuLieu } from "../lib/du-lieu.js";
-const { khuVuc, cho } = await taiDuLieu();
+// Tạm thời chuyển thẳng tới bàn cờ.
 ---
-<TrangChu lang="vi" khuVuc={khuVuc} cho={cho} />
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cờ tướng</title>
+    <meta http-equiv="refresh" content="0; url=/co-tuong/" />
+    <link rel="canonical" href="/co-tuong/" />
+  </head>
+  <body><a href="/co-tuong/">Chơi cờ tướng</a></body>
+</html>
