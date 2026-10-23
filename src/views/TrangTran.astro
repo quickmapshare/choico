@@ -699,6 +699,9 @@ const T = chuCaTrang(lang);
   }
 
   function hienKhoi() {
+    // Khay và hàng nút loa, phóng to chỉ hiện khi veBan() vẽ được bàn; mọi trạng thái chờ (kể cả đài thượng đài) thì ẩn
+    $("tr-khung").hidden = true;
+    $("tr-thanh-nut").hidden = true;
     $("tr-tao").hidden = true;
     $("tr-link").hidden = true;
     $("tr-roi-dai").hidden = true;
