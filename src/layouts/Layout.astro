@@ -6,6 +6,7 @@ import ChuyenTheme from "../components/ChuyenTheme.astro";
 import ChonNgonNgu from "../components/ChonNgonNgu.astro";
 import TaiKhoan from "../components/TaiKhoan.astro";
 import { NGON_NGU, t, thongTin, duongDan, boTienTo } from "../i18n/strings.js";
+import { TRO_CHOI } from "../lib/tro-choi.js";
 // khongDich: trang không có bản theo ngôn ngữ (ví dụ /dang-nhap/), không hiện bộ chọn ngôn ngữ và không có hreflang.
 // khongLapChiMuc: trang có nội dung phụ thuộc mã trong địa chỉ (?ma=...), không nên xuất hiện trên công cụ tìm kiếm.
 // troChoi: loại cờ của trang dùng chung cho mọi loại cờ (trận, sảnh), để làm sáng đúng mục menu.
@@ -20,6 +21,16 @@ const MENU = [
   { ma: "co_tuong", href: "/co-tuong/", khoa: "menuCoTuong" },
   { ma: "co_vua", href: "/co-vua/", khoa: "menuCoVua" },
 ];
+// Menu con của loại cờ đang chọn (nằm sát dưới tab loại cờ): chơi với máy, chơi với bạn, thượng đài.
+// Mục sáng theo đường dẫn; /tran/ dùng chung cho chơi với bạn và thượng đài nên mặc định là chơi với bạn,
+// trang trận đổi lại bằng sangMenu khi biết loại trận.
+const MUC_CON = [
+  { ma: "may", khoa: "menuMay" },
+  { ma: "tran", khoa: "menuKhepKin" },
+  { ma: "dai", khoa: "menuThuongDai" },
+];
+const troChoiMenu = menuSang ? TRO_CHOI[menuSang] : null;
+const mucConSang = troChoiMenu ? (MUC_CON.find((m) => troChoiMenu.duong[m.ma] === duongGoc)?.ma ?? "") : "";
 // Tự chọn ngôn ngữ chỉ ở trang tiếng Việt thường (không phải bản nhúng, không phải trang trung tính)
 const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
 // Thẻ Open Graph và Twitter: tiêu đề, mô tả và ảnh hiện ra khi dán link vào mạng xã hội. Ảnh theo ngôn ngữ của trang
@@ -169,6 +180,13 @@ const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "
       }
       .thanh-tren nav a { color: var(--phu); }
       .thanh-tren nav a:hover, .thanh-tren nav a[aria-current="page"] { color: var(--nhan); }
+      /* Tab loại cờ đang chọn nối liền với hàng menu con ngay dưới */
+      .thanh-tren nav a[aria-current="page"] { background: var(--nhan-nhe); padding: .15rem .7rem; border-radius: 999px; margin: -.15rem 0; }
+      .menu-con { background: var(--nhan-nhe); border-top: 1px solid var(--vien); }
+      .menu-con-noi { max-width: 46rem; margin: 0 auto; padding: .25rem 1rem; display: flex; gap: .3rem; overflow-x: auto; font-size: .9rem; font-weight: 600; }
+      .menu-con-noi a { flex: none; padding: .3rem .8rem; border-radius: 999px; color: var(--phu); white-space: nowrap; }
+      .menu-con-noi a:hover { text-decoration: none; color: var(--nhan); }
+      .menu-con-noi a[aria-current="page"] { background: var(--nhan); color: var(--nen); }
       .chan-trang { max-width: 46rem; margin: 0 auto; padding: 1rem 1rem 2rem; border-top: 1px solid var(--vien); color: var(--phu); font-size: .85rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
       main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
       a { color: var(--nhan); text-decoration: none; }
@@ -215,6 +233,13 @@ const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "
             </button>
           </div>
         </div>
+        {troChoiMenu && (
+          <div class="menu-con">
+            <nav class="menu-con-noi" id="menu-con" aria-label={t(lang, "menuAria")}>
+              {MUC_CON.map((m) => <a href={duongDan(lang, troChoiMenu.duong[m.ma])} data-muc={m.ma} aria-current={mucConSang === m.ma ? "page" : undefined}>{t(lang, m.khoa)}</a>)}
+            </nav>
+          </div>
+        )}
       </header>
     )}
     <main>

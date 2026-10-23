@@ -1,5 +1,6 @@
 // Phần của từng loại cờ chỉ dùng ở trình duyệt: bộ vẽ bàn, mức chơi của máy và máy chạy trong Web Worker.
 // Luật và đường dẫn nằm ở src/lib/tro-choi.js (dùng được cả ở server). Thêm loại cờ mới thì thêm vào các bảng dưới đây.
+import { TRO_CHOI } from "../tro-choi.js";
 import veCoTuong from "../co-tuong/ve.js";
 import veCoVua from "../co-vua/ve.js";
 import { MUC as MUC_CO_TUONG } from "../co-tuong/muc.js";
@@ -71,10 +72,20 @@ export function taoMay(troChoi) {
 }
 
 // Làm sáng mục menu của loại cờ đang xem (trang dùng chung cho mọi loại cờ như /tran/ chỉ biết loại cờ khi đã tải trận)
-export function sangMenu(troChoi) {
+// Menu con (chơi với máy / bạn / thượng đài) đổi theo loại cờ; muc là mã mục con cần sáng ("tran", "dai"), bỏ trống thì giữ nguyên.
+export function sangMenu(troChoi, muc = "") {
   for (const a of document.querySelectorAll("#menu-chinh a[data-tro-choi]")) {
     if (a.getAttribute("data-tro-choi") === troChoi) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
+  }
+  const tienTo = document.documentElement.dataset.tienTo || "";
+  for (const a of document.querySelectorAll("#menu-con a[data-muc]")) {
+    const duong = TRO_CHOI[troChoi]?.duong[a.getAttribute("data-muc")];
+    if (duong) a.setAttribute("href", `${tienTo}${duong}`);
+    if (muc) {
+      if (a.getAttribute("data-muc") === muc) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    }
   }
 }
 

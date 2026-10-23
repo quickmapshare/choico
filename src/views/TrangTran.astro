@@ -520,6 +520,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     const tieuDe = tran?.loai === "dai" ? T.tdTieuDe : tran?.loai === "khep_kin" ? T.trTieuDeKhepKin : T.trTieuDe;
     $("tr-h1").textContent = `${tieuDe} · ${T.tenCo}`;
     document.title = tieuDe;
+    if (tran?.loai) sangMenu(tc.ma, tran.loai === "dai" ? "dai" : "tran");
     doiEl.textContent = "";
     clearInterval(gioTimer);
 
