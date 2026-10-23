@@ -15,10 +15,20 @@ import Layout from "../layouts/Layout.astro";
       </button>
     </span>
     <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
-    <button type="button" id="co-moi">Ván mới</button>
-    <button type="button" id="co-hoan">Hoãn nước (còn 3)</button>
-    <button type="button" id="co-phong-to">Phóng to bàn cờ</button>
-    <button type="button" id="co-tieng" aria-pressed="false">Tiếng: tắt</button>
+  </div>
+  <div class="co-thanh-nut">
+    <button type="button" id="co-moi" class="co-nut-chu">Ván mới</button>
+    <button type="button" id="co-hoan" class="co-nut-chu">Hoãn nước (còn 3)</button>
+    <div class="co-nut-goc">
+      <button type="button" id="co-tieng" class="co-nut-icon" aria-pressed="false" aria-label="Âm thanh: tắt" title="Bật âm thanh">
+        <svg id="co-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg id="co-loa-tat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button type="button" id="co-phong-to" class="co-nut-icon" aria-label="Phóng to bàn cờ" title="Phóng to bàn cờ">
+        <svg id="co-phong-mo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg id="co-phong-dong" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
   </div>
 
   <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
@@ -47,14 +57,20 @@ import Layout from "../layouts/Layout.astro";
 
 <!-- is:global vì bàn cờ được JavaScript vẽ, CSS có phạm vi sẽ không áp dụng cho các phần tử đó -->
 <style is:global>
-  .co-dieu-khien { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1rem 0; }
-  .co-dieu-khien button {
-    font: inherit; padding: .4rem .6rem; border-radius: .3rem; border: 1px solid var(--nhan);
-    background: var(--nhan); color: var(--nen); font-weight: 600; cursor: pointer;
-  }
-  /* Nút bật tắt tiếng: đang bật thì đổi sang kiểu viền */
-  .co-dieu-khien button[aria-pressed="true"] { background: var(--nen); color: var(--nhan); }
+  .co-dieu-khien { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1rem 0 .6rem; }
   .co-muc-hien-tai { font-weight: 600; }
+  /* Thanh nút: nút chữ bên trái, nút biểu tượng gom bên phải */
+  .co-thanh-nut { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 1rem; }
+  .co-nut-chu, .co-nut-icon {
+    font: inherit; border-radius: .3rem; border: 1px solid var(--nhan); background: var(--nhan); color: var(--nen);
+    font-weight: 600; cursor: pointer;
+  }
+  .co-nut-chu { padding: .4rem .8rem; }
+  .co-nut-chu:disabled { opacity: .5; cursor: default; }
+  .co-nut-goc { margin-left: auto; display: inline-flex; gap: .4rem; }
+  .co-nut-icon { width: 2.3rem; height: 2.3rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  /* Nút bật tiếng: đang bật thì đổi sang kiểu viền */
+  .co-nut-icon[aria-pressed="true"] { background: var(--nen); color: var(--nhan); }
   .co-ten-o { display: inline-flex; align-items: center; gap: .3rem; }
   .co-ten input { font: inherit; padding: .35rem .5rem; border: 1px solid var(--vien); border-radius: .3rem; background: var(--nen); color: var(--chu); width: 12rem; }
   /* Nút dấu check lưu tên: chỉ có biểu tượng, nhỏ nằm ngay cuối ô nhập */
@@ -159,9 +175,16 @@ import Layout from "../layouts/Layout.astro";
   const KHOA_TIENG = "co-tuong-tieng";
   const am = taoAmThanh();
   const tiengEl = document.getElementById("co-tieng") as HTMLButtonElement;
+  const loaBatEl = document.getElementById("co-loa-bat") as unknown as SVGElement;
+  const loaTatEl = document.getElementById("co-loa-tat") as unknown as SVGElement;
   function hienTieng() {
-    tiengEl.textContent = am.dangBat() ? "Tiếng: bật" : "Tiếng: tắt";
-    tiengEl.setAttribute("aria-pressed", String(am.dangBat()));
+    const bat = am.dangBat();
+    const nhan = bat ? "Âm thanh: bật" : "Âm thanh: tắt";
+    tiengEl.setAttribute("aria-pressed", String(bat));
+    tiengEl.setAttribute("aria-label", nhan);
+    tiengEl.title = bat ? "Tắt âm thanh" : "Bật âm thanh";
+    loaBatEl.hidden = !bat;
+    loaTatEl.hidden = bat;
   }
   try {
     am.datBat(localStorage.getItem(KHOA_TIENG) === "1", false);
@@ -775,7 +798,10 @@ import Layout from "../layouts/Layout.astro";
   const phongEl = document.getElementById("co-phong-to") as HTMLButtonElement;
   const thuNhoEl = document.getElementById("co-thu-nho") as HTMLButtonElement;
   const coFullscreen = !!banEl.requestFullscreen;
-  const nhanPhong = () => (document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css") ? "Thu nhỏ" : "Phóng to bàn cờ");
+  const phongMoEl = document.getElementById("co-phong-mo") as unknown as SVGElement;
+  const phongDongEl = document.getElementById("co-phong-dong") as unknown as SVGElement;
+  const dangPhong = () => document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css");
+  const nhanPhong = () => (dangPhong() ? "Thu nhỏ bàn cờ" : "Phóng to bàn cờ");
   // Đổi trạng thái phóng to bằng CSS (iPhone): cập nhật nút và nút thu nhỏ cố định
   const datPhongCss = (bat) => {
     banEl.classList.toggle("co-phong-to-css", bat);
@@ -784,9 +810,12 @@ import Layout from "../layouts/Layout.astro";
   };
   // Ẩn nút chat khi bàn đang phóng to (cả chế độ toàn màn hình thật lẫn CSS)
   const capNhatPhongTo = () => {
-    const dang = document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css");
+    const dang = dangPhong();
     document.body.classList.toggle("co-dang-phong-to", dang);
-    phongEl.textContent = nhanPhong();
+    phongEl.setAttribute("aria-label", nhanPhong());
+    phongEl.title = nhanPhong();
+    phongMoEl.hidden = dang;
+    phongDongEl.hidden = !dang;
   };
   phongEl.addEventListener("click", () => {
     if (coFullscreen) {
