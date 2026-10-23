@@ -20,4 +20,5 @@ Mã này tách ra từ dự án Chợ phiên Việt Nam (repo `quickmapshare/cho
 - Các hàm API đang chỉ cho phép nguồn `https://choico.pages.dev` (hằng `NGUON_CHO_PHEP`). Khi nhúng vào web khác cần quyết định cách xử lý nguồn.
 - Hướng đi: trang Chợ phiên chỉ nhúng widget bàn cờ từ ChoiCo (iframe). Cần đăng nhập, lưu tên, bảng xếp hạng thì widget link sang ChoiCo, không làm trên Chợ phiên.
 - Đã có trang nhúng gọn /nhung/co-tuong/ (bàn cờ và nút, không tiêu đề, ô tên, bảng điểm, có link sang /co-tuong/). Dùng chung component src/components/CoTuong.astro với trang đầy đủ. Nhúng bằng iframe, trang nhúng báo chiều cao qua postMessage({ choicoCao }).
-- Chưa làm: script nhúng một dòng tự tạo iframe.
+- Trang lấy mã nhúng cho web bất kỳ: `/nhung/` (iframe và script chỉnh chiều cao, có xem trước).
+- Ý định sắp tới: thêm đăng nhập Google để gắn tên và bảng xếp hạng với tài khoản.
