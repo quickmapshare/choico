@@ -110,7 +110,7 @@ export const CHU = {
     trDangTai: "Đang tải...",
     trHetGioChoQuyet: "Hết giờ. Đang chờ đối thủ quyết định.",
     trHetGioBanQuyet: "Đối thủ hết giờ. Bạn chọn cách xử:",
-    trThem1Phut: "Cho nghĩ thêm 1 phút",
+    trThem1Phut: "Cho thêm 1 phút",
     trThoaiMai: "Cho nghĩ thoải mái",
     trXuThua: "Xử thua",
     trKhongGioiHan: "Không giới hạn thời gian",
