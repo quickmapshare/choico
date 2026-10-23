@@ -6,10 +6,10 @@ import { t, chuCaTrang } from "../i18n/strings.js";
 const { lang = "vi" } = Astro.props;
 const T = chuCaTrang(lang);
 ---
-<Layout lang={lang} tieuDe={t(lang, "trTieuDe")} moTa={t(lang, "trMoTa")} khongLapChiMuc>
+<Layout lang={lang} tieuDe={t(lang, "trTieuDe")} moTa={t(lang, "trMoTaChung")} khongLapChiMuc>
   <script is:inline type="application/json" id="tran-chu" set:html={JSON.stringify(T)}></script>
   <h1>{T.trTieuDe}</h1>
-  <p class="phu">{T.trMoTa}</p>
+  <p id="tr-mo-ta" class="phu">{T.trMoTa}</p>
 
   <section id="tr-tao" class="tr-khoi" hidden>
     <button type="button" id="tr-nut-tao" class="tr-nut tr-nut-chinh">{T.trTaoLink}</button>
@@ -499,6 +499,7 @@ const T = chuCaTrang(lang);
     $("tr-dieu-khien").hidden = true;
     $("tr-tiep").hidden = true;
     $("tr-het-gio").hidden = true;
+    $("tr-mo-ta").hidden = tran?.loai === "dai"; // đoạn mô tả nói về trận khép kín, không đúng với trận thượng đài
     if (tran?.loai === "dai") danhDauMenu();
     doiEl.textContent = "";
     clearInterval(gioTimer);
