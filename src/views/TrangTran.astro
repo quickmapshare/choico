@@ -61,8 +61,9 @@ const T = chuCaTrang(lang);
 </style>
 
 <script>
-  import { khoiTao, nuocHopLe, kyHieu } from "../lib/co-tuong.js";
-  import { duyetNuoc, benDenLuot } from "../lib/co-tuong-tran.js";
+  import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu } from "../lib/co-tuong.js";
+  import { duyetNuoc, benDenLuot, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
+  import { taoAmThanh } from "../lib/co-tuong-am.js";
   import { docToken, headerXacThuc, batDauDangNhap } from "../lib/co-tuong-tai-khoan.js";
 
   const T = JSON.parse(document.getElementById("tran-chu")?.textContent || "{}");
@@ -94,24 +95,54 @@ const T = chuCaTrang(lang);
   const TEN_DEN = { K: "將", A: "士", E: "象", H: "馬", R: "車", C: "砲", P: "卒" };
 
   let tran: any = null; // trạng thái trận từ server
-  let ban: (string | null)[][] | null = null; // bàn dựng lại từ nước đi
+  let ban: (string | null)[][] | null = null; // bàn đang hiển thị, dựng từ nước đi rồi cập nhật tức thì khi đi
   let chon: [number, number] | null = null; // ô đang chọn
   let gioDi: any[] = []; // nước hợp lệ từ ô đang chọn
-  let dangGui = false;
-  let timer: number | undefined;
+  let dangGui = false; // đang gửi một nước lên server
+  let pollId: number | undefined; // hẹn giờ đọc lại trạng thái
+  let gioTimer: number | undefined; // hẹn giờ cập nhật đếm ngược
+  let lechGio = 0; // giờ server trừ giờ máy, để đếm ngược đúng dù đồng hồ máy lệch
+  let daBaoKetThuc = false; // đã phát tiếng kết thúc cho trận này chưa (không phát khi vừa mở một trận đã xong)
+
+  // Hiệu ứng nước vừa đi, giống chơi với máy: quân trượt, quân bị ăn mờ dần, vòng sáng, chiếu tướng.
+  // batDau: thời điểm đi, để vẽ lại giữa chừng (veBan() được gọi nhiều lần) vẫn chạy tiếp đúng tiến độ.
+  let hieuUng: { batDau: number; quanBiAn: string | null; chieu: boolean; tu: [number, number]; den: [number, number] } | null = null;
+  const THOI_GIAN_DI = 200; // ms quân trượt từ ô cũ sang ô mới
+  const THOI_GIAN_AN = 360; // ms quân bị ăn mờ dần và vòng sáng lan ra
+  const THOI_GIAN_CHIEU = 800; // ms vòng sáng và nhãn "Chiếu tướng!"
+  const tongHieuUng = () => THOI_GIAN_DI + Math.max(THOI_GIAN_AN, hieuUng?.chieu ? THOI_GIAN_CHIEU : 0);
+  const giamChuyenDong = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Âm thanh theo lựa chọn đã lưu ở trang chơi với máy (mặc định tắt)
+  const am = taoAmThanh();
+  try {
+    am.datBat(localStorage.getItem("co-tuong-tieng") === "1", false);
+  } catch {
+    // Trình duyệt chặn localStorage: giữ mặc định tắt
+  }
+  function phatTiengNuoc(anQuan: boolean, chieu: boolean) {
+    am.phat(anQuan ? "an" : "di", THOI_GIAN_DI);
+    if (chieu) am.phat("chieu", THOI_GIAN_DI);
+  }
 
   const trangThai = $("tr-trang-thai");
   const banEl = $("tr-ban");
   const doiEl = $("tr-doi");
-
-  function batTrangThai(text: string) {
+  const batTrangThai = (text: string) => {
     trangThai.textContent = text;
-  }
+  };
+  const doiBen = (s: string) => (s === "r" ? "b" : "r");
 
   async function goi(url: string, init?: RequestInit) {
     const r = await fetch(url, init);
     const data = await r.json().catch(() => ({}));
     return { ok: r.ok, status: r.status, data };
+  }
+
+  // Nhận trạng thái mới từ server: ghi nhớ độ lệch giờ để đếm ngược đúng
+  function nhanTran(data: any) {
+    tran = data;
+    if (data.bay_gio) lechGio = Date.parse(data.bay_gio) - Date.now();
   }
 
   // Dựng bàn từ danh sách nước đi của server
@@ -126,58 +157,207 @@ const T = chuCaTrang(lang);
   const toaX = (c: number) => LE + (xoay() ? 8 - c : c) * KC;
   const toaY = (r: number) => LE + (xoay() ? 9 - r : r) * KC;
 
+  const NS = "http://www.w3.org/2000/svg";
+  function svgEl(tag: string, attrs: Record<string, string | number>, cha?: Element) {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+    cha?.appendChild(e);
+    return e;
+  }
+
+  // Vẽ một quân trong nhóm .quan để có thể làm hoạt ảnh riêng
+  function vePhanQuan(cha: Element, p: string, x: number, y: number) {
+    const mau = p[0] === "r" ? "#b3261e" : "#1f1f1f";
+    const q = svgEl("g", { class: "quan", "pointer-events": "none" }, cha);
+    svgEl("circle", { cx: x, cy: y, r: 20, fill: "#fbf6e6", stroke: mau, "stroke-width": 2 }, q);
+    svgEl("text", { x, y: y + 8, "text-anchor": "middle", "font-size": 24, "font-weight": "bold", fill: mau }, q).textContent =
+      p[0] === "r" ? TEN[p[1]] : TEN_DEN[p[1]];
+    return q;
+  }
+
   function veBan() {
     banEl.replaceChildren();
     if (!ban) return;
-    const khoa = !(tran.trang_thai === "dang_dau" && tran.den_luot === tran.ban_cua);
-    banEl.classList.toggle("khoa", khoa);
-    const NS = "http://www.w3.org/2000/svg";
-    const s = document.createElementNS(NS, "svg");
-    s.setAttribute("viewBox", `0 0 ${RONG} ${CAO}`);
-    s.setAttribute("role", "img");
-    const them = (tag: string, attrs: Record<string, string | number>, cha: Element = s) => {
-      const e = document.createElementNS(NS, tag);
-      for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
-      cha.appendChild(e);
-      return e;
-    };
-    them("rect", { x: 0, y: 0, width: RONG, height: CAO, rx: 10, fill: "#f1dca8" });
+    banEl.classList.toggle("khoa", !(tran.trang_thai === "dang_dau" && tran.den_luot === tran.ban_cua));
+    const s = svgEl("svg", { viewBox: `0 0 ${RONG} ${CAO}`, role: "img" });
+    svgEl("rect", { x: 0, y: 0, width: RONG, height: CAO, rx: 10, fill: "#f1dca8" }, s);
     const net = { stroke: "#7a4b1e", "stroke-width": 1.5, fill: "none" };
-    for (let r = 0; r < 10; r++) them("line", { ...net, x1: toaX(0), y1: toaY(r), x2: toaX(8), y2: toaY(r) });
+    for (let r = 0; r < 10; r++) svgEl("line", { ...net, x1: toaX(0), y1: toaY(r), x2: toaX(8), y2: toaY(r) }, s);
     for (let c = 0; c < 9; c++) {
-      if (c === 0 || c === 8) them("line", { ...net, x1: toaX(c), y1: toaY(0), x2: toaX(c), y2: toaY(9) });
+      if (c === 0 || c === 8) svgEl("line", { ...net, x1: toaX(c), y1: toaY(0), x2: toaX(c), y2: toaY(9) }, s);
       else {
-        them("line", { ...net, x1: toaX(c), y1: toaY(0), x2: toaX(c), y2: toaY(4) });
-        them("line", { ...net, x1: toaX(c), y1: toaY(5), x2: toaX(c), y2: toaY(9) });
+        svgEl("line", { ...net, x1: toaX(c), y1: toaY(0), x2: toaX(c), y2: toaY(4) }, s);
+        svgEl("line", { ...net, x1: toaX(c), y1: toaY(5), x2: toaX(c), y2: toaY(9) }, s);
       }
     }
-    const nuocCuoi = tran.nuoc?.length ? tran.nuoc[tran.nuoc.length - 1] : null;
+    // Hai đường chéo trong mỗi cung tướng
+    for (const r0 of [0, 7]) {
+      svgEl("line", { ...net, x1: toaX(3), y1: toaY(r0), x2: toaX(5), y2: toaY(r0 + 2) }, s);
+      svgEl("line", { ...net, x1: toaX(5), y1: toaY(r0), x2: toaX(3), y2: toaY(r0 + 2) }, s);
+    }
+    const nuocCuoi: string | null = tran.nuoc?.length ? tran.nuoc[tran.nuoc.length - 1] : null;
+    const oDi = nuocCuoi ? nuocCuoi.slice(0, 2) : "";
+    const oDen = nuocCuoi ? nuocCuoi.slice(2, 4) : "";
+    const dangBiChieu = { r: biChieu(ban, "r"), b: biChieu(ban, "b") };
     for (let r = 0; r < 10; r++) {
       for (let c = 0; c < 9; c++) {
-        const g = them("g", { class: "o", "data-r": r, "data-c": c });
+        const g = svgEl("g", { class: "o", "data-r": r, "data-c": c }, s);
         const x = toaX(c);
         const y = toaY(r);
-        if (chon && chon[0] === r && chon[1] === c) them("circle", { cx: x, cy: y, r: 22, fill: "none", stroke: "#1e88e5", "stroke-width": 3 }, g);
-        if (gioDi.some((m) => m.den[0] === r && m.den[1] === c)) them("circle", { cx: x, cy: y, r: 7, fill: "rgba(30,136,229,.65)" }, g);
+        const ten = `${String.fromCharCode(97 + c)}${r}`;
+        // Ô quân vừa rời: vòng nét đứt. Ô quân vừa đến: vòng liền đậm hơn.
+        if (ten === oDi) svgEl("circle", { cx: x, cy: y, r: 22, fill: "rgba(224,161,0,.22)", stroke: "#e0a100", "stroke-width": 2, "stroke-dasharray": "4 3" }, g);
+        if (ten === oDen) svgEl("circle", { cx: x, cy: y, r: 24, fill: "rgba(224,161,0,.35)", stroke: "#e0a100", "stroke-width": 3.5 }, g);
+        if (chon && chon[0] === r && chon[1] === c) svgEl("circle", { cx: x, cy: y, r: 22, fill: "none", stroke: "#1e88e5", "stroke-width": 3 }, g);
+        if (gioDi.some((m) => m.den[0] === r && m.den[1] === c)) svgEl("circle", { cx: x, cy: y, r: 7, fill: "rgba(30,136,229,.65)" }, g);
         const p = ban[r][c];
-        if (p) {
-          const mau = p[0] === "r" ? "#b3261e" : "#1f1f1f";
-          them("circle", { cx: x, cy: y, r: 20, fill: "#fbf6e6", stroke: mau, "stroke-width": 2 }, g);
-          const txt = them("text", { x, y: y + 8, "text-anchor": "middle", "font-size": 24, "font-weight": "bold", fill: mau }, g);
-          txt.textContent = p[0] === "r" ? TEN[p[1]] : TEN_DEN[p[1]];
-        }
-        // Đánh dấu nước vừa đi (nước cuối trong danh sách)
-        if (nuocCuoi && (nuocCuoi.slice(2, 4) === `${String.fromCharCode(97 + c)}${r}`)) {
-          them("circle", { cx: x, cy: y, r: 24, fill: "none", stroke: "#e0a100", "stroke-width": 3 }, g);
-        }
-        them("circle", { cx: x, cy: y, r: KC / 2 - 2, fill: "transparent" }, g);
+        // Tướng đang bị chiếu: vòng đỏ đậm quanh quân
+        if (p && p[1] === "K" && dangBiChieu[p[0]]) svgEl("circle", { cx: x, cy: y, r: 25, fill: "rgba(229,57,53,.28)", stroke: "#e53935", "stroke-width": 3.5 }, g);
+        if (p) vePhanQuan(g, p, x, y);
+        // Vùng bấm trong suốt phủ lên trên để nhận nhấp chuột
+        svgEl("circle", { cx: x, cy: y, r: KC / 2 - 2, fill: "transparent" }, g);
       }
     }
     banEl.appendChild(s);
+    chayHieuUng(s as unknown as SVGSVGElement);
+  }
+
+  // Hiệu ứng nước vừa đi (cùng kiểu với chơi với máy). veBan() dựng lại cả bàn nên hiệu ứng được bắt đầu lại ở đúng tiến độ.
+  function chayHieuUng(s: SVGSVGElement) {
+    if (!hieuUng || giamChuyenDong || !s.animate) return;
+    const troi = Date.now() - hieuUng.batDau;
+    if (troi >= tongHieuUng()) {
+      hieuUng = null;
+      return;
+    }
+    const { tu, den } = hieuUng;
+    const x = toaX(den[1]);
+    const y = toaY(den[0]);
+    const GIUA = "transform-box: fill-box; transform-origin: center;";
+
+    // Quân bị ăn nằm yên ở ô đến cho đến khi quân đi tới, rồi mờ dần
+    if (hieuUng.quanBiAn) {
+      const ma_ = svgEl("g", { style: GIUA, "pointer-events": "none" }, s);
+      vePhanQuan(ma_, hieuUng.quanBiAn, x, y);
+      ma_.animate(
+        [
+          { opacity: 1, transform: "scale(1)", offset: 0 },
+          { opacity: 1, transform: "scale(1)", offset: THOI_GIAN_DI / (THOI_GIAN_DI + THOI_GIAN_AN) },
+          { opacity: 0, transform: "scale(1.5)", offset: 1 },
+        ],
+        { duration: THOI_GIAN_DI + THOI_GIAN_AN, delay: -troi, fill: "forwards" },
+      );
+    }
+
+    // Vòng sáng lan ra khi quân đến nơi: đỏ nếu ăn quân, vàng nếu chỉ đi
+    const vong = svgEl("circle", {
+      cx: x, cy: y, r: 22, fill: "none", stroke: hieuUng.quanBiAn ? "#e53935" : "#e0a100", "stroke-width": 4,
+      opacity: 0, style: GIUA, "pointer-events": "none",
+    }, s);
+    vong.animate(
+      [{ opacity: 0.95, transform: "scale(1)" }, { opacity: 0, transform: "scale(2)" }],
+      { duration: THOI_GIAN_AN, delay: THOI_GIAN_DI - troi, easing: "ease-out", fill: "forwards" },
+    );
+
+    // Chiếu tướng: vòng đỏ lan ra quanh tướng bị chiếu và nhãn nổi lên
+    if (hieuUng.chieu && ban) {
+      const benBiChieu = doiBen(ban[den[0]][den[1]]![0]);
+      let tuong: [number, number] | null = null;
+      for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++) if (ban[r][c] === benBiChieu + "K") tuong = [r, c];
+      if (tuong) {
+        const kx = toaX(tuong[1]);
+        const ky = toaY(tuong[0]);
+        const vongChieu = svgEl("circle", {
+          cx: kx, cy: ky, r: 24, fill: "none", stroke: "#e53935", "stroke-width": 4, opacity: 0, style: GIUA, "pointer-events": "none",
+        }, s);
+        vongChieu.animate(
+          [{ opacity: 0.95, transform: "scale(1)" }, { opacity: 0, transform: "scale(2.4)" }],
+          { duration: THOI_GIAN_CHIEU, delay: THOI_GIAN_DI - troi, easing: "ease-out", fill: "forwards" },
+        );
+        // Nhãn nằm phía trong bàn (xét theo hướng xoay hiện tại)
+        const tuongOTren = ky < CAO / 2;
+        const nhan = svgEl("text", {
+          x: kx, y: tuongOTren ? ky + 46 : ky - 34, "text-anchor": "middle", "font-size": 20, "font-weight": 800,
+          fill: "#e53935", stroke: "#fff", "stroke-width": 4, "paint-order": "stroke", opacity: 0, style: GIUA, "pointer-events": "none",
+        }, s);
+        nhan.textContent = T.chieu;
+        nhan.animate(
+          [
+            { opacity: 0, transform: "translateY(8px) scale(.8)", offset: 0 },
+            { opacity: 1, transform: "translateY(0) scale(1)", offset: 0.2 },
+            { opacity: 1, transform: "translateY(0) scale(1)", offset: 0.75 },
+            { opacity: 0, transform: "translateY(-6px) scale(1)", offset: 1 },
+          ],
+          { duration: THOI_GIAN_CHIEU, delay: THOI_GIAN_DI - troi, fill: "forwards" },
+        );
+      }
+    }
+
+    // Quân vừa đi trượt từ ô cũ, đưa lên lớp trên cùng để không bị quân khác che
+    const quan = s.querySelector(`g.o[data-r="${den[0]}"][data-c="${den[1]}"] .quan`);
+    if (quan && THOI_GIAN_DI > troi) {
+      s.appendChild(quan);
+      quan.animate(
+        [
+          { transform: `translate(${toaX(tu[1]) - x}px, ${toaY(tu[0]) - y}px)` },
+          { transform: "translate(0px, 0px)" },
+        ],
+        { duration: THOI_GIAN_DI, delay: -troi, easing: "ease-out", fill: "backwards" },
+      );
+    }
+  }
+
+  // Áp một nước lên bàn đang hiển thị và bắt đầu hiệu ứng, tiếng
+  function apMove(m: any, s: string) {
+    if (!ban) return;
+    apDung(ban, m);
+    hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, chieu: biChieu(ban, doiBen(s)), tu: m.tu, den: m.den };
+    phatTiengNuoc(Boolean(m.an), hieuUng.chieu);
+  }
+
+  // Đi nước: hiện ngay trên màn hình rồi gửi server ngầm, không phải chờ mạng mới thấy quân di chuyển
+  async function diNuoc(m: any) {
+    const ky = kyHieu(m);
+    const s = tran.ban_cua;
+    apMove(m, s);
+    tran.nuoc = [...tran.nuoc, ky];
+    tran.den_luot = doiBen(s);
+    tran.han_nuoc = new Date(Date.now() + lechGio + GIAY_MOI_NUOC * 1000).toISOString();
+    const kt = duyetNuoc(tran.nuoc);
+    if (kt.hop_le && kt.ket_thuc) {
+      tran.trang_thai = "ket_thuc";
+      tran.ket_qua = kt.ket_qua;
+      tran.ly_do = kt.ly_do;
+    }
+    chon = null;
+    gioDi = [];
+    hienKhoi();
+    dangGui = true;
+    const { ok, data } = await goi("/api/co-tuong-tran", {
+      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "nuoc", ma, ky }),
+    });
+    dangGui = false;
+    if (ok) {
+      // Khớp với màn hình thì chỉ cập nhật giờ; lệch thì dựng lại theo server
+      if (data.nuoc?.length === tran.nuoc.length && data.trang_thai === tran.trang_thai) {
+        tran.han_nuoc = data.han_nuoc;
+        if (data.bay_gio) lechGio = Date.parse(data.bay_gio) - Date.now();
+      } else {
+        nhanTran(data);
+        dungBan();
+        hienKhoi();
+      }
+      return;
+    }
+    // Server từ chối (sai luật, hết giờ, đối thủ đã đầu hàng...): bỏ hiệu ứng, tải trạng thái thật và báo
+    hieuUng = null;
+    await taiTran();
+    batTrangThai(T.trNuocSai);
   }
 
   // Nhấp vào bàn: chọn quân của mình, rồi nhấp vào ô đích để đi
-  banEl.addEventListener("click", async (e) => {
+  banEl.addEventListener("click", (e) => {
+    am.mo(); // mở ngữ cảnh âm thanh ngay trong lúc người dùng bấm (iPhone chỉ cho phép như vậy)
     const o = (e.target as Element).closest(".o");
     if (!o || !ban || dangGui || tran?.trang_thai !== "dang_dau" || tran.den_luot !== tran.ban_cua) return;
     const r = Number(o.getAttribute("data-r"));
@@ -187,18 +367,7 @@ const T = chuCaTrang(lang);
 
     if (chon) {
       const m = gioDi.find((x) => x.den[0] === r && x.den[1] === c);
-      if (m) {
-        dangGui = true;
-        const { ok } = await goi("/api/co-tuong-tran", {
-          method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "nuoc", ma, ky: kyHieu(m) }),
-        });
-        dangGui = false;
-        chon = null;
-        gioDi = [];
-        await taiTran();
-        if (!ok) batTrangThai(T.trNuocSai);
-        return;
-      }
+      if (m) return void diNuoc(m);
     }
     if (quan && quan[0] === benMinh) {
       chon = [r, c];
@@ -218,7 +387,10 @@ const T = chuCaTrang(lang);
       batTrangThai(status === 404 ? T.trTranKhongTim : (T.loiMang || ""));
       return;
     }
-    tran = data;
+    nhanTran(data);
+    daBaoKetThuc = data.trang_thai === "ket_thuc"; // mở một trận đã xong thì không phát tiếng kết thúc
+    chon = null;
+    gioDi = [];
     dungBan();
     hienKhoi();
   }
@@ -231,13 +403,21 @@ const T = chuCaTrang(lang);
     batTrangThai("");
   }
 
+  // Dòng "Đối thủ: X · Còn N giây", cập nhật mỗi giây khi trận đang đi
+  function capNhatGio() {
+    if (tran?.trang_thai !== "dang_dau") return;
+    const ten = tran.ban_cua === "r" ? tran.ten_den : tran.ten_do;
+    const giay = Math.max(0, Math.ceil((Date.parse(tran.han_nuoc) - (Date.now() + lechGio)) / 1000));
+    doiEl.textContent = [ten ? f(T.trDoi, { ten }) : "", f(T.trGioCon, { s: giay })].filter(Boolean).join(" · ");
+  }
+
   function hienKhoi() {
     $("tr-tao").hidden = true;
     $("tr-link").hidden = true;
     $("tr-vao").hidden = true;
     $("tr-dieu-khien").hidden = true;
     doiEl.textContent = "";
-    clearInterval(timer);
+    clearInterval(gioTimer);
 
     // Người ngoài: link còn chờ thì hiện nút vào chơi
     if (!tran.ban_cua) {
@@ -250,40 +430,82 @@ const T = chuCaTrang(lang);
       return batTrangThai(tran.trang_thai === "huy" ? T.trHetHan : T.trDaCoNguoi);
     }
 
-    // Người tạo đang chờ người vào: hiện link để gửi
+    // Người tạo đang chờ người vào: hiện link để gửi (và tự cập nhật khi có người vào)
     if (tran.trang_thai === "cho") {
       $("tr-link").hidden = false;
       ($("tr-link-o") as HTMLInputElement).value = `${location.origin}${location.pathname}?ma=${ma}`;
-      return batTrangThai(T.trChoBan);
+      batTrangThai(T.trChoBan);
+      return datPoll();
     }
 
     // Trận đang đi hoặc đã xong
     veBan();
-    doiEl.textContent = tran.ten_den ? f(T.trDoi, { ten: tran.ten_den }) : "";
     const minhDo = tran.ban_cua === "r";
     if (tran.trang_thai === "dang_dau") {
       $("tr-dieu-khien").hidden = false;
       const toi = tran.den_luot === tran.ban_cua;
       batTrangThai(`${toi ? T.trToiLuot : T.trDoiLuot} · ${minhDo ? T.trBanDo : T.trBanDen}`);
-      timer = window.setInterval(() => void taiTranLanSau(), 2000);
-      return;
+      capNhatGio();
+      gioTimer = window.setInterval(capNhatGio, 1000);
+      return datPoll();
     }
     // Đã kết thúc
+    const ten = minhDo ? tran.ten_den : tran.ten_do;
+    doiEl.textContent = ten ? f(T.trDoi, { ten }) : "";
     const kq = tran.ket_qua === "do" ? T.trKetDo : tran.ket_qua === "den" ? T.trKetDen : T.trKetHoa;
     const ly = tran.ly_do === "het_gio" ? T.trLyHetGio : tran.ly_do === "dau_hang" ? T.trLyDauHang : T.trLyHetNuoc;
     batTrangThai(`${kq}${tran.ly_do ? ` (${ly})` : ""}. ${T.trKhongTinh}`);
+    if (!daBaoKetThuc) {
+      daBaoKetThuc = true;
+      const thang = (tran.ket_qua === "do" && minhDo) || (tran.ket_qua === "den" && !minhDo);
+      am.phat(tran.ket_qua === "hoa" ? "hoa" : thang ? "thang" : "thua", THOI_GIAN_DI + 500); // sau tiếng đi quân và hiệu ứng
+    }
+    datPoll();
   }
 
-  // Cập nhật lặp (đối thủ vừa đi thì bàn tự cập nhật)
-  async function taiTranLanSau() {
-    if (dangGui) return;
-    const cu = tran?.nuoc?.length;
+  // Đối thủ vừa đi thì bàn cập nhật và chạy hiệu ứng như nước đi của máy
+  async function docMoi() {
+    const cu: number = tran?.nuoc?.length ?? 0;
+    const trangThaiCu = tran?.trang_thai;
     const { ok, data } = await goi(`/api/co-tuong-tran?ma=${encodeURIComponent(ma)}`, { headers: yeuCau() });
-    if (!ok) return;
-    if (data.nuoc?.length === cu && data.trang_thai === tran.trang_thai) return;
-    tran = data;
+    if (!ok || dangGui) return; // người chơi vừa đi trong lúc chờ: bỏ kết quả cũ này
+    const moi: number = data.nuoc?.length ?? 0;
+    if (moi === cu && data.trang_thai === trangThaiCu) {
+      if (data.bay_gio) lechGio = Date.parse(data.bay_gio) - Date.now();
+      return;
+    }
+    // Đúng một nước mới của đối thủ: đi nước đó trên bàn đang có để quân trượt, có tiếng, có hiệu ứng
+    if (trangThaiCu === "dang_dau" && moi === cu + 1 && ban) {
+      const s = benDenLuot(cu);
+      const m = timNuoc(ban, s, data.nuoc[moi - 1]);
+      if (m) {
+        apMove(m, s);
+        nhanTran(data);
+        chon = null;
+        gioDi = [];
+        return hienKhoi();
+      }
+    }
+    nhanTran(data);
+    chon = null;
+    gioDi = [];
     dungBan();
     hienKhoi();
+  }
+
+  // Hẹn lần đọc lại tiếp theo: nhanh khi đang chờ đối thủ đi, chậm hơn khi đến lượt mình hoặc tab ẩn
+  function datPoll() {
+    clearTimeout(pollId);
+    pollId = undefined;
+    const caoNhat = tran?.ban_cua && (tran.trang_thai === "dang_dau" || tran.trang_thai === "cho");
+    if (!caoNhat) return;
+    const luotMinh = tran.trang_thai === "dang_dau" && tran.den_luot === tran.ban_cua;
+    const doTre = document.hidden ? 5000 : tran.trang_thai === "cho" || luotMinh ? 2500 : 1000;
+    pollId = window.setTimeout(async () => {
+      pollId = undefined;
+      await docMoi();
+      datPoll();
+    }, doTre);
   }
 
   // Tạo link: cần đăng nhập, xong thì chuyển sang trang có mã
@@ -323,10 +545,14 @@ const T = chuCaTrang(lang);
   });
 
   $("tr-nut-dau-hang").addEventListener("click", async () => {
-    await goi("/api/co-tuong-tran", {
+    const { ok, data } = await goi("/api/co-tuong-tran", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "dau_hang", ma }),
     });
-    await taiTran();
+    if (!ok) return void taiTran();
+    nhanTran(data);
+    chon = null;
+    gioDi = [];
+    hienKhoi();
   });
 
   // Nút đăng nhập ngay trong thông báo cần đăng nhập

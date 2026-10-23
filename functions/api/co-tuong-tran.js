@@ -25,6 +25,7 @@ function ban(tran, benCua) {
     trang_thai: tran.trang_thai,
     ten_do: tran.ten_do,
     het_han: tran.het_han,
+    bay_gio: new Date().toISOString(), // giờ server, để trình duyệt đếm ngược đúng dù đồng hồ máy lệch
   };
   if (!benCua) return co;
   return {
@@ -104,7 +105,7 @@ export async function onRequestPost({ request, env }) {
   if (body.hanh_dong === "dau_hang") {
     const ket = benCua === "r" ? "den" : "do";
     await ketThuc(pb, H, tran, { ket_qua: ket, ly_do: "dau_hang", nuoc: null });
-    return tra(200, { ket_qua: ket, ly_do: "dau_hang" });
+    return tra(200, ban({ ...tran, trang_thai: "ket_thuc", ket_qua: ket, ly_do: "dau_hang", han_nuoc: "" }, benCua));
   }
 
   if (body.hanh_dong !== "nuoc") return tra(400, { loi: "hanh_dong_khong_hop_le" });
@@ -123,9 +124,11 @@ export async function onRequestPost({ request, env }) {
 
   if (sau.ket_thuc) {
     await ketThuc(pb, H, tran, { ket_qua: sau.ket_qua, ly_do: sau.ly_do, nuoc: nuocMoi });
-    return tra(200, { ket_thuc: true, ket_qua: sau.ket_qua, ly_do: sau.ly_do });
+    return tra(200, ban({ ...tran, nuoc: nuocMoi, trang_thai: "ket_thuc", ket_qua: sau.ket_qua, ly_do: sau.ly_do, han_nuoc: "" }, benCua));
   }
-  const r = await capNhatTran(pb, H, tran.id, { nuoc: nuocMoi, han_nuoc: sauPhut(GIAY_MOI_NUOC) });
+  // Trả luôn trạng thái mới để trình duyệt không phải gọi thêm một lượt đọc
+  const hanMoi = sauPhut(GIAY_MOI_NUOC);
+  const r = await capNhatTran(pb, H, tran.id, { nuoc: nuocMoi, han_nuoc: hanMoi });
   if (!r.ok) return tra(502, { loi: "khong_luu_duoc_nuoc" });
-  return tra(200, { ket_thuc: false });
+  return tra(200, ban({ ...tran, nuoc: nuocMoi, han_nuoc: hanMoi }, benCua));
 }

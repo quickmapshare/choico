@@ -15,14 +15,28 @@ export async function layNguoi(pb, request) {
   return null;
 }
 
+// Token admin được giữ lại trong bộ nhớ của worker một lúc, để mỗi yêu cầu không phải đăng nhập lại (tiết kiệm một lượt gọi).
+let tokenAdmin = null;
+let hanTokenAdmin = 0;
+const GIU_TOKEN_MS = 10 * 60 * 1000;
+
 // Header cho các lời gọi PocketBase bằng tài khoản admin
 export async function headerAdmin(env) {
-  const token = await dangNhap(env.PB_URL, env.PB_ADMIN_EMAIL, env.PB_ADMIN_PASSWORD);
-  return { authorization: token, "content-type": "application/json" };
+  if (!tokenAdmin || Date.now() > hanTokenAdmin) {
+    tokenAdmin = await dangNhap(env.PB_URL, env.PB_ADMIN_EMAIL, env.PB_ADMIN_PASSWORD);
+    hanTokenAdmin = Date.now() + GIU_TOKEN_MS;
+  }
+  return { authorization: tokenAdmin, "content-type": "application/json" };
+}
+
+// Bỏ token đã giữ (khi PocketBase từ chối), lần gọi sau sẽ đăng nhập lại
+export function quenTokenAdmin() {
+  tokenAdmin = null;
 }
 
 export async function docTran(pb, H, ma) {
   const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records?perPage=1&filter=${encodeURIComponent(`ma="${ma}"`)}`, { headers: H });
+  if (r.status === 401 || r.status === 403) quenTokenAdmin(); // token cũ hết hạn: lần sau đăng nhập lại
   if (!r.ok) return { loi: "khong_doc_duoc_tran" };
   return { tran: (await r.json()).items?.[0] ?? null };
 }
