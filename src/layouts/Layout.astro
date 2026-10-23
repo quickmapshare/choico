@@ -15,6 +15,10 @@ const duongGoc = boTienTo(Astro.url.pathname); // đường dẫn tiếng Việt
 const thuocCoTuong = /^\/(co-tuong|thuong-dai|tran|xem-van|nhung)\//.test(duongGoc);
 // Tự chọn ngôn ngữ chỉ ở trang tiếng Việt thường (không phải bản nhúng, không phải trang trung tính)
 const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
+// Thẻ Open Graph và Twitter: tiêu đề, mô tả và ảnh hiện ra khi dán link vào mạng xã hội. Ảnh theo ngôn ngữ của trang
+// (public/og/<ngôn ngữ>.png, tạo bằng tools/tao-anh-chia-se.mjs).
+const anhChiaSe = new URL(`/og/${lang}.png`, Astro.site);
+const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "zh_TW", ko: "ko_KR", ja: "ja_JP" };
 ---
 <!doctype html>
 <html lang={thongTin(lang).html} data-tien-to={thongTin(lang).tienTo} data-tu-chon={tuChonNgonNgu ? "1" : undefined}>
@@ -26,6 +30,23 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
     {(nhung || khongLapChiMuc) && <meta name="robots" content="noindex" />}
     {nhung && <base target="_blank" />}
     <link rel="canonical" href={duongCanhTac} />
+    {!nhung && (
+      <>
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="ChoiCo" />
+        <meta property="og:title" content={tieuDe} />
+        <meta property="og:description" content={moTa} />
+        {/* Trang phụ thuộc mã trong địa chỉ (link mời ?ma=...) không khai og:url, để mạng xã hội giữ nguyên link có mã */}
+        {!khongLapChiMuc && <meta property="og:url" content={duongCanhTac} />}
+        <meta property="og:locale" content={OG_LOCALE[lang] ?? "vi_VN"} />
+        <meta property="og:image" content={anhChiaSe} />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={tieuDe} />
+        <meta name="twitter:card" content="summary_large_image" />
+      </>
+    )}
     {!khongDich && NGON_NGU.map((n) => <link rel="alternate" hreflang={n.html} href={new URL(duongDan(n.ma, duongGoc), Astro.site)} />)}
     {!khongDich && <link rel="alternate" hreflang="x-default" href={new URL(duongDan("en", duongGoc), Astro.site)} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
