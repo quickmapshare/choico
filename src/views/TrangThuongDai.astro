@@ -111,6 +111,12 @@ const T = chuCaTrang(lang);
     justify-content: center; text-align: center; line-height: 1.25; font-weight: 700; letter-spacing: .02em;
     box-shadow: 0 2px 8px rgba(0, 0, 0, .22);
   }
+  /* Màn hình hẹp: nút không chia chỗ với tên nữa mà xuống dòng riêng, rộng hết thẻ, để tên luôn đọc được */
+  @media (max-width: 480px) {
+    .td-ds li { flex-wrap: wrap; }
+    .td-thong-tin { flex: 1 1 0; }
+    .td-thach { flex: 1 1 100%; margin-left: 0; min-width: 0; }
+  }
   .td-thach::before {
     content: ""; flex: none; width: 1rem; height: 1rem; background: currentColor;
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M4 20L20 4M4 4l16 16M3 9l3-3M18 6l3-3M3 15l6 6M15 3l6 6'/%3E%3C/svg%3E") center / contain no-repeat;
