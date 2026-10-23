@@ -1,35 +1,38 @@
 ---
 // Bàn cờ tướng và các nút. nhung = true: bản gọn để nhúng vào web khác (không tiêu đề, không ô tên, không bảng điểm).
-const { nhung = false } = Astro.props;
+import { chuCaTrang, duongDan } from "../i18n/strings.js";
+const { nhung = false, lang = "vi" } = Astro.props;
+const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấy tiếng Việt; cũng được gửi cho script phía trình duyệt
 ---
-  {!nhung && <h1>Cờ tướng với máy</h1>}
-  {!nhung && <p class="phu">Bạn cầm quân đỏ và đi trước. Bắt đầu ở mức 1/5: thắng thì lên một mức, hòa giữ nguyên, thua thì xuống một mức. Ván hòa khi đi quá 120 nước.</p>}
+  <script is:inline type="application/json" id="co-chu" set:html={JSON.stringify(T)}></script>
+  {!nhung && <h1>{T.ctTieuDe}</h1>}
+  {!nhung && <p class="phu">{T.ctGioiThieu}</p>}
 
   <div class="co-dieu-khien">
     <span class="co-ten-o" hidden>
-      <label class="co-ten">Tên của bạn
-        <input id="co-ten" type="text" maxlength="50" autocomplete="nickname" placeholder="Tối đa 50 ký tự" />
+      <label class="co-ten">{T.tenCuaBan}
+        <input id="co-ten" type="text" maxlength="50" autocomplete="nickname" placeholder={T.goiYTen} />
       </label>
-      <button type="button" id="co-doi-ten" class="co-doi-ten" aria-label="Lưu tên mới" title="Lưu tên mới">
+      <button type="button" id="co-doi-ten" class="co-doi-ten" aria-label={T.luuTen} title={T.luuTen}>
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </span>
     <button type="button" id="co-dang-nhap" class="co-nut-google" hidden={nhung} data-nhung={nhung ? "1" : undefined}>
       <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-      <span>Đăng nhập bằng Google</span>
+      <span>{T.dangNhapNut}</span>
     </button>
-    <button type="button" id="co-dang-xuat" class="co-nut-chu co-nut-phu" hidden>Đăng xuất</button>
+    <button type="button" id="co-dang-xuat" class="co-nut-chu co-nut-phu" hidden>{T.dangXuat}</button>
     <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
   </div>
   <div class="co-thanh-nut">
-    <button type="button" id="co-moi" class="co-nut-chu">Ván mới</button>
-    <button type="button" id="co-hoan" class="co-nut-chu">Hoãn nước (còn 3)</button>
+    <button type="button" id="co-moi" class="co-nut-chu">{T.vanMoi}</button>
+    <button type="button" id="co-hoan" class="co-nut-chu">{T.hoan.replace("{n}", "3")}</button>
     <div class="co-nut-goc">
-      <button type="button" id="co-tieng" class="co-nut-icon" aria-label="Âm thanh" aria-pressed="false" title="Bật âm thanh">
+      <button type="button" id="co-tieng" class="co-nut-icon" aria-label={T.amThanh} aria-pressed="false" title={T.batAm}>
         <svg id="co-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <svg id="co-loa-tat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
-      <button type="button" id="co-phong-to" class="co-nut-icon" aria-label="Phóng to bàn cờ" title="Phóng to bàn cờ">
+      <button type="button" id="co-phong-to" class="co-nut-icon" aria-label={T.phongTo} title={T.phongTo}>
         <svg id="co-phong-mo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <svg id="co-phong-dong" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -40,27 +43,27 @@ const { nhung = false } = Astro.props;
   <p id="co-ghi-diem" class="phu" aria-live="polite"></p>
   <div class="co-khung">
     <!-- Phía trên bàn là quân đen bị ăn, phía dưới bàn là quân đỏ bị ăn (đúng phía của mỗi bên) -->
-    <div class="co-an-nua" aria-label="Quân đen bị ăn">
-      <h3>Quân đen bị ăn</h3>
+    <div class="co-an-nua" aria-label={T.quanDenBiAn}>
+      <h3>{T.quanDenBiAn}</h3>
       <div id="co-an-den"></div>
     </div>
-    <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
-    <div class="co-an-nua" aria-label="Quân đỏ bị ăn">
-      <h3>Quân đỏ bị ăn</h3>
+    <div id="co-ban" class="co-ban" aria-label={T.banCo}></div>
+    <div class="co-an-nua" aria-label={T.quanDoBiAn}>
+      <h3>{T.quanDoBiAn}</h3>
       <div id="co-an-do"></div>
     </div>
   </div>
-  <button type="button" id="co-thu-nho" class="co-thu-nho" hidden>Thu nhỏ</button>
+  <button type="button" id="co-thu-nho" class="co-thu-nho" hidden>{T.thuNho}</button>
 
   <section class="co-bang-diem" aria-labelledby="co-bang-diem-tieu-de" hidden={nhung}>
-    <h2 id="co-bang-diem-tieu-de">Bảng điểm</h2>
-    <p class="phu">Thắng +3 điểm, hòa +1 điểm, thua -1 điểm. Mỗi nước hoãn trừ 0,5 điểm, tối đa 3 nước hoãn mỗi ván. Ván được tính khi kết thúc.</p>
+    <h2 id="co-bang-diem-tieu-de">{T.bangDiem}</h2>
+    <p class="phu">{T.luatDiem}</p>
     <p id="co-vi-tri" class="co-vi-tri"></p>
     <ol id="co-top10" class="co-top10"></ol>
   </section>
   {nhung && (
     <p class="phu co-lien-ket">
-      <a href="https://choico.pages.dev/co-tuong/" target="_blank" rel="noopener">Đăng nhập, lưu tên và xem bảng xếp hạng trên ChoiCo →</a>
+      <a href={`https://choico.pages.dev${duongDan(lang, "/co-tuong/")}`} target="_blank" rel="noopener">{T.lienKetNhung}</a>
     </p>
   )}
 
@@ -176,7 +179,10 @@ const { nhung = false } = Astro.props;
   import { batDauDangNhap, headerXacThuc, docToken, xoaToken } from "../lib/co-tuong-tai-khoan.js";
   import { timNuocMay } from "../lib/co-tuong-may.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
-  // Địa chỉ PocketBase công khai: chỉ đọc bảng điểm, ghi điểm đi qua /api/co-tuong-van
+  // Chuỗi giao diện theo ngôn ngữ trang (được component đưa vào #co-chu); f() điền các chỗ {x} trong mẫu
+  const T = JSON.parse(document.getElementById("co-chu")?.textContent || "{}");
+  const f = (mau: string, v: Record<string, string | number> = {}) => mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
+  const NGON_NGU_TRANG = document.documentElement.lang; // thông báo lưu cùng ván chỉ dùng lại khi cùng ngôn ngữ
 
   // Tên quân theo cách gọi thường thấy ở Việt Nam: quân đỏ có Tốt, quân đen có Chốt
   // Quân dùng chữ Hán như bàn cờ truyền thống: bên đỏ và bên đen khác nhau
@@ -226,8 +232,8 @@ const { nhung = false } = Astro.props;
   function hienTieng() {
     // Biểu tượng là hành động sẽ xảy ra khi bấm: đang bật thì hiện loa gạch chéo (tắt), đang tắt thì hiện loa có sóng (bật)
     const bat = am.dangBat();
-    const nhan = bat ? "Tắt âm thanh" : "Bật âm thanh";
-    tiengEl.setAttribute("aria-label", "Âm thanh");
+    const nhan = bat ? T.tatAm : T.batAm;
+    tiengEl.setAttribute("aria-label", T.amThanh);
     tiengEl.setAttribute("aria-pressed", String(bat));
     tiengEl.title = nhan;
     tiengEl.classList.toggle("co-dang-bat", bat);
@@ -279,7 +285,7 @@ const { nhung = false } = Astro.props;
   let ten = "";
 
   function tenHienThi() {
-    return ten || "Bạn";
+    return ten || T.ban;
   }
 
   // Mã định danh cho mỗi ván, để server không tính điểm trùng cho cùng một ván
@@ -290,7 +296,7 @@ const { nhung = false } = Astro.props;
   let anCuoi: string | null = null; // quân vừa bị ăn gần nhất (mã bên + loại, ví dụ "bR"), đánh dấu trong khay
 
   // Điểm có thể là số lẻ 0,5: dùng dấu phẩy theo cách viết tiếng Việt
-  const soDiem = (x: number) => String(x).replace(".", ",");
+  const soDiem = (x: number) => String(x).replace(".", T.thapPhan);
 
   function taoMaVan() {
     if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -306,7 +312,7 @@ const { nhung = false } = Astro.props;
       const a = document.createElement("span");
       a.textContent = `${it.ten}`;
       const bb = document.createElement("span");
-      bb.textContent = `${soDiem(it.diem)} điểm`;
+      bb.textContent = f(T.diemSo, { n: soDiem(it.diem) });
       li.append(a, bb);
       ds.appendChild(li);
     }
@@ -322,16 +328,16 @@ const { nhung = false } = Astro.props;
       const { top, vi_tri } = await r.json();
       hienBangDiem(top || []);
       if (!ten) {
-        datLienKetDangNhap(viEl, "Đăng nhập Google để ghi điểm và có tên trên bảng xếp hạng.");
+        datLienKetDangNhap(viEl, T.moiBangDiem, T.linkDangNhap);
         return;
       }
       if (!vi_tri) {
-        viEl.textContent = `${ten} chưa có điểm. Hoàn thành một ván để có điểm.`;
+        viEl.textContent = f(T.chuaCoDiem, { ten });
         return;
       }
-      viEl.textContent = `${ten} đang ở vị trí #${vi_tri.hang} với ${soDiem(vi_tri.diem)} điểm.`;
+      viEl.textContent = f(T.viTri, { ten, hang: vi_tri.hang, diem: soDiem(vi_tri.diem) });
     } catch {
-      viEl.textContent = "Chưa tải được bảng điểm. Thử tải lại trang sau.";
+      viEl.textContent = T.loiBangDiem;
     }
   }
 
@@ -341,12 +347,13 @@ const { nhung = false } = Astro.props;
   }
 
   // Câu mời đăng nhập, cả câu là liên kết. Bản nhúng mở ChoiCo ở tab mới, bản đầy đủ đăng nhập Google ngay.
-  function datLienKetDangNhap(el: HTMLElement, text: string) {
+  // mau có chỗ {link}; chỉ phần chữ lienKet là liên kết, phần còn lại là chữ thường
+  function datLienKetDangNhap(el: HTMLElement, mau: string, chuLienKet: string) {
     const a = document.createElement("a");
-    a.textContent = text;
+    a.textContent = chuLienKet;
     a.href = "#";
     if (document.getElementById("co-dang-nhap")?.hasAttribute("data-nhung")) {
-      a.href = "https://choico.pages.dev/co-tuong/";
+      a.href = `https://choico.pages.dev${document.documentElement.dataset.tienTo || ""}/co-tuong/`;
       a.target = "_blank";
       a.rel = "noopener";
     } else {
@@ -355,14 +362,15 @@ const { nhung = false } = Astro.props;
         void bamDangNhap();
       });
     }
-    el.replaceChildren(a);
+    const [truoc, sau = ""] = mau.split("{link}");
+    el.replaceChildren(truoc, a, sau);
   }
 
   // Gửi nhật ký ván lên server để tính điểm. Mỗi ván chỉ gửi thành công một lần.
   async function nopDiem() {
     if (!ketThuc || daNop || nuocDaDi.length === 0) return;
     if (!ten) {
-      datLienKetDangNhap(document.getElementById("co-ghi-diem") as HTMLElement, "Đăng nhập Google để ghi điểm ván này lên bảng xếp hạng.");
+      datLienKetDangNhap(document.getElementById("co-ghi-diem") as HTMLElement, T.moiVan, T.linkDangNhap);
       return;
     }
     try {
@@ -374,7 +382,7 @@ const { nhung = false } = Astro.props;
       if (r.status === 401) {
         xoaToken(); // token hết hạn hoặc không hợp lệ
         datTaiKhoan("");
-        datLienKetDangNhap(document.getElementById("co-ghi-diem") as HTMLElement, "Phiên đăng nhập đã hết hạn. Đăng nhập lại để ghi điểm.");
+        datLienKetDangNhap(document.getElementById("co-ghi-diem") as HTMLElement, T.hetHan, T.linkDangNhapLai);
         return;
       }
       if (r.status === 409 && (await r.clone().json().catch(() => ({}))).loi === "van_da_tinh_diem") {
@@ -383,12 +391,12 @@ const { nhung = false } = Astro.props;
         const { diem_cong, tong_diem } = await r.json();
         daNop = true;
         const dau = diem_cong > 0 ? "+" : "";
-        thongBaoDiem(`Điểm ván này: ${dau}${soDiem(diem_cong)}. Tổng điểm: ${soDiem(tong_diem)}.`);
+        thongBaoDiem(f(T.diemVan, { dau, diem: soDiem(diem_cong), tong: soDiem(tong_diem) }));
       } else {
-        thongBaoDiem("Chưa ghi được điểm, sẽ thử lại khi tải lại trang.");
+        thongBaoDiem(T.loiGhiDiem);
       }
     } catch {
-      thongBaoDiem("Chưa ghi được điểm, sẽ thử lại khi tải lại trang.");
+      thongBaoDiem(T.loiGhiDiem);
     }
     luuTrangThai("r");
     void taiBangDiem();
@@ -397,7 +405,7 @@ const { nhung = false } = Astro.props;
   function luuTrangThai(luot) {
     try {
       localStorage.setItem(KHOA_LUU, JSON.stringify({
-        b, luot, capDo, soNuoc, ketThuc, nuocCuoi, thongBao: trangThai.textContent,
+        b, luot, capDo, soNuoc, ketThuc, nuocCuoi, thongBao: trangThai.textContent, ngonNgu: NGON_NGU_TRANG,
         maVan, nuocDaDi, daNop, soHoan, anCuoi,
       }));
     } catch {
@@ -425,7 +433,7 @@ const { nhung = false } = Astro.props;
 
   function hienMuc() {
     const cap = MUC[capDo];
-    mucHienTai.textContent = `Mức ${capDo}/${MUC_TOI_DA}`;
+    mucHienTai.textContent = f(T.muc, { c: capDo, m: MUC_TOI_DA });
   }
 
   // Vẽ khung quân đã bị ăn: quân đen bị ăn ở nửa trên, quân đỏ bị ăn ở nửa dưới
@@ -454,7 +462,7 @@ const { nhung = false } = Astro.props;
     banEl.classList.toggle("khoa", ketThuc || dangChoMay);
     hienMuc();
     capNhatHoan();
-    const s = svgEl("svg", { viewBox: `0 0 ${RONG} ${CAO}`, class: "co-svg", role: "img", "aria-label": "Bàn cờ tướng" }, banEl);
+    const s = svgEl("svg", { viewBox: `0 0 ${RONG} ${CAO}`, class: "co-svg", role: "img", "aria-label": T.banCo }, banEl);
     const net = { stroke: "#7a4b1e", "stroke-width": 1.5, fill: "none" };
 
     svgEl("rect", { x: 0, y: 0, width: RONG, height: CAO, rx: 10, fill: "#f1dca8" }, s);
@@ -587,7 +595,7 @@ const { nhung = false } = Astro.props;
           x: kx, y: benBiChieu === "b" ? ky + 46 : ky - 34, "text-anchor": "middle", "font-size": 20, "font-weight": 800,
           fill: "#e53935", stroke: "#fff", "stroke-width": 4, "paint-order": "stroke", opacity: 0, style: GIUA, "pointer-events": "none",
         }, s);
-        nhan.textContent = "Chiếu tướng!";
+        nhan.textContent = T.chieu;
         nhan.animate(
           [
             { opacity: 0, transform: "translateY(8px) scale(.8)", offset: 0 },
@@ -624,9 +632,9 @@ const { nhung = false } = Astro.props;
     am.phat(ketQua, THOI_GIAN_DI + 500); // sau khi tiếng đi quân và hiệu ứng nước cuối
     if (ketQua === "thang") capDo = Math.min(MUC_TOI_DA, capDo + 1);
     if (ketQua === "thua") capDo = Math.max(1, capDo - 1);
-    if (ketQua === "thang") hienTrangThai(`${tenHienThi()} thắng! Lên mức ${capDo}/${MUC_TOI_DA}.`);
-    if (ketQua === "thua") hienTrangThai(`${tenHienThi()} thua. Xuống mức ${capDo}/${MUC_TOI_DA}.`);
-    if (ketQua === "hoa") hienTrangThai(`Ván hòa. Giữ nguyên mức ${capDo}/${MUC_TOI_DA}.`);
+    if (ketQua === "thang") hienTrangThai(f(T.thang, { ten: tenHienThi(), c: capDo, m: MUC_TOI_DA }));
+    if (ketQua === "thua") hienTrangThai(f(T.thua, { ten: tenHienThi(), c: capDo, m: MUC_TOI_DA }));
+    if (ketQua === "hoa") hienTrangThai(f(T.hoa, { c: capDo, m: MUC_TOI_DA }));
     void nopDiem();
   }
 
@@ -685,7 +693,7 @@ const { nhung = false } = Astro.props;
   async function mayDi() {
     const luot = demMay; // nếu bắt đầu ván mới trong lúc máy nghĩ thì demMay đổi và bỏ kết quả này
     dangChoMay = true;
-    hienTrangThai(hieuUng?.chieu ? "Chiếu tướng! Máy đang nghĩ…" : "Máy đang nghĩ…");
+    hienTrangThai(hieuUng?.chieu ? T.chieuMayNghi : T.mayNghi);
     ve();
     const cap = MUC[capDo];
     let chonNuoc;
@@ -745,7 +753,7 @@ const { nhung = false } = Astro.props;
       luuTrangThai("r");
       return ve();
     }
-    hienTrangThai(`Máy đi ${chonNuoc ? chonNuoc.nuoc : ""}.${biChieu(b, "r") ? " Chiếu tướng!" : ""} Đến lượt ${tenHienThi()}.`);
+    hienTrangThai(f(T.mayDi, { nuoc: chonNuoc ? chonNuoc.nuoc : "", chieu: biChieu(b, "r") ? ` ${T.chieu} ` : " ", ten: tenHienThi() }));
     luuTrangThai("r");
     ve();
   }
@@ -801,7 +809,7 @@ const { nhung = false } = Astro.props;
 
   function capNhatHoan() {
     hoanEl.disabled = !hoanDuocDung();
-    hoanEl.textContent = `Hoãn nước (còn ${HOAN_TOI_DA - soHoan})`;
+    hoanEl.textContent = f(T.hoan, { n: HOAN_TOI_DA - soHoan });
   }
 
   // Lùi lại nước cuối của người chơi và nước đáp của máy. Bàn được dựng lại từ nhật ký còn lại (đỏ đi trước).
@@ -824,7 +832,7 @@ const { nhung = false } = Astro.props;
     chon = null;
     gioDi = [];
     hieuUng = null;
-    hienTrangThai(`Đã hoãn 2 nước (còn ${HOAN_TOI_DA - soHoan} lượt, mỗi lượt trừ 0,5 điểm). Đến lượt ${tenHienThi()}.`);
+    hienTrangThai(f(T.daHoan, { n: HOAN_TOI_DA - soHoan, ten: tenHienThi() }));
     luuTrangThai("r");
     ve();
   }
@@ -845,7 +853,7 @@ const { nhung = false } = Astro.props;
     soHoan = 0;
     anCuoi = null;
     thongBaoDiem("");
-    hienTrangThai(`${tenHienThi()} đi trước (quân đỏ).`);
+    hienTrangThai(f(T.diTruoc, { ten: tenHienThi() }));
     luuTrangThai("r");
     ve();
   }
@@ -861,7 +869,7 @@ const { nhung = false } = Astro.props;
   const phongMoEl = document.getElementById("co-phong-mo") as unknown as SVGElement;
   const phongDongEl = document.getElementById("co-phong-dong") as unknown as SVGElement;
   const dangPhong = () => document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css");
-  const nhanPhong = () => (dangPhong() ? "Thu nhỏ bàn cờ" : "Phóng to bàn cờ");
+  const nhanPhong = () => (dangPhong() ? T.thuNhoBan : T.phongTo);
   // Đổi trạng thái phóng to bằng CSS (iPhone): cập nhật nút và nút thu nhỏ cố định
   const datPhongCss = (bat) => {
     banEl.classList.toggle("co-phong-to-css", bat);
@@ -908,13 +916,13 @@ const { nhung = false } = Astro.props;
       if (r.status === 401) {
         xoaToken();
         datTaiKhoan("");
-        return "Phiên đăng nhập đã hết hạn. Đăng nhập lại để đổi tên.";
+        return T.hetHanDoiTen;
       }
-      if (r.status === 409) return "Tên này đã có người dùng. Hãy chọn tên khác.";
-      if (!r.ok) return "Chưa đổi được tên trên bảng điểm. Thử lại sau.";
+      if (r.status === 409) return T.tenTrung;
+      if (!r.ok) return T.loiDoiTen;
       return null;
     } catch {
-      return "Chưa đổi được tên: không kết nối được máy chủ.";
+      return T.loiMang;
     }
   }
 
@@ -930,7 +938,7 @@ const { nhung = false } = Astro.props;
       return;
     }
     if (!tenHopLe(t)) {
-      hienTrangThai("Tên chỉ gồm chữ cái và chữ số, tối đa 50 ký tự.");
+      hienTrangThai(T.tenKhongHop);
       return;
     }
     if (t === ten) return;
@@ -979,7 +987,7 @@ const { nhung = false } = Astro.props;
     try {
       await batDauDangNhap();
     } catch {
-      hienTrangThai("Chưa đăng nhập Google được. Thử lại sau.");
+      hienTrangThai(T.loiDangNhap);
       dangNhapEl.disabled = false;
     }
   }
@@ -1018,7 +1026,7 @@ const { nhung = false } = Astro.props;
     anCuoi = typeof d.anCuoi === "string" ? d.anCuoi : null;
     chon = null;
     gioDi = [];
-    hienTrangThai(d.thongBao || "");
+    hienTrangThai(d.ngonNgu === NGON_NGU_TRANG ? d.thongBao || "" : "");
     ve();
     if (d.luot === "b" && !ketThuc) void mayDi();
   } else {

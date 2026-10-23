@@ -1,20 +1,44 @@
 ---
-// Trang Google chuyển về sau khi đăng nhập. Đổi mã lấy token rồi quay lại bàn cờ.
+// Trang Google chuyển về sau khi đăng nhập. Đổi mã lấy token rồi quay lại bàn cờ. Không có bản theo ngôn ngữ:
+// chữ hiện theo ngôn ngữ người dùng đã dùng ở trang trước (html lang do script đặt).
 import Layout from "../layouts/Layout.astro";
+import { CHU } from "../i18n/strings.js";
+const chu = JSON.stringify(Object.fromEntries(Object.entries(CHU).map(([ma, c]) => [ma, { h1: c.dnH1, cho: c.dnCho, ve: c.dnVe, huy: c.dnHuy, loi: c.dnLoi, tieuDe: c.dnTieuDe }])));
 ---
-<Layout lang="vi" tieuDe="Đang đăng nhập" moTa="Hoàn tất đăng nhập Google cho cờ tướng.">
-  <h1>Đang đăng nhập...</h1>
-  <p id="thong-bao" class="phu">Vui lòng chờ trong giây lát.</p>
-  <p><a href="/co-tuong/">Về bàn cờ</a></p>
+<Layout lang="vi" tieuDe={CHU.vi.dnTieuDe} moTa={CHU.vi.dnH1} khongDich>
+  <script is:inline type="application/json" id="dn-chu" set:html={chu}></script>
+  <h1 id="dn-h1">{CHU.vi.dnH1}</h1>
+  <p id="thong-bao" class="phu">{CHU.vi.dnCho}</p>
+  <p><a id="dn-ve" href="/co-tuong/">{CHU.vi.dnVe}</a></p>
 </Layout>
 
 <script>
   import { hoanTatDangNhap } from "../lib/co-tuong-tai-khoan.js";
+  const chu = JSON.parse(document.getElementById("dn-chu")?.textContent || "{}");
+  // Ngôn ngữ đã lưu ở bộ chọn ngôn ngữ; chưa chọn thì lấy theo trình duyệt (khớp 5 ngôn ngữ, còn lại tiếng Anh)
+  // Ưu tiên ngôn ngữ của trang vừa bấm đăng nhập (suy từ tiền tố đường dẫn đã lưu), rồi tới lựa chọn đã lưu
+  let ma = "";
+  try {
+    const quayLai: string = JSON.parse(localStorage.getItem("co-tuong-dang-nhap") || "null")?.quayLai || "";
+    ma = quayLai.match(/^\/(en|zh-tw|ko|ja)\//)?.[1] || (quayLai ? "vi" : "");
+    if (!ma) ma = localStorage.getItem("choico-lang") || "";
+  } catch {
+    // bỏ qua
+  }
+  if (!chu[ma]) {
+    const l = (navigator.language || "en").toLowerCase();
+    ma = l.startsWith("vi") ? "vi" : l.startsWith("ko") ? "ko" : l.startsWith("ja") ? "ja" : /^zh-(tw|hk|mo|hant)/.test(l) ? "zh-tw" : "en";
+  }
+  const c = chu[ma];
   const tb = document.getElementById("thong-bao") as HTMLElement;
+  (document.getElementById("dn-h1") as HTMLElement).textContent = c.h1;
+  tb.textContent = c.cho;
+  (document.getElementById("dn-ve") as HTMLAnchorElement).textContent = c.ve;
+  document.title = c.tieuDe;
   hoanTatDangNhap().then(
     (diaChi) => location.replace(diaChi),
     (loi) => {
-      tb.textContent = loi.message === "da_huy" ? "Bạn đã hủy đăng nhập." : "Chưa đăng nhập được. Hãy quay lại bàn cờ và thử lại.";
+      tb.textContent = loi.message === "da_huy" ? c.huy : c.loi;
     },
   );
 </script>

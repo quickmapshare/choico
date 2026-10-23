@@ -3,11 +3,17 @@
 // nhung: bản nhúng vào web khác (iframe), không lập chỉ mục, mở liên kết ở tab mới.
 import Logo from "../components/Logo.astro";
 import ChuyenTheme from "../components/ChuyenTheme.astro";
-const { tieuDe, moTa, lang = "vi", nhung = false } = Astro.props;
+import ChonNgonNgu from "../components/ChonNgonNgu.astro";
+import { NGON_NGU, t, thongTin, duongDan, boTienTo } from "../i18n/strings.js";
+// khongDich: trang không có bản theo ngôn ngữ (ví dụ /dang-nhap/), không hiện bộ chọn ngôn ngữ và không có hreflang.
+const { tieuDe, moTa, lang = "vi", nhung = false, khongDich = false } = Astro.props;
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
+const duongGoc = boTienTo(Astro.url.pathname); // đường dẫn tiếng Việt của cùng trang
+// Tự chọn ngôn ngữ chỉ ở trang tiếng Việt thường (không phải bản nhúng, không phải trang trung tính)
+const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
 ---
 <!doctype html>
-<html lang={lang}>
+<html lang={thongTin(lang).html} data-tien-to={thongTin(lang).tienTo} data-tu-chon={tuChonNgonNgu ? "1" : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -16,7 +22,36 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     {nhung && <meta name="robots" content="noindex" />}
     {nhung && <base target="_blank" />}
     <link rel="canonical" href={duongCanhTac} />
+    {!khongDich && NGON_NGU.map((n) => <link rel="alternate" hreflang={n.html} href={new URL(duongDan(n.ma, duongGoc), Astro.site)} />)}
+    {!khongDich && <link rel="alternate" hreflang="x-default" href={new URL(duongDan("en", duongGoc), Astro.site)} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script is:inline>
+      // Chọn ngôn ngữ lần đầu: theo lựa chọn đã lưu, không có thì theo ngôn ngữ trình duyệt, không thuộc 5 ngôn ngữ thì tiếng Anh.
+      // Chỉ chạy ở trang tiếng Việt thường. Trang có tiền tố (/en/, /ja/...) là địa chỉ chủ ý, giữ nguyên.
+      try {
+        const goc = document.documentElement;
+        if (goc.dataset.tuChon === "1" && !/bot|crawl|spider|slurp|lighthouse/i.test(navigator.userAgent)) {
+          const TIEN_TO = { en: "/en", "zh-tw": "/zh-tw", ko: "/ko", ja: "/ja" };
+          const theoMay = () => {
+            for (const l of navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"]) {
+              const s = String(l).toLowerCase();
+              if (s === "vi" || s.startsWith("vi-")) return "vi";
+              if (s === "en" || s.startsWith("en-")) return "en";
+              if (s === "ko" || s.startsWith("ko-")) return "ko";
+              if (s === "ja" || s.startsWith("ja-")) return "ja";
+              if (/^zh-(tw|hk|mo|hant)/.test(s)) return "zh-tw";
+            }
+            return "en";
+          };
+          let chon = null;
+          try { chon = localStorage.getItem("choico-lang"); } catch (e) {}
+          const ma = chon === "vi" || TIEN_TO[chon] ? chon : theoMay();
+          if (ma !== "vi") location.replace(TIEN_TO[ma] + location.pathname + location.search + location.hash);
+        }
+      } catch (err) {
+        // lỗi gì thì ở lại trang hiện tại
+      }
+    </script>
     <script is:inline>
       // Áp giao diện đã chọn (sáng hoặc tối) trước khi vẽ trang để không chớp sáng. Không có lựa chọn thì theo máy.
       try {
@@ -78,7 +113,7 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
         -webkit-font-smoothing: antialiased;
       }
       .thanh-tren { position: sticky; top: 0; z-index: 10; background: var(--nen); border-bottom: 1px solid var(--vien); }
-      .thanh-tren-noi { max-width: 46rem; margin: 0 auto; padding: .6rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+      .thanh-tren-noi { max-width: 46rem; margin: 0 auto; padding: .6rem 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem 1rem; }
       .ten-web { display: inline-flex; align-items: center; gap: .55rem; font-size: 1.2rem; font-weight: 800; letter-spacing: -.02em; color: var(--chu); text-decoration: none; }
       .ten-web:hover { text-decoration: none; }
       .ten-web .logo { flex: none; }
@@ -120,13 +155,14 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     {!nhung && (
       <header class="thanh-tren">
         <div class="thanh-tren-noi">
-          <a class="ten-web" href="/" aria-label="ChoiCo, về trang chủ"><Logo size={30} /><span>Choi<span>Co</span></span></a>
+          <a class="ten-web" href={duongDan(lang, "/")} aria-label={t(lang, "logoAria")}><Logo size={30} /><span>Choi<span>Co</span></span></a>
           <div class="thanh-tren-phai">
-            <nav aria-label="Trang chính">
-              <a href="/co-tuong/" aria-current={Astro.url.pathname === "/co-tuong/" ? "page" : undefined}>Cờ tướng</a>
-              <a href="/nhung/" aria-current={Astro.url.pathname === "/nhung/" ? "page" : undefined}>Nhúng vào web</a>
+            <nav aria-label={t(lang, "menuAria")}>
+              <a href={duongDan(lang, "/co-tuong/")} aria-current={duongGoc === "/co-tuong/" ? "page" : undefined}>{t(lang, "menuCoTuong")}</a>
+              <a href={duongDan(lang, "/nhung/")} aria-current={duongGoc === "/nhung/" ? "page" : undefined}>{t(lang, "menuNhung")}</a>
             </nav>
-            <ChuyenTheme />
+            <ChuyenTheme lang={lang} />
+            {!khongDich && <ChonNgonNgu lang={lang} duongGoc={duongGoc} />}
           </div>
         </div>
       </header>
@@ -136,8 +172,8 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     </main>
     {!nhung && (
       <footer class="chan-trang">
-        <a href="/">← Trang chủ ChoiCo</a>
-        <span>Cờ tướng với máy, miễn phí.</span>
+        <a href={duongDan(lang, "/")}>{t(lang, "chanTrangVe")}</a>
+        <span>{t(lang, "chanTrangMoTa")}</span>
       </footer>
     )}
     <script is:inline>

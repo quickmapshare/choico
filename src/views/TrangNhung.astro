@@ -1,0 +1,68 @@
+---
+// Trang lấy mã nhúng bàn cờ tướng vào web bất kỳ, dùng chung cho mọi ngôn ngữ.
+// Mã nhúng trỏ tới bản nhúng cùng ngôn ngữ với trang này.
+import Layout from "../layouts/Layout.astro";
+import { t, duongDan } from "../i18n/strings.js";
+
+const { lang = "vi" } = Astro.props;
+const src = new URL(duongDan(lang, "/nhung/co-tuong/"), Astro.site);
+// Mã nhúng: một iframe và một đoạn script nhỏ để khung tự cao theo nội dung
+const ma = [
+  `<iframe src="${src.href}" title="${t(lang, "nhungKhungTieuDe")}" allow="fullscreen" style="width:100%;max-width:480px;border:0;height:640px" loading="lazy"></iframe>`,
+  `<script>`,
+  `addEventListener("message", (e) => {`,
+  `  if (e.origin !== "${src.origin}" || !e.data?.choicoCao) return;`,
+  `  for (const f of document.querySelectorAll("iframe")) if (f.contentWindow === e.source) f.style.height = e.data.choicoCao + "px";`,
+  `});`,
+  `</script>`,
+].join("\n");
+---
+<Layout lang={lang} tieuDe={t(lang, "nhungTieuDe")} moTa={t(lang, "nhungMoTa")}>
+  <h1>{t(lang, "nhungH1")}</h1>
+  <p class="phu">{t(lang, "nhungGioiThieu")}</p>
+
+  <div class="the">
+    <textarea id="ma-nhung" readonly rows="9">{ma}</textarea>
+    <div class="hang-nut">
+      <button type="button" id="chep" data-nhan={t(lang, "nhungSaoChep")} data-da={t(lang, "nhungDaChep")} data-tay={t(lang, "nhungChonTay")}>{t(lang, "nhungSaoChep")}</button>
+      <a href={src.href} target="_blank" rel="noopener">{t(lang, "nhungXem")} ↗</a>
+    </div>
+  </div>
+
+  <h2>{t(lang, "nhungXemTruoc")}</h2>
+  <iframe id="xem-truoc" src={src.href} title={t(lang, "nhungKhungTieuDe")} allow="fullscreen" style="width:100%;max-width:480px;border:0;height:640px"></iframe>
+</Layout>
+
+<style>
+  textarea {
+    display: block; width: 100%; min-width: 0; margin: 0; font: .8rem/1.5 ui-monospace, Consolas, monospace;
+    background: var(--nen); color: var(--chu); border: 1px solid var(--vien); border-radius: 8px; padding: .6rem .7rem; resize: vertical;
+  }
+  .hang-nut { display: flex; align-items: center; gap: 1rem; margin-top: .6rem; }
+  button {
+    font: inherit; font-weight: 600; padding: .4rem 1.1rem; border-radius: 999px; border: 1px solid var(--nhan);
+    background: var(--nhan); color: #fff; cursor: pointer;
+  }
+</style>
+
+<script>
+  const o = document.getElementById("ma-nhung") as HTMLTextAreaElement;
+  const nut = document.getElementById("chep") as HTMLButtonElement;
+  nut.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(o.value);
+      nut.textContent = nut.dataset.da!;
+    } catch {
+      o.select();
+      nut.textContent = nut.dataset.tay!;
+    }
+    setTimeout(() => (nut.textContent = nut.dataset.nhan!), 2000);
+  });
+
+  // Xem trước cũng tự cao theo nội dung
+  addEventListener("message", (e) => {
+    if (e.origin !== location.origin || !e.data?.choicoCao) return;
+    const khung = document.getElementById("xem-truoc") as HTMLIFrameElement;
+    if (khung.contentWindow === e.source) khung.style.height = e.data.choicoCao + "px";
+  });
+</script>

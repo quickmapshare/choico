@@ -69,5 +69,6 @@ export async function hoanTatDangNhap() {
   if (!r.ok) throw new Error("khong_doi_duoc_code");
   localStorage.setItem(KHOA_TOKEN, (await r.json()).token);
   localStorage.removeItem(KHOA_DANG_NHAP);
-  return luu.quayLai === "/nhung/co-tuong/" ? "/co-tuong/" : (luu.quayLai || "/co-tuong/");
+  // Quay lại đúng trang (giữ tiền tố ngôn ngữ); bản nhúng thì về trang đầy đủ
+  return (luu.quayLai || "/co-tuong/").replace("/nhung/co-tuong/", "/co-tuong/");
 }

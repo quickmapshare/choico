@@ -1,7 +1,17 @@
 ---
 // Nút biểu tượng trên thanh đầu để chọn giao diện: tự động (theo máy), sáng, tối. Bấm để đổi vòng tròn.
+import { t } from "../i18n/strings.js";
+const { lang = "vi" } = Astro.props;
+// Nhãn theo ngôn ngữ, trang đọc lại để ghi vào aria-label và title khi đổi chế độ
+const nhan = JSON.stringify({
+  mau: t(lang, "themeMau", { x: "{x}" }),
+  auto: t(lang, "themeAuto"),
+  light: t(lang, "themeSang"),
+  dark: t(lang, "themeToi"),
+});
+const nhanDau = t(lang, "themeMau", { x: t(lang, "themeAuto") });
 ---
-<button type="button" id="chuyen-theme" class="chuyen-theme" data-che-do="auto" aria-label="Giao diện: tự động" title="Giao diện: tự động">
+<button type="button" id="chuyen-theme" class="chuyen-theme" data-che-do="auto" data-nhan={nhan} aria-label={nhanDau} title={nhanDau}>
   <svg class="bt-auto" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>
   <svg class="bt-sang" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
   <svg class="bt-toi" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
@@ -25,7 +35,6 @@
   // Vòng: tự động -> sáng -> tối -> tự động. Tự động = xóa lựa chọn đã lưu, theo giao diện của máy.
   const KHOA = "choico-theme";
   const VONG = ["auto", "light", "dark"] as const;
-  const NHAN = { auto: "tự động", light: "sáng", dark: "tối" };
   const nut = document.getElementById("chuyen-theme") as HTMLButtonElement | null;
 
   function docChon(): (typeof VONG)[number] {
@@ -43,7 +52,8 @@
     else document.documentElement.setAttribute("data-theme", cheDo);
     if (!nut) return;
     nut.dataset.cheDo = cheDo;
-    const chu = `Giao diện: ${NHAN[cheDo]}. Bấm để đổi.`;
+    const nhan = JSON.parse(nut.dataset.nhan || "{}");
+    const chu = String(nhan.mau || "{x}").replace("{x}", nhan[cheDo] || cheDo);
     nut.setAttribute("aria-label", chu);
     nut.title = chu;
   }

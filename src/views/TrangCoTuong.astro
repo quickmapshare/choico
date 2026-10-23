@@ -1,0 +1,11 @@
+---
+// Trang cờ tướng đầy đủ, dùng chung cho mọi ngôn ngữ.
+import Layout from "../layouts/Layout.astro";
+import CoTuong from "../components/CoTuong.astro";
+import { t } from "../i18n/strings.js";
+
+const { lang = "vi" } = Astro.props;
+---
+<Layout lang={lang} tieuDe={t(lang, "ctTieuDe")} moTa={t(lang, "ctMoTa")}>
+  <CoTuong lang={lang} />
+</Layout>
