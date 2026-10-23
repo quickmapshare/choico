@@ -4,6 +4,7 @@
 import Layout from "../layouts/Layout.astro";
 import NutBan from "../components/NutBan.astro";
 import KhungBan from "../components/KhungBan.astro";
+import ThanhXemLai from "../components/ThanhXemLai.astro";
 import { t, chuCaTrang, chuRieng } from "../i18n/strings.js";
 import { MA_TRO_CHOI } from "../lib/tro-choi.js";
 import "../styles/ban-co.css";
@@ -63,7 +64,13 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   <div id="tr-thanh-nut" class="tr-thanh-nut" hidden>
     <NutBan T={T} />
   </div>
+  <ThanhXemLai T={T} />
   <KhungBan T={T} hidden />
+  <!-- Trận đã xong: xem lại cả trận ngay trên bàn, hoặc chép link để người khác xem (/xem-van/?tran=...) -->
+  <div id="tr-xem" class="tr-xem" hidden>
+    <button type="button" id="tr-nut-xem" class="nut">{T.xemLai}</button>
+    <button type="button" id="tr-nut-chep-xem" class="nut nut-phu nut-nho">{T.chepLink}</button>
+  </div>
   <p id="tr-tiep" class="tr-khoi" hidden><a id="tr-tiep-a" href="#"></a></p>
   <div id="tr-dieu-khien" class="tr-khoi" hidden>
     <button type="button" id="tr-nut-dau-hang" class="nut nut-phu">{T.trDauHang}</button>
@@ -91,6 +98,8 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   .tr-het-gio .nut { flex: 1 1 8rem; font-size: .9rem; padding: .4rem .8rem; background: var(--mat); }
   .tr-het-gio .nut-chinh { background: var(--nhan); }
   .tr-hang[hidden] { display: none; }
+  .tr-xem { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; width: 100%; max-width: 460px; margin: .4rem auto 0; }
+  .tr-xem[hidden] { display: none; }
   /* Thẻ lời mời cho người mở link: tiêu đề mời, giới thiệu, lưu ý link chỉ một người vào, rồi nút chấp nhận */
   .tr-moi { max-width: 32rem; }
   .tr-moi-tieu-de { font-size: 1.3rem; line-height: 1.3; margin: .2rem 0 .6rem; }
@@ -107,6 +116,8 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   import { taoAmThanh } from "../lib/chung/am.js";
   import { veBanCo, veHaiKhay, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutKhung, oBamDuoc, chonNuocPhong, THOI_GIAN } from "../lib/chung/ban.js";
   import { ngheTinHieu } from "../lib/chung/realtime.js";
+  import { taoXemLai } from "../lib/chung/xem-lai.js";
+  import { duocDung } from "../lib/chung/tinh-nang.js";
   import { docToken, headerXacThuc, damBaoCoTen } from "../lib/chung/tai-khoan.js";
 
   type O = [number, number];
@@ -209,6 +220,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     giuTrangThaiDen = Date.now() + 3000;
   };
   const doiBen = (s: string) => (s === "r" ? "b" : "r");
+  const nut = (id: string) => $(id) as HTMLButtonElement;
 
   async function goi(url: string, init?: RequestInit) {
     const r = await fetch(url, init);
@@ -261,6 +273,48 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     const nuocDi = hieuUng ? [hieuUng.tu, hieuUng.den] : null;
     if (chayHieuUng(s, hieuUng, { banEl, ban: the.b, ve, toa, nuocCuoi: nuocDi, nhanChieu: T.chieu })) hieuUng = null;
   }
+
+  // Xem lại trận đã xong (tính năng chung, src/lib/chung/xem-lai.js): thế đang xem thay thế cờ trên bàn; thoát thì dựng lại
+  // thế cuối của trận từ server. Trận đã xong nên không còn đọc lại hay nghe chuông, bàn không bị vẽ đè trong lúc xem.
+  const coXemLai = duocDung("xem_lai");
+  const xemLai = taoXemLai({
+    am,
+    nhan: T,
+    hienTrangThai: batTrangThai,
+    khiVe: (p: any) => {
+      the = p.the;
+      nuocCuoi = p.nuocCuoi;
+      anCuoi = p.anCuoi;
+      hieuUng = p.hieuUng;
+      chon = null;
+      gioDi = [];
+      veBan();
+    },
+    khiThoat: () => {
+      hieuUng = null;
+      dungBan();
+      hienKhoi();
+    },
+    khiDoi: () => capNhatNutXem(),
+  });
+  // Trận đã xong và có nước đi thì xem lại được (trận bị đóng khi mới có vài nước cũng xem được)
+  const xemDuoc = () => coXemLai && Boolean(tran?.nuoc?.length) && (tran.trang_thai === "ket_thuc" || tran.trang_thai === "huy");
+  function capNhatNutXem() {
+    $("tr-xem").hidden = !xemDuoc() || xemLai.dangXem();
+  }
+  nut("tr-nut-xem").addEventListener("click", () => {
+    if (xemDuoc()) xemLai.batDau(luat, tran.nuoc);
+  });
+  nut("tr-nut-chep-xem").addEventListener("click", async () => {
+    const url = `${location.origin}${tienTo}${tc.duong.xemVan}?tran=${ma}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      $("tr-nut-chep-xem").textContent = T.daChepLink;
+      setTimeout(() => ($("tr-nut-chep-xem").textContent = T.chepLink), 2000);
+    } catch {
+      baoLoi(url); // trình duyệt chặn clipboard: hiện link để người dùng tự chép
+    }
+  });
 
   // Đi nước m (đã hợp lệ) trên bàn đang hiện: hiệu ứng và tiếng như nước đi của máy
   function apMove(m: any) {
@@ -352,7 +406,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   banEl.addEventListener("click", async (e) => {
     am.mo(); // mở ngữ cảnh âm thanh ngay trong lúc người dùng bấm (iPhone chỉ cho phép như vậy)
     const o = oBamDuoc(e);
-    if (!o || !the || dangGui || dangChonPhong || tran?.trang_thai !== "dang_dau" || tran.den_luot !== tran.ban_cua) return;
+    if (!o || !the || dangGui || dangChonPhong || xemLai.dangXem() || tran?.trang_thai !== "dang_dau" || tran.den_luot !== tran.ban_cua) return;
     const [r, c] = o;
     const benMinh = tran.ban_cua;
     const quan = the.b[r][c];
@@ -460,6 +514,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     $("tr-dieu-khien").hidden = true;
     $("tr-tiep").hidden = true;
     $("tr-het-gio").hidden = true;
+    capNhatNutXem();
     $("tr-mo-ta").hidden = tran?.loai === "dai"; // đoạn mô tả nói về trận khép kín, không đúng với trận thượng đài
     // Tiêu đề theo loại trận để người chơi biết mình đang ở trận nào; chưa rõ loại thì dùng tiêu đề chung
     const tieuDe = tran?.loai === "dai" ? T.tdTieuDe : tran?.loai === "khep_kin" ? T.trTieuDeKhepKin : T.trTieuDe;
@@ -637,8 +692,6 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
       datPoll();
     }, doTre);
   }
-
-  const nut = (id: string) => $(id) as HTMLButtonElement;
 
   // Tạo link (tài khoản hoặc khách) cho loại cờ của trang, xong thì chuyển sang trang có mã
   nut("tr-nut-tao").addEventListener("click", () => void chay(nut("tr-nut-tao"), T.trDangTao, async () => {

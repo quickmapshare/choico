@@ -1,12 +1,13 @@
 ---
 // Bàn cờ chơi với máy và các nút, dùng chung cho mọi loại cờ (troChoi: mã trong src/lib/tro-choi.js).
 // nhung = true: bản gọn để nhúng vào web khác (không tiêu đề, không ô tên, không bảng điểm).
-// xemVan = true: trang mở một ván qua link (/xem-van/?ma=...), chỉ xem lại, không chơi và không ghi điểm. Ván thuộc loại cờ
+// xemVan = true: trang mở một ván qua link (/xem-van/?ma=... ván đấu máy, ?tran=... trận hai người), chỉ xem lại, không chơi và không ghi điểm. Ván thuộc loại cờ
 // nào thì bàn đổi theo loại cờ đó.
 import { chuCaTrang, chuRieng, duongDan } from "../i18n/strings.js";
 import { TRO_CHOI, MA_TRO_CHOI } from "../lib/tro-choi.js";
 import NutBan from "./NutBan.astro";
 import KhungBan from "./KhungBan.astro";
+import ThanhXemLai from "./ThanhXemLai.astro";
 import "../styles/ban-co.css";
 import "../styles/nut.css";
 const { nhung = false, lang = "vi", xemVan = false, troChoi = "co_tuong" } = Astro.props;
@@ -42,25 +43,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
   <p id="co-ghi-diem" class="phu" aria-live="polite"></p>
   <!-- Thanh xem lại ván: chỉ hiện khi đang xem lại -->
-  <div id="co-xl" class="co-xl" hidden>
-    <button type="button" id="co-xl-dau" class="co-nut-icon" aria-label={T.xlDau} title={T.xlDau}>
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <button type="button" id="co-xl-lui" class="co-nut-icon" aria-label={T.xlLui} title={T.xlLui}>
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M17 5l-9 7 9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-    </button>
-    <button type="button" id="co-xl-chay" class="co-nut-icon" aria-label={T.xlChay} title={T.xlChay}>
-      <svg id="co-xl-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5l11 7-11 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-      <svg id="co-xl-tam" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
-    </button>
-    <button type="button" id="co-xl-tien" class="co-nut-icon" aria-label={T.xlTien} title={T.xlTien}>
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 5l9 7-9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-    </button>
-    <button type="button" id="co-xl-cuoi" class="co-nut-icon" aria-label={T.xlCuoi} title={T.xlCuoi}>
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <button type="button" id="co-xl-thoat" class="nut nut-phu nut-nho">{T.xlThoat}</button>
-  </div>
+  <ThanhXemLai T={T} />
   <KhungBan T={T} />
 
   <section class="co-bang-diem" aria-labelledby="co-bang-diem-tieu-de" hidden={nhung}>
@@ -84,13 +67,9 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   /* Thanh nút: nút chữ bên trái, nút biểu tượng gom bên phải */
   .co-thanh-nut { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 1rem; }
   .co-nut-goc { margin-left: auto; display: inline-flex; gap: .5rem; }
-  /* Thanh xem lại ván: các nút tròn, nút Thoát đẩy sang cuối hàng */
-  .co-xl { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .6rem; }
-  .co-xl[hidden] { display: none; }
-  #co-xl-thoat { margin-left: auto; }
   /* Trang xem ván qua link: chỉ có bàn cờ và thanh xem lại, không có phần chơi và bảng điểm */
   body.co-xem-van .co-dieu-khien, body.co-xem-van .co-bang-diem, body.co-xem-van #co-moi, body.co-xem-van #co-hoan,
-  body.co-xem-van #co-xl-thoat, body.co-xem-van #co-xem-lai, body.co-xem-van #co-chep-link { display: none !important; }
+  body.co-xem-van #co-xem-lai, body.co-xem-van #co-chep-link { display: none !important; }
   /* Ô tên dạng viên thuốc: nhãn nhỏ, ô nhập không viền, nút check tròn nằm cuối ô */
   .co-ten-o { display: inline-flex; align-items: center; gap: .4rem; padding: .2rem .25rem .2rem 1rem; border: 1px solid var(--vien); border-radius: 999px; background: var(--mat); box-shadow: var(--bong); transition: border-color .15s, box-shadow .15s; }
   .co-ten-o:focus-within { border-color: var(--nhan); box-shadow: 0 0 0 3px var(--nhan-nhe); }
@@ -119,6 +98,8 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   import { batDauDangNhap, headerXacThuc, docToken, xoaToken } from "../lib/chung/tai-khoan.js";
   import { taoAmThanh } from "../lib/chung/am.js";
   import { veBanCo, veHaiKhay, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutKhung, oBamDuoc, chonNuocPhong, THOI_GIAN } from "../lib/chung/ban.js";
+  import { taoXemLai } from "../lib/chung/xem-lai.js";
+  import { duocDung } from "../lib/chung/tinh-nang.js";
   import { banVanBan } from "../lib/co-tuong/luat.js";
 
   type O = [number, number];
@@ -306,7 +287,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     try {
       // Đang xem lại thì lưu thông báo thật của ván, không lưu thông báo của thế đang xem
       localStorage.setItem(tc.khoaLuu, JSON.stringify({
-        capDo, ketThuc, thongBao: xem ? xem.thongBaoThat : trangThai.textContent, ngonNgu: NGON_NGU_TRANG,
+        capDo, ketThuc, thongBao: that ? that.thongBao : trangThai.textContent, ngonNgu: NGON_NGU_TRANG,
         maVan, nuocDaDi, daNop, soHoan,
       }));
     } catch {
@@ -437,7 +418,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   banEl.addEventListener("click", async (e) => {
     am.mo(); // tạo hoặc mở lại ngữ cảnh âm thanh ngay trong lúc người dùng bấm (iPhone chỉ cho phép như vậy)
     const o = oBamDuoc(e);
-    if (!o || ketThuc || dangChoMay || dangChonPhong || xem) return;
+    if (!o || ketThuc || dangChoMay || dangChonPhong || xemLai.dangXem()) return;
     const [r, c] = o;
     const p = the.b[r][c];
 
@@ -474,20 +455,19 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
 
   const hoanEl = document.getElementById("co-hoan") as HTMLButtonElement;
   // Được hoãn khi đến lượt người chơi, ván chưa kết thúc, còn lượt hoãn và đã có nước của cả hai bên
-  const hoanDuocDung = () => !ketThuc && !dangChoMay && !xem && soHoan < HOAN_TOI_DA && nuocDaDi.length >= 2 && the.s === "r";
+  const hoanDuocDung = () => !ketThuc && !dangChoMay && !xemLai.dangXem() && soHoan < HOAN_TOI_DA && nuocDaDi.length >= 2 && the.s === "r";
 
   function capNhatHoan() {
     hoanEl.disabled = !hoanDuocDung();
     hoanEl.textContent = f(T.hoan, { n: HOAN_TOI_DA - soHoan });
   }
 
-  // Dựng bàn theo k nước đầu của nhật ký (k mặc định là cả nhật ký), trả về nước cuối cùng đã đi
-  function dungBanDen(k = nuocDaDi.length) {
-    const p = phatLai(luat, nuocDaDi, { den: k });
+  // Dựng lại bàn từ cả nhật ký nước đi (sau khi hoãn nước)
+  function dungBanDen() {
+    const p = phatLai(luat, nuocDaDi);
     the = p.the; // nhật ký hỏng thì dừng ở nước hợp lệ cuối
     nuocCuoi = p.nuocCuoi;
     anCuoi = p.anCuoi;
-    return p.hop_le ? p.m : null;
   }
 
   // Lùi lại nước cuối của người chơi và nước đáp của máy. Bàn được dựng lại từ nhật ký còn lại.
@@ -504,100 +484,53 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     veLai();
   }
 
-  // Xem lại ván đã kết thúc: dựng lại bàn từ nhật ký nước đi, không đụng đến nhật ký và điểm.
-  // Khi đang xem, the/nuocCuoi/anCuoi được thay bằng thế đang xem; thế thật của ván cất trong xem.
-  let xem: { k: number; theThat: any; nuocCuoiThat: O[] | null; anCuoiThat: string | null; thongBaoThat: string } | null = null;
-  let chayId: number | undefined; // bộ hẹn giờ tự chạy
-  const XEM_LAI_NHIP = 1100; // ms giữa hai nước khi tự chạy
+  // Xem lại ván đã kết thúc (tính năng chung, src/lib/chung/xem-lai.js): dựng lại bàn từ nhật ký nước đi, không đụng đến
+  // nhật ký và điểm. Khi đang xem, the/nuocCuoi/anCuoi là thế đang xem; thế thật của ván cất trong that.
+  let that: { the: any; nuocCuoi: O[] | null; anCuoi: string | null; thongBao: string } | null = null;
   const xemEl = document.getElementById("co-xem-lai") as HTMLButtonElement;
   const chepEl = document.getElementById("co-chep-link") as HTMLButtonElement;
-  const xlEl = document.getElementById("co-xl") as HTMLElement;
-  const xlNut = {
-    dau: document.getElementById("co-xl-dau") as HTMLButtonElement,
-    lui: document.getElementById("co-xl-lui") as HTMLButtonElement,
-    chay: document.getElementById("co-xl-chay") as HTMLButtonElement,
-    tien: document.getElementById("co-xl-tien") as HTMLButtonElement,
-    cuoi: document.getElementById("co-xl-cuoi") as HTMLButtonElement,
-    thoat: document.getElementById("co-xl-thoat") as HTMLButtonElement,
-  };
-  const xlBatEl = document.getElementById("co-xl-bat") as unknown as SVGElement;
-  const xlTamEl = document.getElementById("co-xl-tam") as unknown as SVGElement;
+  const coXemLai = duocDung("xem_lai");
+  const xemLai = taoXemLai({
+    am,
+    nhan: T,
+    coThoat: !XEM_VAN,
+    hienTrangThai,
+    khiVe: (p: any) => {
+      the = p.the;
+      nuocCuoi = p.nuocCuoi;
+      anCuoi = p.anCuoi;
+      hieuUng = p.hieuUng;
+      chon = null;
+      gioDi = [];
+      veLai();
+    },
+    // Thoát xem lại: trả thế cờ và thông báo thật của ván
+    khiThoat: () => {
+      if (!that) return;
+      the = that.the;
+      nuocCuoi = that.nuocCuoi;
+      anCuoi = that.anCuoi;
+      hienTrangThai(that.thongBao);
+      that = null;
+      hieuUng = null;
+      veLai();
+    },
+    khiDoi: () => capNhatXemLai(),
+  });
 
   function capNhatXemLai() {
-    xemEl.hidden = !ketThuc || nuocDaDi.length === 0 || !!xem;
-    chepEl.hidden = !ketThuc || !daNop || nuocDaDi.length === 0 || !!xem;
-    xlEl.hidden = !xem;
-    if (!xem) return;
-    const n = nuocDaDi.length;
-    xlNut.dau.disabled = xlNut.lui.disabled = xem.k <= 0;
-    xlNut.tien.disabled = xlNut.cuoi.disabled = xem.k >= n;
-    const dangChay = chayId !== undefined;
-    xlBatEl.toggleAttribute("hidden", dangChay);
-    xlTamEl.toggleAttribute("hidden", !dangChay);
-    xlNut.chay.setAttribute("aria-label", dangChay ? T.xlDung : T.xlChay);
-    xlNut.chay.title = dangChay ? T.xlDung : T.xlChay;
-  }
-
-  function dungChay() {
-    if (chayId !== undefined) {
-      clearInterval(chayId);
-      chayId = undefined;
-    }
-    capNhatXemLai();
-  }
-
-  function xemDen(k: number, hoatAnh = false) {
-    if (!xem) return;
-    const n = nuocDaDi.length;
-    k = Math.max(0, Math.min(n, k));
-    const truoc = xem.k;
-    const m = dungBanDen(k);
-    xem.k = k;
-    chon = null;
-    gioDi = [];
-    hieuUng = null;
-    // Đi tới đúng một nước thì chạy hiệu ứng và phát tiếng như lúc chơi
-    if (hoatAnh && m && k === truoc + 1) {
-      hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, oAn: m.oAn, chieu: luat.biChieu(the, the.s) };
-      phatTiengNuoc(am, Boolean(m.an), hieuUng.chieu);
-    }
-    if (k >= n) dungChay();
-    hienTrangThai(f(T.xlTrangThai, { k, n }));
-    veLai();
+    const dang = xemLai?.dangXem();
+    xemEl.hidden = !coXemLai || !ketThuc || nuocDaDi.length === 0 || dang;
+    chepEl.hidden = !coXemLai || !ketThuc || !daNop || nuocDaDi.length === 0 || dang;
   }
 
   function batDauXem() {
-    if (!ketThuc || nuocDaDi.length === 0 || xem) return;
-    am.mo();
-    xem = { k: -1, theThat: the, nuocCuoiThat: nuocCuoi, anCuoiThat: anCuoi, thongBaoThat: trangThai.textContent || "" };
+    if (!ketThuc || nuocDaDi.length === 0 || xemLai.dangXem()) return;
+    that = { the, nuocCuoi, anCuoi, thongBao: trangThai.textContent || "" };
     hieuUng = null;
-    xemDen(0);
-    batChay();
+    xemLai.batDau(luat, nuocDaDi);
   }
-
-  function batChay() {
-    if (!xem) return;
-    if (xem.k >= nuocDaDi.length) xemDen(0);
-    dungChay();
-    chayId = window.setInterval(() => {
-      if (!xem) return dungChay();
-      xemDen(xem.k + 1, true);
-    }, XEM_LAI_NHIP);
-    capNhatXemLai();
-  }
-
-  // Thoát xem lại: trả thế cờ và thông báo thật của ván
-  function thoatXem() {
-    if (!xem) return;
-    dungChay();
-    the = xem.theThat;
-    nuocCuoi = xem.nuocCuoiThat;
-    anCuoi = xem.anCuoiThat;
-    hienTrangThai(xem.thongBaoThat);
-    xem = null;
-    hieuUng = null;
-    veLai();
-  }
+  xemEl.addEventListener("click", batDauXem);
 
   // Chép link xem ván: chỉ khi ván đã được ghi lên server (có mã và nước đi) thì link mới mở được
   const linkXemVan = () => `${location.origin}${tienTo}${tc.duong.xemVan}?ma=${maVan}`;
@@ -613,13 +546,16 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   }
   chepEl.addEventListener("click", () => void chepLink());
 
-  // Mở ván qua link: tải nhật ký nước đi từ server rồi xem lại từ thế khởi đầu, theo đúng loại cờ của ván
+  // Mở qua link: ván đấu máy (?ma=) hoặc trận giữa hai người đã xong (?tran=). Tải nhật ký nước đi từ server rồi xem lại
+  // từ thế khởi đầu, theo đúng loại cờ của ván.
   async function moVanChiaSe() {
-    const ma = new URLSearchParams(location.search).get("ma") || "";
+    const q = new URLSearchParams(location.search);
+    const maTran = q.get("tran") || "";
+    const url = maTran ? `/api/van-xem?tran=${encodeURIComponent(maTran)}` : `/api/van-xem?ma_van=${encodeURIComponent(q.get("ma") || "")}`;
     hienTrangThai(T.dangTaiVan);
     let v;
     try {
-      const r = await fetch(`/api/van-xem?ma_van=${encodeURIComponent(ma)}`);
+      const r = await fetch(url, { headers: headerXacThuc() });
       if (r.status === 400 || r.status === 404) return hienTrangThai(T.vanKhongCo);
       if (!r.ok) throw new Error("tai_loi");
       v = await r.json();
@@ -628,34 +564,25 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     }
     if (!v.nuoc) return hienTrangThai(T.vanKhongNuoc);
     if (v.tro_choi !== tc.ma) datTroChoi(v.tro_choi);
-    const kq = v.ket_qua === "thang" ? T.kqThang : v.ket_qua === "thua" ? T.kqThua : T.kqHoa;
+    if (maTran) {
+      // Trận hai người: tên hai bên và kết quả theo bên (máy trên thượng đài thì tên theo ngôn ngữ đang chọn)
+      const tenDo = v.may_muc ? f(T.tenMay, { c: v.may_muc }) : v.ten_do;
+      const kq = v.ket_qua === "do" ? T.trKetDo : v.ket_qua === "den" ? T.trKetDen : v.ket_qua === "hoa" ? T.trKetHoa : "";
+      thongBaoDiem(`${tenDo} – ${v.ten_den}${kq ? `: ${kq}` : ""}`);
+    } else {
+      const kq = v.ket_qua === "thang" ? T.kqThang : v.ket_qua === "thua" ? T.kqThua : T.kqHoa;
+      thongBaoDiem(f(T.vanCuaAi, { ten: v.ten, kq }));
+      soHoan = v.so_hoan || 0;
+    }
     nuocDaDi = v.nuoc;
-    soHoan = v.so_hoan || 0;
     ketThuc = true;
     daNop = true; // trang này không ghi điểm
     the = luat.khoiTao();
-    thongBaoDiem(f(T.vanCuaAi, { ten: v.ten, kq }));
-    batDauXem();
+    xemLai.batDau(luat, nuocDaDi);
   }
 
-  xemEl.addEventListener("click", batDauXem);
-  xlNut.thoat.addEventListener("click", thoatXem);
-  xlNut.dau.addEventListener("click", () => { dungChay(); xemDen(0); });
-  xlNut.lui.addEventListener("click", () => { dungChay(); xemDen((xem?.k ?? 0) - 1); });
-  xlNut.tien.addEventListener("click", () => { dungChay(); xemDen((xem?.k ?? 0) + 1, true); });
-  xlNut.cuoi.addEventListener("click", () => { dungChay(); xemDen(nuocDaDi.length); });
-  xlNut.chay.addEventListener("click", () => (chayId !== undefined ? dungChay() : batChay()));
-  document.addEventListener("keydown", (e) => {
-    if (!xem || (e.target as Element)?.closest?.("input, textarea")) return;
-    if (e.key === "ArrowLeft") { dungChay(); xemDen(xem.k - 1); e.preventDefault(); }
-    if (e.key === "ArrowRight") { dungChay(); xemDen(xem.k + 1, true); e.preventDefault(); }
-  });
-
   function vanMoi() {
-    if (xem) {
-      dungChay();
-      xem = null; // bỏ thế đang xem, bàn sẽ được dựng mới ngay dưới
-    }
+    xemLai.thoat(); // đang xem lại thì thôi xem, bàn được dựng mới ngay dưới
     luotTinh++;
     may!.huy(); // bỏ lượt máy đang nghĩ (nếu có)
     the = luat.khoiTao();

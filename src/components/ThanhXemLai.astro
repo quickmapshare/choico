@@ -1,0 +1,32 @@
+---
+// Thanh xem lại ván (về đầu, lùi, tự chạy, tới, về cuối, thoát), dùng chung cho mọi loại cờ và mọi loại trận.
+// Chỉ hiện khi đang xem lại; điều khiển bằng taoXemLai() trong src/lib/chung/xem-lai.js (id cố định, mỗi trang một thanh).
+const { T } = Astro.props;
+---
+<div id="co-xl" class="co-xl" hidden>
+  <button type="button" id="co-xl-dau" class="co-nut-icon" aria-label={T.xlDau} title={T.xlDau}>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button type="button" id="co-xl-lui" class="co-nut-icon" aria-label={T.xlLui} title={T.xlLui}>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M17 5l-9 7 9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+  </button>
+  <button type="button" id="co-xl-chay" class="co-nut-icon" aria-label={T.xlChay} title={T.xlChay}>
+    <svg id="co-xl-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5l11 7-11 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    <svg id="co-xl-tam" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+  </button>
+  <button type="button" id="co-xl-tien" class="co-nut-icon" aria-label={T.xlTien} title={T.xlTien}>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 5l9 7-9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+  </button>
+  <button type="button" id="co-xl-cuoi" class="co-nut-icon" aria-label={T.xlCuoi} title={T.xlCuoi}>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button type="button" id="co-xl-thoat" class="nut nut-phu nut-nho">{T.xlThoat}</button>
+</div>
+
+<style is:global>
+  /* Các nút tròn, nút Thoát đẩy sang cuối hàng */
+  .co-xl { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; width: 100%; max-width: 460px; margin: 0 auto .6rem; }
+  .co-xl[hidden] { display: none; }
+  #co-xl-thoat { margin-left: auto; }
+  #co-xl-thoat[hidden] { display: none; }
+</style>
