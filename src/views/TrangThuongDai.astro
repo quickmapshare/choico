@@ -78,6 +78,7 @@ const T = chuCaTrang(lang);
 
 <script>
   import { docToken, headerXacThuc, batDauDangNhap } from "../lib/co-tuong-tai-khoan.js";
+  import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
 
   const T = JSON.parse(document.getElementById("td-chu")?.textContent || "{}");
   const f = (mau: string, v: Record<string, string | number> = {}) => mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
@@ -219,13 +220,29 @@ const T = chuCaTrang(lang);
     void batDauDangNhap();
   });
 
-  // Đọc lại danh sách đều đặn để thấy người mới lên đài; chậm lại khi tab ẩn
+  // Chuông chung của sảnh: có người lên đài, rời đài hoặc vào trận thì chuông rung và danh sách tải lại ngay.
+  // Đang nghe được chuông thì chỉ đọc dự phòng thưa; không nghe được thì đọc lại đều như trước.
+  let dangNghe = false;
+  if (docToken()) {
+    ngheTinHieu(
+      "sanhthuongdai01",
+      () => {
+        if (!dangLam) void tai();
+      },
+      (ok: boolean) => {
+        const doi = ok !== dangNghe;
+        dangNghe = ok;
+        if (doi) vong();
+      },
+    );
+  }
+
   function vong() {
     clearTimeout(pollId);
     pollId = window.setTimeout(async () => {
       if (!dangLam) await tai();
       vong();
-    }, document.hidden ? 8000 : 3000);
+    }, dangNghe ? 30000 : document.hidden ? 8000 : 3000);
   }
   void tai();
   vong();

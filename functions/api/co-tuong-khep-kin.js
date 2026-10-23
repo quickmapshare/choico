@@ -54,7 +54,7 @@ export async function onRequestPost({ request, env }) {
   if (body.hanh_dong === "huy") {
     if (!nguoi.tai_khoan || tran.do !== nguoi.id) return tra(403, { loi: "khong_phai_nguoi_tao" });
     if (tran.trang_thai !== "cho") return tra(409, { loi: "khong_the_huy" });
-    const r = await capNhatTran(pb, H, tran.id, { trang_thai: "huy", ly_do: "nguoi_tao_huy" });
+    const r = await capNhatTran(pb, H, tran, { trang_thai: "huy", ly_do: "nguoi_tao_huy" });
     if (!r.ok) return tra(502, { loi: "khong_huy_duoc" });
     return tra(200, { ok: true });
   }
@@ -70,7 +70,7 @@ export async function onRequestPost({ request, env }) {
       const nhap = lamSachTen(typeof body.ten_khach === "string" ? body.ten_khach : "");
       ten = tenHopLe(nhap) ? nhap : "Khách";
     }
-    const r = await capNhatTran(pb, H, tran.id, {
+    const r = await capNhatTran(pb, H, tran, {
       den: nguoi.id,
       ten_den: ten,
       trang_thai: "dang_dau",

@@ -7,7 +7,7 @@
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
 import { tenBangDiem } from "../../src/lib/co-tuong.js";
-import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, BANG_TRAN, MAU_MA } from "../_lib/tran.js";
+import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, baoTinHieu, BANG_TRAN, MAU_MA, TIN_HIEU_SANH } from "../_lib/tran.js";
 import { GIAY_MOI_NUOC, HAN_SANH_PHUT, soDaiConHieuLuc } from "../../src/lib/co-tuong-tran.js";
 
 const loc = (c) => encodeURIComponent(c);
@@ -27,7 +27,8 @@ async function tranDangCo(pb, H, id) {
   // Trận chờ quá lâu thì coi như đã rời đài, dọn luôn
   for (const t of (await r.json()).items || []) {
     if (t.trang_thai === "cho" && !soDaiConHieuLuc(t)) {
-      await capNhatTran(pb, H, t.id, { trang_thai: "huy", ly_do: "het_han_sanh" });
+      await capNhatTran(pb, H, t, { trang_thai: "huy", ly_do: "het_han_sanh" });
+      await baoTinHieu(pb, H, TIN_HIEU_SANH);
       continue;
     }
     return { tran: t };
@@ -100,6 +101,7 @@ export async function onRequestPost({ request, env }) {
       da_tinh_diem: false,
     });
     if (!r.ok) return tra(502, { loi: "khong_len_dai_duoc" });
+    await baoTinHieu(pb, H, TIN_HIEU_SANH); // người khác trong sảnh thấy ngay người vừa lên đài
     return tra(200, { ma });
   }
 
@@ -112,8 +114,9 @@ export async function onRequestPost({ request, env }) {
   if (body.hanh_dong === "roi_dai") {
     if (tran.do !== nguoi.id) return tra(403, { loi: "khong_phai_nguoi_len_dai" });
     if (tran.trang_thai !== "cho") return tra(409, { loi: "da_co_nguoi_thach_dau" });
-    const r = await capNhatTran(pb, H, tran.id, { trang_thai: "huy", ly_do: "roi_dai" });
+    const r = await capNhatTran(pb, H, tran, { trang_thai: "huy", ly_do: "roi_dai" });
     if (!r.ok) return tra(502, { loi: "khong_roi_duoc" });
+    await baoTinHieu(pb, H, TIN_HIEU_SANH);
     return tra(200, { ok: true });
   }
 
@@ -129,13 +132,14 @@ export async function onRequestPost({ request, env }) {
     const dangCo = await tranDangCo(pb, H, nguoi.id);
     if (dangCo.loi) return tra(502, { loi: dangCo.loi });
     if (dangCo.tran) return tra(409, { loi: "dang_co_tran", ma: dangCo.tran.ma });
-    const r = await capNhatTran(pb, H, tran.id, {
+    const r = await capNhatTran(pb, H, tran, {
       den: nguoi.id,
       ten_den: nguoi.ten,
       trang_thai: "dang_dau",
       han_nuoc: sauPhut(GIAY_MOI_NUOC),
     });
     if (!r.ok) return tra(502, { loi: "khong_vao_duoc" });
+    await baoTinHieu(pb, H, TIN_HIEU_SANH); // người này rời khỏi danh sách chờ
     // Hai người cùng thách đấu một lúc: đọc lại, chỉ người ghi cuối được coi là đã vào
     const sau = await docTran(pb, H, ma);
     if (sau.loi || sau.tran?.den !== nguoi.id) return tra(409, { loi: "da_co_nguoi_vao" });

@@ -21,7 +21,7 @@ async function dongBoDo(pb, H, tran) {
     await ketThucTran(pb, H, tran, { ket_qua: ketQua, ly_do: "bo_do", nuoc: null });
     return { ...tran, trang_thai: "ket_thuc", ket_qua: ketQua, ly_do: "bo_do", han_nuoc: "" };
   }
-  await capNhatTran(pb, H, tran.id, { trang_thai: "huy", ly_do: "bo_do", han_nuoc: "" });
+  await capNhatTran(pb, H, tran, { trang_thai: "huy", ly_do: "bo_do", han_nuoc: "" });
   return { ...tran, trang_thai: "huy", ly_do: "bo_do", han_nuoc: "" };
 }
 
@@ -44,6 +44,7 @@ function ban(tran, benCua) {
     ket_qua: tran.ket_qua || null,
     ly_do: tran.ly_do || null,
     ban_cua: benCua, // "r" hoặc "b"
+    tin_hieu: tran.tin_hieu || "", // mã chuông báo realtime của trận (rỗng với trận tạo trước khi có chuông)
     den_luot: tran.trang_thai === "dang_dau" ? benDenLuot((tran.nuoc || []).length) : null,
     het_gio: Boolean(kiemHetGio(tran)), // đã quá hạn nước này, đang chờ bên kia quyết định
   };
@@ -108,7 +109,7 @@ export async function onRequestPost({ request, env }) {
       await ketThucTran(pb, H, tran, { ket_qua: kq.ket_thuc.ket_qua, ly_do: kq.ket_thuc.ly_do, nuoc: null });
       return tra(200, ban({ ...tran, trang_thai: "ket_thuc", ket_qua: kq.ket_thuc.ket_qua, ly_do: kq.ket_thuc.ly_do, han_nuoc: "" }, benCua));
     }
-    const r = await capNhatTran(pb, H, tran.id, kq.cap_nhat);
+    const r = await capNhatTran(pb, H, tran, kq.cap_nhat);
     if (!r.ok) return tra(502, { loi: "khong_luu_duoc" });
     return tra(200, ban({ ...tran, ...kq.cap_nhat }, benCua));
   }
@@ -139,7 +140,7 @@ export async function onRequestPost({ request, env }) {
   }
   // Trả luôn trạng thái mới để trình duyệt không phải gọi thêm một lượt đọc
   const hanMoi = sauPhut(GIAY_MOI_NUOC);
-  const r = await capNhatTran(pb, H, tran.id, { nuoc: nuocMoi, han_nuoc: hanMoi });
+  const r = await capNhatTran(pb, H, tran, { nuoc: nuocMoi, han_nuoc: hanMoi });
   if (!r.ok) return tra(502, { loi: "khong_luu_duoc_nuoc" });
   return tra(200, ban({ ...tran, nuoc: nuocMoi, han_nuoc: hanMoi }, benCua));
 }

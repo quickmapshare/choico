@@ -87,6 +87,7 @@ const T = chuCaTrang(lang);
   import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu, diemCongVan } from "../lib/co-tuong.js";
   import { duyetNuoc, benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
+  import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
   import { docToken, headerXacThuc, batDauDangNhap } from "../lib/co-tuong-tai-khoan.js";
 
   const T = JSON.parse(document.getElementById("tran-chu")?.textContent || "{}");
@@ -604,14 +605,42 @@ const T = chuCaTrang(lang);
     hienKhoi();
   }
 
-  // Hẹn lần đọc lại tiếp theo: nhanh khi đang chờ đối thủ đi, chậm hơn khi đến lượt mình hoặc tab ẩn
+  // Chuông báo realtime của trận: đang nghe được thì chỉ đọc lại khi chuông rung, cộng một lần dự phòng thưa.
+  // Không nghe được (trận cũ chưa có chuông, mạng chặn SSE...) thì quay về đọc lại theo nhịp như trước.
+  const DU_PHONG_MS = 20000;
+  let dangNghe = false;
+  let chuongDangNghe = "";
+  let dungNghe: (() => void) | null = null;
+  function capNhatNghe(can: boolean) {
+    const id: string = can ? tran?.tin_hieu || "" : "";
+    if (id === chuongDangNghe) return;
+    dungNghe?.();
+    dungNghe = null;
+    dangNghe = false;
+    chuongDangNghe = id;
+    if (!id) return;
+    dungNghe = ngheTinHieu(
+      id,
+      () => {
+        if (!dangGui) void docMoi().then(() => datPoll()); // chuông rung: đọc trạng thái mới, hẹn lại lần dự phòng
+      },
+      (ok: boolean) => {
+        const doi = ok !== dangNghe;
+        dangNghe = ok;
+        if (doi) datPoll(); // đổi nhịp đọc dự phòng theo việc có nghe được chuông hay không
+      },
+    );
+  }
+
+  // Hẹn lần đọc lại tiếp theo: có chuông thì thưa (dự phòng); không có thì nhanh khi chờ đối thủ đi, chậm hơn khi đến lượt mình hoặc tab ẩn
   function datPoll() {
     clearTimeout(pollId);
     pollId = undefined;
     const caoNhat = tran?.ban_cua && (tran.trang_thai === "dang_dau" || tran.trang_thai === "cho");
+    capNhatNghe(Boolean(caoNhat)); // trận xong thì thôi nghe
     if (!caoNhat) return;
     const luotMinh = tran.trang_thai === "dang_dau" && tran.den_luot === tran.ban_cua;
-    const doTre = document.hidden ? 5000 : tran.trang_thai === "cho" || luotMinh ? 2500 : 1000;
+    const doTre = dangNghe ? DU_PHONG_MS : document.hidden ? 5000 : tran.trang_thai === "cho" || luotMinh ? 2500 : 1000;
     pollId = window.setTimeout(async () => {
       pollId = undefined;
       await docMoi();

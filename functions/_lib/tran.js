@@ -43,12 +43,37 @@ export async function docTran(pb, H, ma) {
   return { tran: (await r.json()).items?.[0] ?? null };
 }
 
-export function capNhatTran(pb, H, id, data) {
-  return fetch(`${pb}/api/collections/${BANG_TRAN}/records/${id}`, { method: "PATCH", headers: H, body: JSON.stringify(data) });
+// Chuông báo (collection co_tuong_tin_hieu): trình duyệt nghe realtime, chuông rung thì mới gọi server lấy trạng thái,
+// thay cho việc hỏi liên tục. Chuông chỉ chứa số phiên bản, không chứa dữ liệu trận.
+const BANG_TIN_HIEU = "co_tuong_tin_hieu";
+export const TIN_HIEU_SANH = "sanhthuongdai01"; // chuông chung của sảnh thượng đài
+
+async function taoTinHieu(pb, H) {
+  const r = await fetch(`${pb}/api/collections/${BANG_TIN_HIEU}/records`, { method: "POST", headers: H, body: JSON.stringify({ phien: 0 }) });
+  return r.ok ? (await r.json()).id : ""; // không tạo được thì trận vẫn chạy, trình duyệt tự đọc lại định kỳ như trước
 }
 
-export function taoTran(pb, H, data) {
-  return fetch(`${pb}/api/collections/${BANG_TRAN}/records`, { method: "POST", headers: H, body: JSON.stringify(data) });
+// Rung chuông: tăng số phiên bản (phép cộng nguyên tử của PocketBase). Lỗi thì bỏ qua, trình duyệt còn lần đọc dự phòng.
+export async function baoTinHieu(pb, H, id) {
+  if (!id) return;
+  try {
+    await fetch(`${pb}/api/collections/${BANG_TIN_HIEU}/records/${id}`, { method: "PATCH", headers: H, body: JSON.stringify({ "phien+": 1 }) });
+  } catch {
+    // bỏ qua
+  }
+}
+
+// Ghi thay đổi của trận rồi rung chuông của trận đó (sau khi ghi xong, để người nghe đọc được trạng thái mới)
+export async function capNhatTran(pb, H, tran, data) {
+  const r = await fetch(`${pb}/api/collections/${BANG_TRAN}/records/${tran.id}`, { method: "PATCH", headers: H, body: JSON.stringify(data) });
+  if (r.ok) await baoTinHieu(pb, H, tran.tin_hieu);
+  return r;
+}
+
+// Tạo trận mới kèm chuông riêng của trận
+export async function taoTran(pb, H, data) {
+  const tinHieu = await taoTinHieu(pb, H);
+  return fetch(`${pb}/api/collections/${BANG_TRAN}/records`, { method: "POST", headers: H, body: JSON.stringify({ ...data, tin_hieu: tinHieu }) });
 }
 
 export const sauPhut = (giay) => new Date(Date.now() + giay * 1000).toISOString();
@@ -68,7 +93,7 @@ export async function ketThucTran(pb, H, tran, { ket_qua, ly_do, nuoc }) {
   if (nuoc) data.nuoc = nuoc;
   const tinhDiem = tran.loai === "dai" && !tran.da_tinh_diem;
   if (tinhDiem) data.da_tinh_diem = true;
-  const r = await capNhatTran(pb, H, tran.id, data);
+  const r = await capNhatTran(pb, H, tran, data);
   if (r.ok && tinhDiem) await tinhDiemTran(pb, H, tran, ket_qua);
   return r;
 }
