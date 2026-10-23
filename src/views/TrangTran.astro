@@ -40,7 +40,18 @@ const T = chuCaTrang(lang);
 
   <p id="tr-trang-thai" class="tr-trang-thai" role="status" aria-live="polite"></p>
   <p id="tr-doi" class="phu"></p>
-  <div id="tr-ban" class="tr-ban"></div>
+  <!-- Khay quân bị ăn đặt trên và dưới bàn, giống chơi với máy. Bên nào có quân ở phía trên bàn thì khay đó nằm trên -->
+  <div class="tr-khung">
+    <div class="tr-an-nua">
+      <h3 id="tr-nhan-an-tren"></h3>
+      <div id="tr-an-tren"></div>
+    </div>
+    <div id="tr-ban" class="tr-ban"></div>
+    <div class="tr-an-nua">
+      <h3 id="tr-nhan-an-duoi"></h3>
+      <div id="tr-an-duoi"></div>
+    </div>
+  </div>
   <div id="tr-het-gio" class="tr-khoi" hidden>
     <button type="button" id="tr-nut-them" class="tr-nut tr-nut-chinh">{T.trThem1Phut}</button>
     <button type="button" id="tr-nut-thoai" class="tr-nut">{T.trThoaiMai}</button>
@@ -51,7 +62,8 @@ const T = chuCaTrang(lang);
     <button type="button" id="tr-nut-dau-hang" class="tr-nut tr-nut-phu">{T.trDauHang}</button>
   </div>
 
-<style>
+<style is:global>
+  /* Global vì quân trong khay và bàn được tạo bằng JS, không có mã scope của Astro */
   .tr-khoi { margin: 1rem 0; display: flex; flex-direction: column; gap: .6rem; align-items: flex-start; }
   .tr-khoi[hidden] { display: none; }
   .tr-hang { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; width: 100%; max-width: 460px; }
@@ -78,13 +90,26 @@ const T = chuCaTrang(lang);
   }
   @keyframes tr-nhay { from { background: var(--nhan-nhe); box-shadow: 0 0 0 6px var(--nhan-nhe); } to { background: transparent; box-shadow: 0 0 0 6px transparent; } }
   .tr-ban { width: 100%; max-width: 460px; margin: .5rem 0 1rem; }
+  /* Khung gồm khay trên, bàn, khay dưới; cùng kích thước và kiểu với khung ở chơi với máy */
+  .tr-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; margin: 0 auto; }
+  .tr-khung .tr-ban { max-width: none; margin: .4rem 0; }
+  .tr-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .4rem .6rem; background: var(--mat); min-height: 3.2rem; }
+  .tr-an-nua h3 { font-size: .85rem; margin: 0 0 .3rem; color: var(--phu); font-weight: 600; }
+  .tr-an-nua > div { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .tr-chip {
+    width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 2px solid currentColor; background: #fbf6e6;
+    font-size: 1.2rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+  }
+  .tr-chip-r { color: #b3261e; }
+  .tr-chip-b { color: #1f1f1f; }
+  .tr-chip-moi { background: #fff3c4; box-shadow: 0 0 0 3px #e0a100; }
   .tr-ban svg { width: 100%; height: auto; display: block; user-select: none; overflow: visible; }
   .tr-ban .o { cursor: pointer; }
   .tr-ban .khoa .o { cursor: default; }
 </style>
 
 <script>
-  import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu, diemCongVan } from "../lib/co-tuong.js";
+  import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu, diemCongVan, quanBiAn } from "../lib/co-tuong.js";
   import { duyetNuoc, benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
   import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
@@ -120,6 +145,7 @@ const T = chuCaTrang(lang);
 
   let tran: any = null; // trạng thái trận từ server
   let ban: (string | null)[][] | null = null; // bàn đang hiển thị, dựng từ nước đi rồi cập nhật tức thì khi đi
+  let anCuoi: string | null = null; // quân vừa bị ăn gần nhất (mã bên + loại, ví dụ "bR"), đánh dấu trong khay
   let chon: [number, number] | null = null; // ô đang chọn
   let gioDi: any[] = []; // nước hợp lệ từ ô đang chọn
   let dangGui = false; // đang gửi một nước lên server
@@ -201,6 +227,22 @@ const T = chuCaTrang(lang);
     if (!tran?.nuoc) return;
     const d = duyetNuoc(tran.nuoc);
     ban = d.hop_le ? d.b : khoiTao();
+    anCuoi = anCuoiCung(tran.nuoc);
+  }
+
+  // Quân bị ăn gần nhất trong cả ván (để đánh dấu trong khay), đi lại từ đầu ván
+  function anCuoiCung(nuoc: string[]): string | null {
+    const b = khoiTao();
+    let s = "r";
+    let cuoi: string | null = null;
+    for (const ky of nuoc) {
+      const m = timNuoc(b, s, ky);
+      if (!m) break;
+      if (m.an) cuoi = m.an;
+      apDung(b, m);
+      s = doiBen(s);
+    }
+    return cuoi;
   }
 
   // Khi mình cầm quân đen thì xoay bàn 180 độ để quân đen nằm phía dưới
@@ -226,9 +268,33 @@ const T = chuCaTrang(lang);
     return q;
   }
 
+  // Vẽ khay quân bị ăn: bên nào ở phía trên bàn thì khay của bên đó nằm trên (khi xoay bàn thì đảo lại)
+  function veQuanAn() {
+    const ket = quanBiAn(ban);
+    const benTren = xoay() ? "r" : "b";
+    const benDuoi = doiBen(benTren);
+    const dien = (id: string, list: string[], s: string) => {
+      const el = $(id);
+      el.replaceChildren();
+      // Quân vừa bị ăn của bên s: đánh dấu quân cùng loại cuối cùng trong khay
+      const noi = anCuoi && anCuoi[0] === s ? list.lastIndexOf(anCuoi[1]) : -1;
+      list.forEach((t, i) => {
+        const chip = document.createElement("span");
+        chip.className = "tr-chip tr-chip-" + s + (i === noi ? " tr-chip-moi" : "");
+        chip.textContent = s === "r" ? TEN[t] : TEN_DEN[t];
+        el.appendChild(chip);
+      });
+    };
+    $("tr-nhan-an-tren").textContent = benTren === "r" ? T.quanDoBiAn : T.quanDenBiAn;
+    $("tr-nhan-an-duoi").textContent = benDuoi === "r" ? T.quanDoBiAn : T.quanDenBiAn;
+    dien("tr-an-tren", ket[benTren], benTren);
+    dien("tr-an-duoi", ket[benDuoi], benDuoi);
+  }
+
   function veBan() {
     banEl.replaceChildren();
     if (!ban) return;
+    veQuanAn();
     banEl.classList.toggle("khoa", !(tran.trang_thai === "dang_dau" && tran.den_luot === tran.ban_cua));
     const s = svgEl("svg", { viewBox: `0 0 ${RONG} ${CAO}`, role: "img" });
     svgEl("rect", { x: 0, y: 0, width: RONG, height: CAO, rx: 10, fill: "#f1dca8" }, s);
@@ -362,6 +428,7 @@ const T = chuCaTrang(lang);
   function apMove(m: any, s: string) {
     if (!ban) return;
     apDung(ban, m);
+    if (m.an) anCuoi = m.an;
     hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, chieu: biChieu(ban, doiBen(s)), tu: m.tu, den: m.den };
     phatTiengNuoc(Boolean(m.an), hieuUng.chieu);
   }
