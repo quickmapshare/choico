@@ -78,9 +78,11 @@ const { nhung = false } = Astro.props;
   .co-nut-google:hover { background: #f8f9fa; border-color: #d2e3fc; box-shadow: 0 1px 2px rgba(60, 64, 67, .2); }
   .co-nut-google:disabled { opacity: .6; cursor: default; }
   .co-nut-google[hidden] { display: none; }
+  :root[data-theme="dark"] .co-nut-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
+  :root[data-theme="dark"] .co-nut-google:hover { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
   @media (prefers-color-scheme: dark) {
-    .co-nut-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
-    .co-nut-google:hover { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
+    :root:not([data-theme="light"]) .co-nut-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
+    :root:not([data-theme="light"]) .co-nut-google:hover { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
   }
   .co-lien-ket { margin: .8rem 0 0; }
   .co-dieu-khien { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1rem 0 .6rem; }

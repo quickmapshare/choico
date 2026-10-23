@@ -1,0 +1,62 @@
+---
+// Nút biểu tượng trên thanh đầu để chọn giao diện: tự động (theo máy), sáng, tối. Bấm để đổi vòng tròn.
+---
+<button type="button" id="chuyen-theme" class="chuyen-theme" data-che-do="auto" aria-label="Giao diện: tự động" title="Giao diện: tự động">
+  <svg class="bt-auto" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>
+  <svg class="bt-sang" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  <svg class="bt-toi" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+</button>
+
+<style is:global>
+  .chuyen-theme {
+    width: 2.1rem; height: 2.1rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 1px solid var(--vien); background: var(--mat); color: var(--phu); cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+  .chuyen-theme:hover { border-color: var(--nhan); color: var(--nhan); }
+  /* Mỗi chế độ chỉ hiện một biểu tượng */
+  .chuyen-theme svg { display: none; }
+  .chuyen-theme[data-che-do="auto"] .bt-auto,
+  .chuyen-theme[data-che-do="light"] .bt-sang,
+  .chuyen-theme[data-che-do="dark"] .bt-toi { display: block; }
+</style>
+
+<script>
+  // Vòng: tự động -> sáng -> tối -> tự động. Tự động = xóa lựa chọn đã lưu, theo giao diện của máy.
+  const KHOA = "choico-theme";
+  const VONG = ["auto", "light", "dark"] as const;
+  const NHAN = { auto: "tự động", light: "sáng", dark: "tối" };
+  const nut = document.getElementById("chuyen-theme") as HTMLButtonElement | null;
+
+  function docChon(): (typeof VONG)[number] {
+    try {
+      const v = localStorage.getItem(KHOA);
+      if (v === "light" || v === "dark") return v;
+    } catch {
+      // localStorage bị chặn: dùng tự động
+    }
+    return "auto";
+  }
+
+  function ap(cheDo: (typeof VONG)[number]) {
+    if (cheDo === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", cheDo);
+    if (!nut) return;
+    nut.dataset.cheDo = cheDo;
+    const chu = `Giao diện: ${NHAN[cheDo]}. Bấm để đổi.`;
+    nut.setAttribute("aria-label", chu);
+    nut.title = chu;
+  }
+
+  ap(docChon());
+  nut?.addEventListener("click", () => {
+    const tiep = VONG[(VONG.indexOf(docChon()) + 1) % VONG.length];
+    try {
+      if (tiep === "auto") localStorage.removeItem(KHOA);
+      else localStorage.setItem(KHOA, tiep);
+    } catch {
+      // không nhớ được lựa chọn, vẫn đổi cho trang hiện tại
+    }
+    ap(tiep);
+  });
+</script>

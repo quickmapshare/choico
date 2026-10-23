@@ -2,6 +2,7 @@
 // Khung tối giản cho trang cờ tướng: chỉ có biến màu, giao diện sáng/tối theo máy và báo chiều cao cho trang cha khi nhúng iframe.
 // nhung: bản nhúng vào web khác (iframe), không lập chỉ mục, mở liên kết ở tab mới.
 import Logo from "../components/Logo.astro";
+import ChuyenTheme from "../components/ChuyenTheme.astro";
 const { tieuDe, moTa, lang = "vi", nhung = false } = Astro.props;
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 ---
@@ -16,6 +17,15 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     {nhung && <base target="_blank" />}
     <link rel="canonical" href={duongCanhTac} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script is:inline>
+      // Áp giao diện đã chọn (sáng hoặc tối) trước khi vẽ trang để không chớp sáng. Không có lựa chọn thì theo máy.
+      try {
+        const luu = localStorage.getItem("choico-theme");
+        if (luu === "light" || luu === "dark") document.documentElement.setAttribute("data-theme", luu);
+      } catch (err) {
+        // localStorage bị chặn thì theo giao diện của máy
+      }
+    </script>
     <style is:global>
       :root {
         color-scheme: light dark;
@@ -30,8 +40,10 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
         --do: #b03a2e;
         --bong: 0 1px 2px rgba(31, 36, 33, .06), 0 4px 16px rgba(31, 36, 33, .05);
       }
+      :root[data-theme="light"] { color-scheme: light; }
+      :root[data-theme="dark"] { color-scheme: dark; }
       @media (prefers-color-scheme: dark) {
-        :root {
+        :root:not([data-theme="light"]) {
           --nen: #14161a;
           --mat: #1d2026;
           --chu: #ecebe6;
@@ -43,6 +55,18 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
           --do: #e0796b;
           --bong: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .2);
         }
+      }
+      :root[data-theme="dark"] {
+        --nen: #14161a;
+        --mat: #1d2026;
+        --chu: #ecebe6;
+        --phu: #a3aaa6;
+        --vien: #2d3138;
+        --nhan: #e58a6b;
+        --nhan-nhe: #2e2420;
+        --xanh: #5fbf8a;
+        --do: #e0796b;
+        --bong: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .2);
       }
       * { box-sizing: border-box; }
       body {
@@ -59,6 +83,7 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
       .ten-web:hover { text-decoration: none; }
       .ten-web .logo { flex: none; }
       .ten-web span span { color: var(--nhan); }
+      .thanh-tren-phai { display: flex; align-items: center; gap: .9rem; }
       .thanh-tren nav { display: flex; gap: 1rem; font-size: .93rem; font-weight: 600; }
       .thanh-tren nav a { color: var(--phu); }
       .thanh-tren nav a:hover, .thanh-tren nav a[aria-current="page"] { color: var(--nhan); }
@@ -96,10 +121,13 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
       <header class="thanh-tren">
         <div class="thanh-tren-noi">
           <a class="ten-web" href="/" aria-label="ChoiCo, về trang chủ"><Logo size={30} /><span>Choi<span>Co</span></span></a>
-          <nav aria-label="Trang chính">
-            <a href="/co-tuong/" aria-current={Astro.url.pathname === "/co-tuong/" ? "page" : undefined}>Cờ tướng</a>
-            <a href="/nhung/" aria-current={Astro.url.pathname === "/nhung/" ? "page" : undefined}>Nhúng vào web</a>
-          </nav>
+          <div class="thanh-tren-phai">
+            <nav aria-label="Trang chính">
+              <a href="/co-tuong/" aria-current={Astro.url.pathname === "/co-tuong/" ? "page" : undefined}>Cờ tướng</a>
+              <a href="/nhung/" aria-current={Astro.url.pathname === "/nhung/" ? "page" : undefined}>Nhúng vào web</a>
+            </nav>
+            <ChuyenTheme />
+          </div>
         </div>
       </header>
     )}
