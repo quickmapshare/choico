@@ -27,6 +27,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   <div class="co-thanh-nut">
     <button type="button" id="co-moi" class="co-nut-chu">{T.vanMoi}</button>
     <button type="button" id="co-hoan" class="co-nut-chu">{T.hoan.replace("{n}", "3")}</button>
+    <button type="button" id="co-xem-lai" class="co-nut-chu" hidden>{T.xemLai}</button>
     <div class="co-nut-goc">
       <button type="button" id="co-tieng" class="co-nut-icon" aria-label={T.amThanh} aria-pressed="false" title={T.batAm}>
         <svg id="co-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -41,6 +42,26 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
 
   <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
   <p id="co-ghi-diem" class="phu" aria-live="polite"></p>
+  <!-- Thanh xem lại ván: chỉ hiện khi đang xem lại -->
+  <div id="co-xl" class="co-xl" hidden>
+    <button type="button" id="co-xl-dau" class="co-nut-icon" aria-label={T.xlDau} title={T.xlDau}>
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" id="co-xl-lui" class="co-nut-icon" aria-label={T.xlLui} title={T.xlLui}>
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M17 5l-9 7 9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" id="co-xl-chay" class="co-nut-icon" aria-label={T.xlChay} title={T.xlChay}>
+      <svg id="co-xl-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5l11 7-11 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <svg id="co-xl-tam" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+    </button>
+    <button type="button" id="co-xl-tien" class="co-nut-icon" aria-label={T.xlTien} title={T.xlTien}>
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 5l9 7-9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" id="co-xl-cuoi" class="co-nut-icon" aria-label={T.xlCuoi} title={T.xlCuoi}>
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" id="co-xl-thoat" class="co-nut-chu co-nut-phu">{T.xlThoat}</button>
+  </div>
   <div class="co-khung">
     <!-- Phía trên bàn là quân đen bị ăn, phía dưới bàn là quân đỏ bị ăn (đúng phía của mỗi bên) -->
     <div class="co-an-nua" aria-label={T.quanDenBiAn}>
@@ -102,8 +123,14 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   /* Hai nút chữ dạng viên thuốc: Ván mới là nút chính (nền đậm), Hoãn nước là nút phụ (viền) */
   .co-nut-chu { min-height: 2.4rem; padding: .4rem 1.1rem; border-radius: 999px; border: 1px solid var(--nhan); background: var(--nhan); color: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
   .co-nut-chu:hover:not(:disabled) { box-shadow: 0 2px 8px rgba(0, 0, 0, .18); }
-  #co-hoan { background: transparent; color: var(--nhan); box-shadow: none; }
-  #co-hoan:hover:not(:disabled) { background: var(--nhan-nhe); box-shadow: none; }
+  #co-hoan, #co-xem-lai { background: transparent; color: var(--nhan); box-shadow: none; }
+  #co-hoan:hover:not(:disabled), #co-xem-lai:hover:not(:disabled) { background: var(--nhan-nhe); box-shadow: none; }
+  /* Thanh xem lại ván: các nút tròn, nút Thoát đẩy sang cuối hàng */
+  .co-xl { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .6rem; }
+  .co-xl[hidden] { display: none; }
+  .co-xl .co-nut-icon:disabled { opacity: .4; cursor: default; }
+  .co-xl .co-nut-icon:disabled:hover { border-color: var(--vien); color: var(--chu); }
+  #co-xl-thoat { margin-left: auto; }
   .co-nut-chu:disabled { opacity: .45; cursor: default; box-shadow: none; }
   .co-nut-goc { margin-left: auto; display: inline-flex; gap: .5rem; }
   /* Nút biểu tượng tròn, trung tính; rê chuột hoặc bật thì ngả sang màu nhấn */
@@ -410,9 +437,11 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
 
   function luuTrangThai(luot) {
     try {
+      // Đang xem lại thì lưu thế cờ và thông báo thật của ván, không lưu thế đang xem
       localStorage.setItem(KHOA_LUU, JSON.stringify({
-        b, luot, capDo, soNuoc, ketThuc, nuocCuoi, thongBao: trangThai.textContent, ngonNgu: NGON_NGU_TRANG,
-        maVan, nuocDaDi, daNop, soHoan, anCuoi,
+        b: xem ? xem.bThat : b, luot, capDo, soNuoc, ketThuc, nuocCuoi: xem ? xem.nuocCuoiThat : nuocCuoi,
+        thongBao: xem ? xem.thongBaoThat : trangThai.textContent, ngonNgu: NGON_NGU_TRANG,
+        maVan, nuocDaDi, daNop, soHoan, anCuoi: xem ? xem.anCuoiThat : anCuoi,
       }));
     } catch {
       // Trình duyệt chặn localStorage: vẫn chơi bình thường, chỉ không nhớ được ván
@@ -468,6 +497,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     banEl.classList.toggle("khoa", ketThuc || dangChoMay);
     hienMuc();
     capNhatHoan();
+    capNhatXemLai();
     const s = svgEl("svg", { viewBox: `0 0 ${RONG} ${CAO}`, class: "co-svg", role: "img", "aria-label": T.banCo }, banEl);
     const net = { stroke: "#7a4b1e", "stroke-width": 1.5, fill: "none" };
 
@@ -811,7 +841,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
 
   const hoanEl = document.getElementById("co-hoan") as HTMLButtonElement;
   // Được hoãn khi đến lượt người chơi, ván chưa kết thúc, còn lượt hoãn và đã có nước của cả hai bên
-  const hoanDuocDung = () => !ketThuc && !dangChoMay && soHoan < HOAN_TOI_DA && nuocDaDi.length >= 2;
+  const hoanDuocDung = () => !ketThuc && !dangChoMay && !xem && soHoan < HOAN_TOI_DA && nuocDaDi.length >= 2;
 
   function capNhatHoan() {
     hoanEl.disabled = !hoanDuocDung();
@@ -843,7 +873,135 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     ve();
   }
 
+  // Xem lại ván đã kết thúc: dựng lại bàn từ nhật ký nước đi, không đụng đến nhật ký và điểm.
+  // Khi đang xem, b/nuocCuoi/anCuoi được thay bằng thế đang xem; thế thật của ván cất trong xem.
+  let xem: { k: number; bThat: typeof b; nuocCuoiThat: typeof nuocCuoi; anCuoiThat: string | null; thongBaoThat: string } | null = null;
+  let chayId: number | undefined; // bộ hẹn giờ tự chạy
+  const XEM_LAI_NHIP = 1100; // ms giữa hai nước khi tự chạy
+  const xemEl = document.getElementById("co-xem-lai") as HTMLButtonElement;
+  const xlEl = document.getElementById("co-xl") as HTMLElement;
+  const xlNut = {
+    dau: document.getElementById("co-xl-dau") as HTMLButtonElement,
+    lui: document.getElementById("co-xl-lui") as HTMLButtonElement,
+    chay: document.getElementById("co-xl-chay") as HTMLButtonElement,
+    tien: document.getElementById("co-xl-tien") as HTMLButtonElement,
+    cuoi: document.getElementById("co-xl-cuoi") as HTMLButtonElement,
+    thoat: document.getElementById("co-xl-thoat") as HTMLButtonElement,
+  };
+  const xlBatEl = document.getElementById("co-xl-bat") as unknown as SVGElement;
+  const xlTamEl = document.getElementById("co-xl-tam") as unknown as SVGElement;
+
+  function capNhatXemLai() {
+    xemEl.hidden = !ketThuc || nuocDaDi.length === 0 || !!xem;
+    xlEl.hidden = !xem;
+    if (!xem) return;
+    const n = nuocDaDi.length;
+    xlNut.dau.disabled = xlNut.lui.disabled = xem.k <= 0;
+    xlNut.tien.disabled = xlNut.cuoi.disabled = xem.k >= n;
+    const dangChay = chayId !== undefined;
+    xlBatEl.toggleAttribute("hidden", dangChay);
+    xlTamEl.toggleAttribute("hidden", !dangChay);
+    xlNut.chay.setAttribute("aria-label", dangChay ? T.xlDung : T.xlChay);
+    xlNut.chay.title = dangChay ? T.xlDung : T.xlChay;
+  }
+
+  function dungChay() {
+    if (chayId !== undefined) {
+      clearInterval(chayId);
+      chayId = undefined;
+    }
+    capNhatXemLai();
+  }
+
+  // Dựng lại bàn sau k nước đầu (đỏ đi trước), trả về nước cuối cùng đã đi
+  function dungBanDen(k: number) {
+    b = khoiTao();
+    let s = "r";
+    let m: ReturnType<typeof timNuoc> = null;
+    nuocCuoi = null;
+    anCuoi = null;
+    for (let i = 0; i < k; i++) {
+      m = timNuoc(b, s, nuocDaDi[i]);
+      if (!m) break; // nhật ký hỏng: dừng ở nước hợp lệ cuối
+      apDung(b, m);
+      nuocCuoi = [m.tu, m.den];
+      if (m.an) anCuoi = m.an;
+      s = s === "r" ? "b" : "r";
+    }
+    return m;
+  }
+
+  function xemDen(k: number, hoatAnh = false) {
+    if (!xem) return;
+    const n = nuocDaDi.length;
+    k = Math.max(0, Math.min(n, k));
+    const truoc = xem.k;
+    const m = dungBanDen(k);
+    xem.k = k;
+    chon = null;
+    gioDi = [];
+    hieuUng = null;
+    // Đi tới đúng một nước thì chạy hiệu ứng và phát tiếng như lúc chơi
+    if (hoatAnh && m && k === truoc + 1) {
+      hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, chieu: biChieu(b, k % 2 === 1 ? "b" : "r") };
+      phatTiengNuoc(Boolean(m.an), hieuUng.chieu);
+    }
+    if (k >= n) dungChay();
+    hienTrangThai(f(T.xlTrangThai, { k, n }));
+    ve();
+  }
+
+  function batDauXem() {
+    if (!ketThuc || nuocDaDi.length === 0 || xem) return;
+    am.mo();
+    xem = { k: -1, bThat: b, nuocCuoiThat: nuocCuoi, anCuoiThat: anCuoi, thongBaoThat: trangThai.textContent || "" };
+    hieuUng = null;
+    xemDen(0);
+    batChay();
+  }
+
+  function batChay() {
+    if (!xem) return;
+    if (xem.k >= nuocDaDi.length) xemDen(0);
+    dungChay();
+    chayId = window.setInterval(() => {
+      if (!xem) return dungChay();
+      xemDen(xem.k + 1, true);
+    }, XEM_LAI_NHIP);
+    capNhatXemLai();
+  }
+
+  // Thoát xem lại: trả thế cờ và thông báo thật của ván
+  function thoatXem() {
+    if (!xem) return;
+    dungChay();
+    b = xem.bThat;
+    nuocCuoi = xem.nuocCuoiThat;
+    anCuoi = xem.anCuoiThat;
+    hienTrangThai(xem.thongBaoThat);
+    xem = null;
+    hieuUng = null;
+    ve();
+  }
+
+  xemEl.addEventListener("click", batDauXem);
+  xlNut.thoat.addEventListener("click", thoatXem);
+  xlNut.dau.addEventListener("click", () => { dungChay(); xemDen(0); });
+  xlNut.lui.addEventListener("click", () => { dungChay(); xemDen((xem?.k ?? 0) - 1); });
+  xlNut.tien.addEventListener("click", () => { dungChay(); xemDen((xem?.k ?? 0) + 1, true); });
+  xlNut.cuoi.addEventListener("click", () => { dungChay(); xemDen(nuocDaDi.length); });
+  xlNut.chay.addEventListener("click", () => (chayId !== undefined ? dungChay() : batChay()));
+  document.addEventListener("keydown", (e) => {
+    if (!xem || (e.target as Element)?.closest?.("input, textarea")) return;
+    if (e.key === "ArrowLeft") { dungChay(); xemDen(xem.k - 1); e.preventDefault(); }
+    if (e.key === "ArrowRight") { dungChay(); xemDen(xem.k + 1, true); e.preventDefault(); }
+  });
+
   function vanMoi() {
+    if (xem) {
+      dungChay();
+      xem = null; // bỏ thế đang xem, bàn sẽ được dựng mới ngay dưới
+    }
     huyTinh(); // bỏ lượt máy đang nghĩ (nếu có)
     b = khoiTao();
     chon = null;
