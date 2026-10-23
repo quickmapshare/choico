@@ -18,9 +18,10 @@
 .co-chip-b { color: #1f1f1f; }
 .co-chip-moi { background: #fff3c4; box-shadow: 0 0 0 3px #e0a100; }
 /* Cờ vua: quân trắng và đen là ký tự quân cờ, tô đặc rồi viền để quân trắng vẫn rõ trên nền sáng */
-.co-vua .co-chip { font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "Apple Symbols", "DejaVu Sans", sans-serif; font-weight: 400; font-size: 1.45rem; padding-bottom: .1rem; }
-.co-vua .co-chip-r { color: #fff; -webkit-text-stroke: 1.2px #1f1f1f; border-color: #8a8a8a; }
+.co-vua .co-chip { font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "Apple Symbols", "DejaVu Sans", sans-serif; font-weight: 400; font-size: 1.75rem; padding-bottom: .15rem; }
+.co-vua .co-chip-r { color: #fff; -webkit-text-stroke: .8px #1f1f1f; border-color: #8a8a8a; }
 .co-vua .co-chip-b { color: #1f1f1f; border-color: #8a8a8a; }
+.co-vua .co-chon-mot { font-size: 2.6rem; }
 
 /* Ô chọn quân phong cấp: phủ mờ lên bàn, các quân để chọn ở giữa */
 .co-chon-quan { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; background: rgba(0, 0, 0, .45); border-radius: 10px; }

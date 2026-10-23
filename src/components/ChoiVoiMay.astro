@@ -812,6 +812,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     veLai();
     if (the.s === "b" && !ketThuc) void mayDi(); // tải lại trang lúc đến lượt máy: máy đi tiếp
   } else {
+    if (d && mucHopLe(d.capDo)) capDo = d.capDo; // ván lưu hỏng thì bỏ ván nhưng giữ mức
     vanMoi();
   }
   // Lấy tên từ hồ sơ trước, rồi mới ghi điểm ván đã kết thúc mà chưa ghi (mạng lỗi lúc trước, hoặc vừa đăng nhập xong) và tải bảng điểm
