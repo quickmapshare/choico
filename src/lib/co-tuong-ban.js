@@ -266,3 +266,44 @@ export function gaiNutTieng(am, { nut, loaBat, loaTat, nhan }) {
     am.phat("di"); // nghe thử ngay khi vừa bật
   });
 }
+
+// Ô được bấm trên bàn, dạng [r, c]; null nếu bấm ra ngoài các ô
+export function oBamDuoc(e) {
+  const o = e.target.closest?.(".co-o");
+  return o ? [Number(o.getAttribute("data-r")), Number(o.getAttribute("data-c"))] : null;
+}
+
+// Phóng to bàn cờ: trình duyệt có Fullscreen API (máy tính, Android) thì dùng nó, còn iPhone Safari phủ kín màn hình bằng CSS.
+// nut: nút phóng to; nutMo, nutDong: hai biểu tượng trong nút; nutThuNho: nút cố định góc phải để thu lại (chỉ hiện khi phóng bằng CSS).
+// nhan: { phongTo, thuNhoBan } lấy từ chuỗi của trang. Ẩn nút chat khi đang phóng to, để nút chat không che bàn.
+export function gaiPhongTo(banEl, { nut, nutMo, nutDong, nutThuNho, nhan }) {
+  const coFullscreen = Boolean(banEl.requestFullscreen);
+  const dangPhong = () => document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css");
+  const capNhat = () => {
+    const dang = dangPhong();
+    document.body.classList.toggle("co-dang-phong-to", dang);
+    const nhanNut = dang ? nhan.thuNhoBan : nhan.phongTo;
+    nut.setAttribute("aria-label", nhanNut);
+    nut.title = nhanNut;
+    nutMo.toggleAttribute("hidden", dang);
+    nutDong.toggleAttribute("hidden", !dang);
+  };
+  // Đổi phóng to bằng CSS (iPhone): cập nhật nút và nút thu nhỏ cố định
+  const datCss = (bat) => {
+    banEl.classList.toggle("co-phong-to-css", bat);
+    nutThuNho.hidden = !bat;
+    capNhat();
+  };
+  nut.addEventListener("click", () => {
+    if (!coFullscreen) {
+      datCss(!banEl.classList.contains("co-phong-to-css"));
+    } else if (document.fullscreenElement === banEl) {
+      void document.exitFullscreen();
+    } else {
+      void banEl.requestFullscreen().catch(() => {});
+    }
+  });
+  nutThuNho.addEventListener("click", () => datCss(false));
+  if (coFullscreen) document.addEventListener("fullscreenchange", capNhat);
+  capNhat();
+}

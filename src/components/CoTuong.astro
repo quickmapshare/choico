@@ -97,11 +97,11 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   .co-muc-hien-tai { font-weight: 600; }
   /* Thanh nút: nút chữ bên trái, nút biểu tượng gom bên phải */
   .co-thanh-nut { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 1rem; }
-  .co-nut-chu, .co-nut-icon {
+  .co-nut-chu {
     font: inherit; font-weight: 600; cursor: pointer; touch-action: manipulation;
     transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s, transform .1s;
   }
-  .co-nut-chu:active, .co-nut-icon:active { transform: scale(.96); }
+  .co-nut-chu:active { transform: scale(.96); }
   /* Hai nút chữ dạng viên thuốc: Ván mới là nút chính (nền đậm), Hoãn nước là nút phụ (viền) */
   .co-nut-chu { min-height: 2.4rem; padding: .4rem 1.1rem; border-radius: 999px; border: 1px solid var(--nhan); background: var(--nhan); color: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
   .co-nut-chu:hover:not(:disabled) { box-shadow: 0 2px 8px rgba(0, 0, 0, .18); }
@@ -118,16 +118,6 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   body.co-xem-van #co-xl-thoat, body.co-xem-van #co-xem-lai, body.co-xem-van #co-chep-link { display: none !important; }
   .co-nut-chu:disabled { opacity: .45; cursor: default; box-shadow: none; }
   .co-nut-goc { margin-left: auto; display: inline-flex; gap: .5rem; }
-  /* Nút biểu tượng tròn, trung tính; rê chuột hoặc bật thì ngả sang màu nhấn */
-  .co-nut-icon {
-    flex: none; width: 2.4rem; height: 2.4rem; min-width: 2.4rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 50%; border: 1px solid var(--vien); background: var(--mat); color: var(--chu); box-shadow: var(--bong);
-  }
-  .co-nut-icon:hover { border-color: var(--nhan); color: var(--nhan); }
-  /* Nút loa: đang bật thì nền nhạt màu nhấn, để nhìn ra trạng thái dù biểu tượng là hành động */
-  #co-tieng.co-dang-bat { background: var(--nhan-nhe); border-color: var(--nhan); color: var(--nhan); }
-  /* Thuộc tính hidden không luôn ẩn phần tử SVG trên mọi trình duyệt, nên ghi rõ: mỗi nút chỉ hiện một biểu tượng */
-  .co-nut-icon > svg[hidden] { display: none; }
   /* Ô tên dạng viên thuốc: nhãn nhỏ, ô nhập không viền, nút check tròn nằm cuối ô */
   .co-ten-o { display: inline-flex; align-items: center; gap: .4rem; padding: .2rem .25rem .2rem 1rem; border: 1px solid var(--vien); border-radius: 999px; background: var(--mat); box-shadow: var(--bong); transition: border-color .15s, box-shadow .15s; }
   .co-ten-o:focus-within { border-color: var(--nhan); box-shadow: 0 0 0 3px var(--nhan-nhe); }
@@ -143,23 +133,6 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   /* Hai khay quân bị ăn và bàn cờ nằm giữa trang; phần chữ và nút vẫn căn trái */
   .co-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; margin: 0 auto; }
   .co-khung .co-ban { max-width: none; margin: .4rem 0; }
-  /* Chế độ toàn màn hình: chỉ bàn cờ, căn giữa, cao bằng màn hình */
-  .co-ban:fullscreen { max-width: none; margin: 0; padding: 1rem; box-sizing: border-box; background: var(--nen); display: flex; align-items: center; justify-content: center; }
-  .co-ban:fullscreen .co-svg { width: auto; height: 100%; max-width: 100%; max-height: 100vh; }
-  /* Phương án cho iPhone Safari (không hỗ trợ Fullscreen API cho phần tử): phủ kín màn hình bằng CSS */
-  .co-ban.co-phong-to-css {
-    position: fixed; inset: 0; z-index: 1000; width: 100%; max-width: none; height: 100vh; height: 100dvh;
-    margin: 0; padding: .5rem; box-sizing: border-box; background: var(--nen); border-radius: 0;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .co-ban.co-phong-to-css .co-svg { width: auto; height: 100%; max-width: 100%; }
-  /* Nút thu nhỏ nằm ngoài bàn cờ, luôn trên lớp phủ, chỉ hiện khi bàn đang phóng to bằng CSS */
-  /* Kiểu nút giống nút phóng to (co-nut-icon, tròn có biểu tượng), chỉ khác là cố định ở góc trên bên phải */
-  .co-thu-nho { position: fixed; top: .6rem; right: .6rem; z-index: 1001; }
-  .co-thu-nho[hidden] { display: none; }
-  /* Khi phóng to bàn cờ thì ẩn nút chat (widget bên thứ ba: nút và khung chat) để không che bàn */
-  body.co-dang-phong-to #formmailhub-widget-container,
-  body.co-dang-phong-to iframe[title="AI Chat Assistant"] { display: none !important; }
   .co-bang-diem { margin-top: 1rem; }
   .co-vi-tri { font-weight: 600; min-height: 1.5em; }
   .co-top10 { max-width: 30rem; padding-left: 1.6rem; }
@@ -175,7 +148,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   import { batDauDangNhap, headerXacThuc, docToken, xoaToken } from "../lib/co-tuong-tai-khoan.js";
   import { timNuocMay } from "../lib/co-tuong-may.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
-  import { taoToa, veBanCo, veKhayQuanAn, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutTieng, THOI_GIAN } from "../lib/co-tuong-ban.js";
+  import { taoToa, veBanCo, veKhayQuanAn, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutTieng, gaiPhongTo, oBamDuoc, THOI_GIAN } from "../lib/co-tuong-ban.js";
   // Chuỗi giao diện theo ngôn ngữ trang (được component đưa vào #co-chu); f() điền các chỗ {x} trong mẫu
   const T = JSON.parse(document.getElementById("co-chu")?.textContent || "{}");
   const f = (mau: string, v: Record<string, string | number> = {}) => mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
@@ -549,10 +522,9 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
 
   banEl.addEventListener("click", (e) => {
     am.mo(); // tạo hoặc mở lại ngữ cảnh âm thanh ngay trong lúc người dùng bấm (iPhone chỉ cho phép như vậy)
-    const o = (e.target as Element).closest("g.co-o");
+    const o = oBamDuoc(e);
     if (!o || ketThuc || dangChoMay) return;
-    const r = Number(o.getAttribute("data-r"));
-    const c = Number(o.getAttribute("data-c"));
+    const [r, c] = o;
     const p = b[r][c];
 
     if (chon) {
@@ -819,45 +791,14 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   moiEl.addEventListener("click", vanMoi);
   hoanEl.addEventListener("click", hoanNuoc);
 
-  // Phóng to: chỉ bàn cờ chiếm toàn màn hình. Trình duyệt hỗ trợ Fullscreen API (máy tính, Android) thì dùng nó,
-  // còn iPhone Safari thì phủ kín màn hình bằng CSS.
-  const phongEl = document.getElementById("co-phong-to") as HTMLButtonElement;
-  const thuNhoEl = document.getElementById("co-thu-nho") as HTMLButtonElement;
-  const coFullscreen = !!banEl.requestFullscreen;
-  const phongMoEl = document.getElementById("co-phong-mo") as unknown as SVGElement;
-  const phongDongEl = document.getElementById("co-phong-dong") as unknown as SVGElement;
-  const dangPhong = () => document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css");
-  const nhanPhong = () => (dangPhong() ? T.thuNhoBan : T.phongTo);
-  // Đổi trạng thái phóng to bằng CSS (iPhone): cập nhật nút và nút thu nhỏ cố định
-  const datPhongCss = (bat) => {
-    banEl.classList.toggle("co-phong-to-css", bat);
-    thuNhoEl.hidden = !bat;
-    capNhatPhongTo();
-  };
-  // Ẩn nút chat khi bàn đang phóng to (cả chế độ toàn màn hình thật lẫn CSS)
-  const capNhatPhongTo = () => {
-    const dang = dangPhong();
-    document.body.classList.toggle("co-dang-phong-to", dang);
-    phongEl.setAttribute("aria-label", nhanPhong());
-    phongEl.title = nhanPhong();
-    phongMoEl.toggleAttribute("hidden", dang);
-    phongDongEl.toggleAttribute("hidden", !dang);
-  };
-  phongEl.addEventListener("click", () => {
-    if (coFullscreen) {
-      if (document.fullscreenElement === banEl) {
-        void document.exitFullscreen();
-      } else {
-        void banEl.requestFullscreen().catch(() => {});
-      }
-    } else {
-      datPhongCss(!banEl.classList.contains("co-phong-to-css"));
-    }
+  gaiPhongTo(banEl, {
+    nut: document.getElementById("co-phong-to") as HTMLButtonElement,
+    nutMo: document.getElementById("co-phong-mo") as unknown as SVGElement,
+    nutDong: document.getElementById("co-phong-dong") as unknown as SVGElement,
+    nutThuNho: document.getElementById("co-thu-nho") as HTMLButtonElement,
+    nhan: T,
   });
-  thuNhoEl.addEventListener("click", () => datPhongCss(false));
-  if (coFullscreen) {
-    document.addEventListener("fullscreenchange", capNhatPhongTo);
-  }
+
 
   // Gõ tên: bỏ ký tự đặc biệt
   tenEl.addEventListener("input", () => {

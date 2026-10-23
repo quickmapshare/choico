@@ -53,11 +53,11 @@ const T = chuCaTrang(lang);
   <p id="tr-doi" class="phu"></p>
   <!-- Hàng nút loa và phóng to nằm ngoài khung bàn, căn phải, giống chơi với máy -->
   <div id="tr-thanh-nut" class="tr-thanh-nut" hidden>
-    <button type="button" id="tr-tieng" class="tr-nut-icon" aria-label={T.amThanh} aria-pressed="false" title={T.batAm}>
+    <button type="button" id="tr-tieng" class="co-nut-icon" aria-label={T.amThanh} aria-pressed="false" title={T.batAm}>
       <svg id="tr-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       <svg id="tr-loa-tat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
-    <button type="button" id="tr-phong-to" class="tr-nut-icon" aria-label={T.phongTo} title={T.phongTo}>
+    <button type="button" id="tr-phong-to" class="co-nut-icon" aria-label={T.phongTo} title={T.phongTo}>
       <svg id="tr-phong-mo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <svg id="tr-phong-dong" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
@@ -72,7 +72,7 @@ const T = chuCaTrang(lang);
       <div id="tr-an-duoi"></div>
     </div>
   </div>
-  <button type="button" id="tr-thu-nho" class="tr-nut-icon tr-thu-nho" aria-label={T.thuNhoBan} title={T.thuNhoBan} hidden>
+  <button type="button" id="tr-thu-nho" class="co-nut-icon co-thu-nho" aria-label={T.thuNhoBan} title={T.thuNhoBan} hidden>
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <p id="tr-tiep" class="tr-khoi" hidden><a id="tr-tiep-a" href="#"></a></p>
@@ -122,37 +122,13 @@ const T = chuCaTrang(lang);
   .tr-het-gio .tr-nut { flex: 1 1 8rem; font-size: .9rem; padding: .4rem .8rem; background: var(--mat); }
   .tr-het-gio .tr-nut-chinh { background: var(--nhan); }
   .tr-hang[hidden] { display: none; }
-  .tr-nut-icon {
-    flex: none; width: 2.4rem; height: 2.4rem; min-width: 2.4rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 50%; border: 1px solid var(--vien); background: var(--mat); color: var(--chu); box-shadow: var(--bong); cursor: pointer;
-    transition: border-color .15s, color .15s, background-color .15s;
-  }
-  .tr-nut-icon:hover { border-color: var(--nhan); color: var(--nhan); }
-  .tr-nut-icon:focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; }
-  /* Thuộc tính hidden không luôn ẩn phần tử SVG trên mọi trình duyệt: mỗi nút chỉ hiện một biểu tượng */
-  .tr-nut-icon > svg[hidden] { display: none; }
-  .tr-thu-nho { position: fixed; top: .6rem; right: .6rem; z-index: 1001; }
-  .tr-thu-nho[hidden] { display: none; }
-  /* Khi phóng to bàn cờ thì ẩn nút chat (widget bên thứ ba) để không che bàn */
-  body.tr-dang-phong-to #formmailhub-widget-container,
-  body.tr-dang-phong-to iframe[title="AI Chat Assistant"] { display: none !important; }
-  /* Chế độ toàn màn hình: chỉ bàn cờ, căn giữa, cao bằng màn hình */
-  .co-ban:fullscreen { max-width: none; margin: 0; padding: 1rem; box-sizing: border-box; background: var(--nen); display: flex; align-items: center; justify-content: center; }
-  .co-ban:fullscreen svg { width: auto; height: 100%; max-width: 100%; max-height: 100vh; }
-  /* iPhone Safari không có Fullscreen API cho phần tử: phủ kín màn hình bằng CSS */
-  .co-ban.tr-phong-to-css {
-    position: fixed; inset: 0; z-index: 1000; width: 100%; max-width: none; height: 100vh; height: 100dvh;
-    margin: 0; padding: .5rem; box-sizing: border-box; background: var(--nen); border-radius: 0;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .co-ban.tr-phong-to-css svg { width: auto; height: 100%; max-width: 100%; }
 </style>
 
 <script>
   import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu, diemCongVan, quanBiAn } from "../lib/co-tuong.js";
   import { duyetNuoc, benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
-  import { taoToa, veBanCo, veKhayQuanAn, chayHieuUng, phatTiengNuoc, gaiNutTieng, THOI_GIAN } from "../lib/co-tuong-ban.js";
+  import { taoToa, veBanCo, veKhayQuanAn, chayHieuUng, phatTiengNuoc, gaiNutTieng, gaiPhongTo, oBamDuoc, THOI_GIAN } from "../lib/co-tuong-ban.js";
   import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
   import { docToken, headerXacThuc, damBaoCoTen } from "../lib/co-tuong-tai-khoan.js";
 
@@ -362,10 +338,9 @@ const T = chuCaTrang(lang);
   // Nhấp vào bàn: chọn quân của mình, rồi nhấp vào ô đích để đi
   banEl.addEventListener("click", (e) => {
     am.mo(); // mở ngữ cảnh âm thanh ngay trong lúc người dùng bấm (iPhone chỉ cho phép như vậy)
-    const o = (e.target as Element).closest(".co-o");
+    const o = oBamDuoc(e);
     if (!o || !ban || dangGui || tran?.trang_thai !== "dang_dau" || tran.den_luot !== tran.ban_cua) return;
-    const r = Number(o.getAttribute("data-r"));
-    const c = Number(o.getAttribute("data-c"));
+    const [r, c] = o;
     const benMinh = tran.ban_cua;
     const quan = ban[r][c];
 
@@ -383,39 +358,14 @@ const T = chuCaTrang(lang);
     veBan();
   });
 
-  // Phóng to: chỉ bàn cờ chiếm toàn màn hình. Trình duyệt có Fullscreen API thì dùng nó, iPhone Safari thì phủ bằng CSS.
-  const phongEl = $("tr-phong-to");
-  const thuNhoEl = $("tr-thu-nho");
-  const coFullscreen = !!banEl.requestFullscreen;
-  const phongMoEl = $("tr-phong-mo") as unknown as SVGElement;
-  const phongDongEl = $("tr-phong-dong") as unknown as SVGElement;
-  const dangPhong = () => document.fullscreenElement === banEl || banEl.classList.contains("tr-phong-to-css");
-  const nhanPhong = () => (dangPhong() ? T.thuNhoBan : T.phongTo);
-  const capNhatPhongTo = () => {
-    const dang = dangPhong();
-    document.body.classList.toggle("tr-dang-phong-to", dang);
-    phongEl.setAttribute("aria-label", nhanPhong());
-    phongEl.title = nhanPhong();
-    phongMoEl.toggleAttribute("hidden", dang);
-    phongDongEl.toggleAttribute("hidden", !dang);
-  };
-  // Đổi phóng to bằng CSS (iPhone): cập nhật nút và nút thu nhỏ cố định
-  const datPhongCss = (bat: boolean) => {
-    banEl.classList.toggle("tr-phong-to-css", bat);
-    thuNhoEl.hidden = !bat;
-    capNhatPhongTo();
-  };
-  phongEl.addEventListener("click", () => {
-    if (coFullscreen) {
-      if (document.fullscreenElement === banEl) void document.exitFullscreen();
-      else void banEl.requestFullscreen().catch(() => {});
-    } else {
-      datPhongCss(!banEl.classList.contains("tr-phong-to-css"));
-    }
+  gaiPhongTo(banEl, {
+    nut: $("tr-phong-to") as HTMLButtonElement,
+    nutMo: $("tr-phong-mo") as unknown as SVGElement,
+    nutDong: $("tr-phong-dong") as unknown as SVGElement,
+    nutThuNho: $("tr-thu-nho") as HTMLButtonElement,
+    nhan: T,
   });
-  thuNhoEl.addEventListener("click", () => datPhongCss(false));
-  if (coFullscreen) document.addEventListener("fullscreenchange", capNhatPhongTo);
-  capNhatPhongTo();
+
 
   // Đọc trạng thái trận, dựng lại bàn và hiện đúng khối việc
   async function taiTran() {

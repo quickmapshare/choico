@@ -22,3 +22,34 @@
 /* Quân không nhận nhấp chuột để nhấp xuyên xuống vùng bấm của ô, kể cả khi quân đang trượt ở lớp trên */
 .co-quan { pointer-events: none; }
 .co-ban.khoa .co-o { cursor: default; }
+
+/* Nút biểu tượng tròn, trung tính; rê chuột hoặc bật thì ngả sang màu nhấn */
+.co-nut-icon {
+  font: inherit; font-weight: 600; cursor: pointer; touch-action: manipulation;
+  transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s, transform .1s;
+  flex: none; width: 2.4rem; height: 2.4rem; min-width: 2.4rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; border: 1px solid var(--vien); background: var(--mat); color: var(--chu); box-shadow: var(--bong);
+}
+.co-nut-icon:active { transform: scale(.96); }
+.co-nut-icon:hover { border-color: var(--nhan); color: var(--nhan); }
+.co-nut-icon:focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; }
+/* Thuộc tính hidden không luôn ẩn phần tử SVG trên mọi trình duyệt, nên ghi rõ: mỗi nút chỉ hiện một biểu tượng */
+.co-nut-icon > svg[hidden] { display: none; }
+
+/* Nút thu nhỏ nằm ngoài bàn, luôn trên lớp phủ, chỉ hiện khi bàn đang phóng to bằng CSS */
+.co-thu-nho { position: fixed; top: .6rem; right: .6rem; z-index: 1001; }
+.co-thu-nho[hidden] { display: none; }
+
+/* Chế độ toàn màn hình (Fullscreen API): chỉ bàn cờ, căn giữa, cao bằng màn hình */
+.co-ban:fullscreen { max-width: none; margin: 0; padding: 1rem; box-sizing: border-box; background: var(--nen); display: flex; align-items: center; justify-content: center; }
+.co-ban:fullscreen .co-svg { width: auto; height: 100%; max-width: 100%; max-height: 100vh; }
+/* iPhone Safari không có Fullscreen API cho phần tử: phủ kín màn hình bằng CSS */
+.co-ban.co-phong-to-css {
+  position: fixed; inset: 0; z-index: 1000; width: 100%; max-width: none; height: 100vh; height: 100dvh;
+  margin: 0; padding: .5rem; box-sizing: border-box; background: var(--nen); border-radius: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.co-ban.co-phong-to-css .co-svg { width: auto; height: 100%; max-width: 100%; }
+/* Khi phóng to bàn cờ thì ẩn nút chat (widget bên thứ ba: nút và khung chat) để không che bàn */
+body.co-dang-phong-to #formmailhub-widget-container,
+body.co-dang-phong-to iframe[title="AI Chat Assistant"] { display: none !important; }
