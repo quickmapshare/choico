@@ -37,6 +37,11 @@ const T = chuCaTrang(lang);
   <p id="tr-trang-thai" class="tr-trang-thai" role="status" aria-live="polite"></p>
   <p id="tr-doi" class="phu"></p>
   <div id="tr-ban" class="tr-ban"></div>
+  <div id="tr-het-gio" class="tr-khoi" hidden>
+    <button type="button" id="tr-nut-them" class="tr-nut tr-nut-chinh">{T.trThem1Phut}</button>
+    <button type="button" id="tr-nut-thoai" class="tr-nut">{T.trThoaiMai}</button>
+    <button type="button" id="tr-nut-xu" class="tr-nut tr-nut-phu">{T.trXuThua}</button>
+  </div>
   <div id="tr-dieu-khien" class="tr-khoi" hidden>
     <button type="button" id="tr-nut-dau-hang" class="tr-nut tr-nut-phu">{T.trDauHang}</button>
   </div>
@@ -102,6 +107,7 @@ const T = chuCaTrang(lang);
   let pollId: number | undefined; // hẹn giờ đọc lại trạng thái
   let gioTimer: number | undefined; // hẹn giờ cập nhật đếm ngược
   let lechGio = 0; // giờ server trừ giờ máy, để đếm ngược đúng dù đồng hồ máy lệch
+  let giuTrangThaiDen = 0; // trước thời điểm này (ms) thì không ghi đè dòng thông báo (ví dụ báo lỗi nước đi)
   let daBaoKetThuc = false; // đã phát tiếng kết thúc cho trận này chưa (không phát khi vừa mở một trận đã xong)
 
   // Hiệu ứng nước vừa đi, giống chơi với máy: quân trượt, quân bị ăn mờ dần, vòng sáng, chiếu tướng.
@@ -130,6 +136,10 @@ const T = chuCaTrang(lang);
   const doiEl = $("tr-doi");
   const batTrangThai = (text: string) => {
     trangThai.textContent = text;
+  };
+  const baoLoi = (text: string) => {
+    batTrangThai(text);
+    giuTrangThaiDen = Date.now() + 3000;
   };
   const doiBen = (s: string) => (s === "r" ? "b" : "r");
 
@@ -352,7 +362,7 @@ const T = chuCaTrang(lang);
     // Server từ chối (sai luật, hết giờ, đối thủ đã đầu hàng...): bỏ hiệu ứng, tải trạng thái thật và báo
     hieuUng = null;
     await taiTran();
-    batTrangThai(T.trNuocSai);
+    baoLoi(T.trNuocSai);
   }
 
   // Nhấp vào bàn: chọn quân của mình, rồi nhấp vào ô đích để đi
@@ -403,12 +413,27 @@ const T = chuCaTrang(lang);
     batTrangThai("");
   }
 
-  // Dòng "Đối thủ: X · Còn N giây", cập nhật mỗi giây khi trận đang đi
+  // Dòng "Đối thủ: X · Còn N giây" và dòng trạng thái, cập nhật mỗi giây khi trận đang đi.
+  // Hết giờ thì không xử thua: bên đang chờ thấy ba lựa chọn, bên chậm thấy đang chờ đối thủ quyết định.
   function capNhatGio() {
     if (tran?.trang_thai !== "dang_dau") return;
+    const toi = tran.den_luot === tran.ban_cua;
     const ten = tran.ban_cua === "r" ? tran.ten_den : tran.ten_do;
-    const giay = Math.max(0, Math.ceil((Date.parse(tran.han_nuoc) - (Date.now() + lechGio)) / 1000));
-    doiEl.textContent = [ten ? f(T.trDoi, { ten }) : "", f(T.trGioCon, { s: giay })].filter(Boolean).join(" · ");
+    let hetGio = false;
+    let gio: string;
+    if (!tran.han_nuoc) {
+      gio = T.trKhongGioiHan;
+    } else {
+      const giay = Math.ceil((Date.parse(tran.han_nuoc) - (Date.now() + lechGio)) / 1000);
+      hetGio = giay <= 0;
+      gio = hetGio ? T.trHetGioNgan : f(T.trGioCon, { s: giay });
+    }
+    doiEl.textContent = [ten ? f(T.trDoi, { ten }) : "", gio].filter(Boolean).join(" · ");
+    $("tr-het-gio").hidden = !(hetGio && !toi);
+    if (Date.now() >= giuTrangThaiDen) {
+      const minhDo = tran.ban_cua === "r";
+      batTrangThai(hetGio ? (toi ? T.trHetGioChoQuyet : T.trHetGioBanQuyet) : `${toi ? T.trToiLuot : T.trDoiLuot} · ${minhDo ? T.trBanDo : T.trBanDen}`);
+    }
   }
 
   function hienKhoi() {
@@ -416,6 +441,7 @@ const T = chuCaTrang(lang);
     $("tr-link").hidden = true;
     $("tr-vao").hidden = true;
     $("tr-dieu-khien").hidden = true;
+    $("tr-het-gio").hidden = true;
     doiEl.textContent = "";
     clearInterval(gioTimer);
 
@@ -443,8 +469,7 @@ const T = chuCaTrang(lang);
     const minhDo = tran.ban_cua === "r";
     if (tran.trang_thai === "dang_dau") {
       $("tr-dieu-khien").hidden = false;
-      const toi = tran.den_luot === tran.ban_cua;
-      batTrangThai(`${toi ? T.trToiLuot : T.trDoiLuot} · ${minhDo ? T.trBanDo : T.trBanDen}`);
+      giuTrangThaiDen = 0;
       capNhatGio();
       gioTimer = window.setInterval(capNhatGio, 1000);
       return datPoll();
@@ -472,6 +497,10 @@ const T = chuCaTrang(lang);
     const moi: number = data.nuoc?.length ?? 0;
     if (moi === cu && data.trang_thai === trangThaiCu) {
       if (data.bay_gio) lechGio = Date.parse(data.bay_gio) - Date.now();
+      if (data.han_nuoc !== tran.han_nuoc) {
+        tran.han_nuoc = data.han_nuoc; // đối thủ vừa cho thêm giờ hoặc cho nghĩ thoải mái
+        capNhatGio();
+      }
       return;
     }
     // Đúng một nước mới của đối thủ: đi nước đó trên bàn đang có để quân trượt, có tiếng, có hiệu ứng
@@ -554,6 +583,21 @@ const T = chuCaTrang(lang);
     gioDi = [];
     hienKhoi();
   });
+
+  // Đối thủ hết giờ: chọn cho nghĩ thêm 1 phút, nghĩ thoải mái hoặc xử thua
+  async function xuHetGio(luaChon: string) {
+    const { ok, data } = await goi("/api/co-tuong-tran", {
+      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "xu_het_gio", ma, lua_chon: luaChon }),
+    });
+    if (!ok) return void taiTran(); // trạng thái đã đổi (đối thủ vừa đi): tải lại cho đúng
+    nhanTran(data);
+    chon = null;
+    gioDi = [];
+    hienKhoi();
+  }
+  $("tr-nut-them").addEventListener("click", () => void xuHetGio("them_1_phut"));
+  $("tr-nut-thoai").addEventListener("click", () => void xuHetGio("thoai_mai"));
+  $("tr-nut-xu").addEventListener("click", () => void xuHetGio("xu_thua"));
 
   // Nút đăng nhập ngay trong thông báo cần đăng nhập
   $("tr-can-dang-nhap").addEventListener("click", () => void batDauDangNhap());

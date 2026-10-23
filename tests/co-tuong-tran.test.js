@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc } from "../src/lib/co-tuong-tran.js";
+import { duyetNuoc, kiemHetGio, benCuaToi, ketQuaChoBen, benDenLuot, GIAY_MOI_NUOC, maKhepKinConHieuLuc, xuLyHetGio } from "../src/lib/co-tuong-tran.js";
 import { khoiTao, nuocHopLe, kyHieu } from "../src/lib/co-tuong.js";
 
 // Một nước hợp lệ đầu tiên của đỏ, rồi của đen (lấy từ luật, không viết tay)
@@ -91,5 +91,34 @@ describe("maKhepKinConHieuLuc", () => {
   });
   it("ván đấu thượng đài không có mã khép kín", () => {
     expect(maKhepKinConHieuLuc({ ...ma, loai: "dai" }, han - 1)).toBe(false);
+  });
+});
+
+describe("xuLyHetGio", () => {
+  const han = Date.parse("2026-10-23T12:00:00Z");
+  // Đỏ đã đi một nước, đến lượt đen và đen hết giờ; đỏ là bên đang chờ
+  const tran = { trang_thai: "dang_dau", nuoc: ["a0a1"], han_nuoc: new Date(han).toISOString() };
+  const sau = han + 5000;
+  it("chưa hết giờ thì chưa được xử", () => {
+    expect(xuLyHetGio(tran, "r", "xu_thua", han - 1)).toEqual({ loi: "chua_het_gio" });
+  });
+  it("người đang chậm không được tự quyết", () => {
+    expect(xuLyHetGio(tran, "b", "them_1_phut", sau)).toEqual({ loi: "khong_phai_ben_cho" });
+  });
+  it("cho nghĩ thêm 1 phút: hạn mới là 60 giây từ bây giờ", () => {
+    const kq = xuLyHetGio(tran, "r", "them_1_phut", sau);
+    expect(Date.parse(kq.cap_nhat.han_nuoc)).toBe(sau + 60_000);
+  });
+  it("cho nghĩ thoải mái: không còn hạn", () => {
+    expect(xuLyHetGio(tran, "r", "thoai_mai", sau)).toEqual({ cap_nhat: { han_nuoc: "" } });
+  });
+  it("xử thua: bên đang chờ thắng", () => {
+    expect(xuLyHetGio(tran, "r", "xu_thua", sau)).toEqual({ ket_thuc: { ket_qua: "do", ly_do: "het_gio" } });
+  });
+  it("không có hạn (thoải mái) thì không bao giờ hết giờ", () => {
+    expect(xuLyHetGio({ ...tran, han_nuoc: "" }, "r", "xu_thua", sau)).toEqual({ loi: "chua_het_gio" });
+  });
+  it("lựa chọn lạ bị từ chối", () => {
+    expect(xuLyHetGio(tran, "r", "gi_do", sau)).toEqual({ loi: "lua_chon_khong_hop_le" });
   });
 });

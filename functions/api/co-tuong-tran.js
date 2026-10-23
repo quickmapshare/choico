@@ -2,13 +2,14 @@
 //  - GET ?ma=...: người trong trận thấy đủ thông tin. Người ngoài chỉ thấy loại trận và tên người tạo (để biết link có hợp lệ không).
 //  - POST {hanh_dong: "nuoc", ky}: đi một nước. Server dựng lại bàn từ danh sách nước và kiểm tra luật.
 //  - POST {hanh_dong: "dau_hang"}: bỏ cuộc.
-// Hết 60 giây cho một nước thì bên đến lượt thua, server tự xử khi có yêu cầu đến.
+// Hết 60 giây cho một nước thì KHÔNG xử thua ngay: bên đang chờ chọn cho nghĩ thêm 1 phút, nghĩ thoải mái (không giới hạn
+// nước này) hoặc xử thua. Trong lúc chưa ai quyết định, bên chậm vẫn đi nước được.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
 import { layNguoi, headerAdmin, docTran, capNhatTran, sauPhut, MAU_MA } from "../_lib/tran.js";
 import { timNuoc } from "../../src/lib/co-tuong.js";
 import {
-  duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE,
+  duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio,
 } from "../../src/lib/co-tuong-tran.js";
 
 // Kết thúc trận (hết giờ, đầu hàng, hết nước). Khép kín không tính điểm.
@@ -38,6 +39,7 @@ function ban(tran, benCua) {
     ly_do: tran.ly_do || null,
     ban_cua: benCua, // "r" hoặc "b"
     den_luot: tran.trang_thai === "dang_dau" ? benDenLuot((tran.nuoc || []).length) : null,
+    het_gio: Boolean(kiemHetGio(tran)), // đã quá hạn nước này, đang chờ bên kia quyết định
   };
 }
 
@@ -57,14 +59,6 @@ export async function onRequestGet({ request, env }) {
   if (loi) return tra(502, { loi });
   if (!tran) return tra(404, { loi: "khong_tim_thay" });
 
-  // Hết giờ thì ghi nhận ngay để mọi người thấy đúng kết quả
-  if (tran.trang_thai === "dang_dau") {
-    const het = kiemHetGio(tran);
-    if (het) {
-      await ketThuc(pb, H, tran, { ket_qua: het.ket_qua, ly_do: het.ly_do, nuoc: null });
-      return tra(200, ban({ ...tran, trang_thai: "ket_thuc", ket_qua: het.ket_qua, ly_do: het.ly_do }, nguoi && benCuaToi(tran, nguoi.id)));
-    }
-  }
   return tra(200, ban(tran, nguoi && benCuaToi(tran, nguoi.id)));
 }
 
@@ -95,11 +89,17 @@ export async function onRequestPost({ request, env }) {
   if (!benCua) return tra(403, { loi: "khong_trong_tran" });
   if (tran.trang_thai !== "dang_dau") return tra(409, { loi: "tran_khong_dang_dau" });
 
-  // Hết giờ rồi thì không nhận nước nữa
-  const het = kiemHetGio(tran);
-  if (het) {
-    await ketThuc(pb, H, tran, { ket_qua: het.ket_qua, ly_do: het.ly_do, nuoc: null });
-    return tra(409, { loi: "het_gio", ket_qua: het.ket_qua });
+  // Bên đang chờ quyết định khi đối thủ hết giờ
+  if (body.hanh_dong === "xu_het_gio") {
+    const kq = xuLyHetGio(tran, benCua, body.lua_chon);
+    if (kq.loi) return tra(409, { loi: kq.loi });
+    if (kq.ket_thuc) {
+      await ketThuc(pb, H, tran, { ket_qua: kq.ket_thuc.ket_qua, ly_do: kq.ket_thuc.ly_do, nuoc: null });
+      return tra(200, ban({ ...tran, trang_thai: "ket_thuc", ket_qua: kq.ket_thuc.ket_qua, ly_do: kq.ket_thuc.ly_do, han_nuoc: "" }, benCua));
+    }
+    const r = await capNhatTran(pb, H, tran.id, kq.cap_nhat);
+    if (!r.ok) return tra(502, { loi: "khong_luu_duoc" });
+    return tra(200, ban({ ...tran, ...kq.cap_nhat }, benCua));
   }
 
   if (body.hanh_dong === "dau_hang") {

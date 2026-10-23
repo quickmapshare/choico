@@ -61,3 +61,18 @@ export function maKhepKinConHieuLuc(tran, now = Date.now()) {
 
 // Ký hiệu nước đi hợp lệ về hình thức: cột a–i, hàng 0–9, ví dụ "a3a4"
 export const MAU_KY_HOP_LE = /^[a-i][0-9][a-i][0-9]$/;
+
+// Hết giờ không xử thua ngay: bên đang chờ (không phải bên đến lượt) chọn một trong ba cách.
+export const LUA_CHON_HET_GIO = ["them_1_phut", "thoai_mai", "xu_thua"];
+
+// benCua: bên của người chọn. Trả về { loi } hoặc { cap_nhat } (ghi vào trận, trận vẫn tiếp tục)
+// hoặc { ket_thuc: { ket_qua, ly_do } } (xử thua). "thoai_mai" đặt han_nuoc rỗng: nước này không giới hạn thời gian.
+export function xuLyHetGio(tran, benCua, luaChon, now = Date.now()) {
+  if (!LUA_CHON_HET_GIO.includes(luaChon)) return { loi: "lua_chon_khong_hop_le" };
+  const het = kiemHetGio(tran, now);
+  if (!het) return { loi: "chua_het_gio" };
+  if (benCua === benDenLuot((tran.nuoc || []).length)) return { loi: "khong_phai_ben_cho" }; // người chậm không tự quyết
+  if (luaChon === "them_1_phut") return { cap_nhat: { han_nuoc: new Date(now + GIAY_MOI_NUOC * 1000).toISOString() } };
+  if (luaChon === "thoai_mai") return { cap_nhat: { han_nuoc: "" } };
+  return { ket_thuc: { ket_qua: het.ket_qua, ly_do: "het_gio" } };
+}
