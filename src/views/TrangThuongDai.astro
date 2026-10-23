@@ -54,14 +54,26 @@ const T = chuCaTrang(lang);
     font: inherit; font-weight: 600; min-height: 2.4rem; padding: .4rem 1.1rem; border-radius: 999px; cursor: pointer;
     border: 1px solid var(--nhan); background: transparent; color: var(--nhan); text-decoration: none; display: inline-flex; align-items: center;
   }
+  .td-nut { transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s, transform .1s, opacity .15s; touch-action: manipulation; }
+  .td-nut:hover:not(:disabled) { background: var(--nhan-nhe); box-shadow: 0 2px 8px rgba(0, 0, 0, .18); }
+  .td-nut:active:not(:disabled) { transform: scale(.96); }
+  .td-nut:focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; }
+  .td-nut[aria-busy="true"] { opacity: .6; cursor: progress; }
   .td-nut-chinh { background: var(--nhan); color: #fff; }
+  .td-nut-chinh:hover:not(:disabled) { background: var(--nhan); filter: brightness(1.1); }
   .td-nut-phu { color: var(--phu); border-color: var(--vien); }
+  .td-nut-phu:hover:not(:disabled) { border-color: var(--nhan); color: var(--nhan); }
   .td-nut:disabled { opacity: .45; cursor: default; }
   .td-ds { list-style: none; padding: 0; margin: .5rem 0; max-width: 32rem; }
   .td-ds li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .5rem 0; border-bottom: 1px dotted var(--vien); }
   .td-ten { font-weight: 600; }
   .td-nhan { color: var(--phu); font-size: .85rem; margin-left: .5rem; }
-  .td-thong-bao { min-height: 1.5em; font-weight: 600; }
+  .td-thong-bao { min-height: 1.5em; font-weight: 600; border-radius: .4rem; }
+  /* Thông báo mới nháy nền một lần để người chơi nhận ra kết quả của nút vừa bấm */
+  @media (prefers-reduced-motion: no-preference) {
+    .td-thong-bao.moi { animation: td-nhay 1.2s ease-out; }
+  }
+  @keyframes td-nhay { from { background: var(--nhan-nhe); box-shadow: 0 0 0 6px var(--nhan-nhe); } to { background: transparent; box-shadow: 0 0 0 6px transparent; } }
 </style>
 
 <script>
@@ -87,7 +99,32 @@ const T = chuCaTrang(lang);
     const mau: Record<string, string> = {
       khac_muc: T.tdKhacMuc, da_co_nguoi_vao: T.tdDaCoNguoi, dang_co_tran: T.tdBanDangCoTran,
     };
-    $("td-thong-bao").textContent = (loi && mau[loi]) || T.tdLoi;
+    const el = $("td-thong-bao");
+    el.textContent = (loi && mau[loi]) || T.tdLoi;
+    el.classList.remove("moi");
+    void el.offsetWidth; // khởi động lại hiệu ứng nháy
+    el.classList.add("moi");
+  }
+
+  // Chạy một việc khi bấm nút: nút mờ đi, đổi chữ và khóa trong lúc chờ. viec trả về true nếu trang sắp chuyển đi (giữ nguyên trạng thái chờ).
+  async function chay(nut: HTMLButtonElement, nhanDang: string, viec: () => Promise<boolean | void>) {
+    if (nut.getAttribute("aria-busy") === "true") return;
+    const nhanCu = nut.textContent;
+    nut.setAttribute("aria-busy", "true");
+    nut.disabled = true;
+    nut.textContent = nhanDang;
+    dangLam = true; // tạm dừng đọc lại danh sách để không vẽ đè lên nút đang chờ
+    let giu = false;
+    try {
+      giu = Boolean(await viec());
+    } finally {
+      dangLam = false;
+      if (!giu) {
+        nut.removeAttribute("aria-busy");
+        nut.disabled = false;
+        nut.textContent = nhanCu;
+      }
+    }
   }
 
   function veDanhSach(ds: any[]) {
@@ -108,7 +145,7 @@ const T = chuCaTrang(lang);
       nut.type = "button";
       nut.className = "td-nut td-nut-chinh";
       nut.textContent = T.tdThachDau;
-      nut.addEventListener("click", () => void thachDau(it.ma));
+      nut.addEventListener("click", () => void chay(nut, T.trDangXuLy, () => thachDau(it.ma)));
       li.append(trai, nut);
       ul.appendChild(li);
     }
@@ -141,37 +178,42 @@ const T = chuCaTrang(lang);
     veDanhSach(coTran ? [] : data.danh_sach || []);
   }
 
-  async function lenDai(cheDo: string) {
-    dangLam = true;
+  // Các hàm trả về true khi trang sắp chuyển sang trận (giữ nút ở trạng thái chờ cho đến khi đổi trang)
+  async function lenDai(cheDo: string): Promise<boolean> {
     const { ok, data } = await goi("/api/co-tuong-dai", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "len_dai", che_do: cheDo }),
     });
-    dangLam = false;
-    if (ok) location.href = linkTran(data.ma);
-    else if (data.loi === "dang_co_tran" && data.ma) location.href = linkTran(data.ma);
-    else baoLoi(data.loi);
+    if (ok || (data.loi === "dang_co_tran" && data.ma)) {
+      location.href = linkTran(data.ma);
+      return true;
+    }
+    baoLoi(data.loi);
+    return false;
   }
 
-  async function thachDau(ma: string) {
-    dangLam = true;
+  async function thachDau(ma: string): Promise<boolean> {
     const { ok, data } = await goi("/api/co-tuong-dai", {
       method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "vao_dai", ma }),
     });
-    dangLam = false;
-    if (ok) location.href = linkTran(data.ma);
-    else {
-      baoLoi(data.loi);
-      void tai(); // danh sách đã đổi (người đó vừa có đối thủ khác hoặc rời đài)
+    if (ok) {
+      location.href = linkTran(data.ma);
+      return true;
     }
+    baoLoi(data.loi);
+    void tai(); // danh sách đã đổi (người đó vừa có đối thủ khác hoặc rời đài)
+    return false;
   }
 
-  $("td-cung-muc").addEventListener("click", () => void lenDai("cung"));
-  $("td-mo-rong").addEventListener("click", () => void lenDai("moi"));
-  $("td-roi-dai").addEventListener("click", async () => {
-    const ma = $("td-roi-dai").dataset.ma || "";
+  const nutCung = $("td-cung-muc") as HTMLButtonElement;
+  const nutMoRong = $("td-mo-rong") as HTMLButtonElement;
+  const nutRoi = $("td-roi-dai") as HTMLButtonElement;
+  nutCung.addEventListener("click", () => void chay(nutCung, T.trDangXuLy, () => lenDai("cung")));
+  nutMoRong.addEventListener("click", () => void chay(nutMoRong, T.trDangXuLy, () => lenDai("moi")));
+  nutRoi.addEventListener("click", () => void chay(nutRoi, T.trDangXuLy, async () => {
+    const ma = nutRoi.dataset.ma || "";
     await goi("/api/co-tuong-dai", { method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "roi_dai", ma }) });
-    void tai();
-  });
+    await tai();
+  }));
   $("td-nut-dang-nhap").addEventListener("click", (e) => {
     e.preventDefault();
     void batDauDangNhap();
