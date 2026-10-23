@@ -65,7 +65,7 @@ export async function docTran(pb, H, ma) {
 // Chuông báo (collection co_tuong_tin_hieu): trình duyệt nghe realtime, thay cho việc hỏi liên tục. Chuông của trận mang kèm
 // tóm tắt "tom_tat" (số nước, nước cuối, hạn nước, trạng thái): bên kia đi quân ngay khi chuông rung, không phải gọi server đọc
 // lại. Nước đi không phải dữ liệu riêng tư, và mã chuông chỉ người trong trận biết.
-const BANG_TIN_HIEU = "co_tuong_tin_hieu";
+export const BANG_TIN_HIEU = "co_tuong_tin_hieu";
 export const TIN_HIEU_SANH = "sanhthuongdai01"; // chuông chung của sảnh thượng đài
 
 async function taoTinHieu(pb, H) {

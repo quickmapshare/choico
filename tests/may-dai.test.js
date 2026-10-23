@@ -15,7 +15,14 @@ function taoPocketBase() {
       trans[moi.id] = moi;
       return ok(moi);
     }
-    return ok({ items: Object.values(trans) });
+    if (bang === "co_tuong_tran" && opt.method === "DELETE") {
+      delete trans[String(url).match(/records\/([a-z0-9]+)/)[1]];
+      return ok({});
+    }
+    // PocketBase chỉ trả các trường được yêu cầu qua "fields": mock cũng phải vậy thì mới bắt được lỗi thiếu trường
+    const fields = new URL(url).searchParams.get("fields");
+    const cat = (t) => (fields ? Object.fromEntries(fields.split(",").map((f) => [f, t[f]])) : t);
+    return ok({ items: Object.values(trans).map(cat) });
   };
   return trans;
 }
@@ -35,11 +42,22 @@ describe("máy đứng sẵn trên đài", () => {
     expect(ds.every((t) => t.do === `may_${t.cap_do}` && t.che_do === "cung" && t.trang_thai === "cho")).toBe(true);
   });
 
-  it("mức nào còn máy thì không tạo thêm", async () => {
+  it("mức nào còn máy thì không tạo thêm, dù tải sảnh nhiều lần", async () => {
+    const trans = taoPocketBase();
+    for (let i = 0; i < 4; i++) await bamDanhMay("http://pb", {});
+    expect(Object.keys(trans).length).toBe(5);
+  });
+
+  it("dọn các máy trùng mức đã sinh ra từ lỗi cũ, giữ một máy mỗi mức", async () => {
     const trans = taoPocketBase();
     await bamDanhMay("http://pb", {});
+    // Thêm máy trùng ở mức 2 và 3
+    for (const [id, muc] of [["d1", 2], ["d2", 2], ["d3", 3]]) {
+      trans[id] = { id, loai: "dai", trang_thai: "cho", do: `may_${muc}`, cap_do: muc, tin_hieu: "" };
+    }
+    expect(Object.keys(trans).length).toBe(8);
     await bamDanhMay("http://pb", {});
-    expect(Object.keys(trans).length).toBe(5);
+    expect(Object.values(trans).map((t) => t.cap_do).sort()).toEqual([1, 2, 3, 4, 5]);
   });
 });
 
