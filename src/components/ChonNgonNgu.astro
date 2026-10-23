@@ -1,36 +1,74 @@
 ---
-// Bộ chọn ngôn ngữ trên thanh đầu. Chọn xong chuyển sang cùng trang ở ngôn ngữ đó và nhớ lựa chọn.
-import { NGON_NGU, t, duongDan } from "../i18n/strings.js";
+// Bộ chọn ngôn ngữ trên thanh đầu: nút nhỏ (biểu tượng địa cầu và mã ngôn ngữ hiện tại), bấm vào mới xổ menu đủ các ngôn ngữ.
+// Chọn xong chuyển sang cùng trang ở ngôn ngữ đó và nhớ lựa chọn.
+import { NGON_NGU, t, thongTin, duongDan } from "../i18n/strings.js";
 const { lang = "vi", duongGoc = "/" } = Astro.props;
+// Nhãn ngắn trên nút, mỗi ngôn ngữ một ký hiệu gọn
+const NHAN_NGAN = { vi: "VI", en: "EN", "zh-tw": "繁", ko: "한", ja: "日" };
 ---
-<label class="chon-ngon-ngu">
-  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.6 2.7 3.9 5.7 3.9 9S14.6 18.3 12 21c-2.6-2.7-3.9-5.7-3.9-9S9.4 5.7 12 3z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-  <select id="chon-ngon-ngu" aria-label={t(lang, "ngonNguAria")}>
-    {NGON_NGU.map((n) => <option value={duongDan(n.ma, duongGoc)} data-ma={n.ma} selected={n.ma === lang}>{n.ten}</option>)}
-  </select>
-</label>
+<div class="chon-ngon-ngu">
+  <button type="button" id="chon-ngon-ngu-nut" class="cnn-nut" aria-haspopup="true" aria-expanded="false" aria-controls="chon-ngon-ngu-menu" aria-label={t(lang, "ngonNguAria")} title={t(lang, "ngonNguAria")}>
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.6 2.7 3.9 5.7 3.9 9S14.6 18.3 12 21c-2.6-2.7-3.9-5.7-3.9-9S9.4 5.7 12 3z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+    <span>{NHAN_NGAN[thongTin(lang).ma]}</span>
+  </button>
+  <ul id="chon-ngon-ngu-menu" class="cnn-menu" hidden>
+    {NGON_NGU.map((n) => (
+      <li>
+        <a href={duongDan(n.ma, duongGoc)} data-ma={n.ma} lang={n.html} hreflang={n.html} aria-current={n.ma === lang ? "true" : undefined}>{n.ten}</a>
+      </li>
+    ))}
+  </ul>
+</div>
 
 <style is:global>
-  .chon-ngon-ngu { position: relative; display: inline-flex; align-items: center; color: var(--phu); }
-  .chon-ngon-ngu svg { position: absolute; left: .55rem; pointer-events: none; }
-  .chon-ngon-ngu select {
-    appearance: none; -webkit-appearance: none; font: inherit; font-size: .88rem; font-weight: 600; color: var(--phu);
-    height: 2.1rem; padding: 0 .8rem 0 1.9rem; border: 1px solid var(--vien); border-radius: 999px; background: var(--mat); cursor: pointer;
+  .chon-ngon-ngu { position: relative; display: inline-flex; }
+  .cnn-nut {
+    display: inline-flex; align-items: center; gap: .3rem; height: 2.1rem; padding: 0 .6rem; font: inherit; font-size: .8rem; font-weight: 700;
+    color: var(--phu); border: 1px solid var(--vien); border-radius: 999px; background: var(--mat); cursor: pointer;
     transition: border-color .15s, color .15s;
   }
-  .chon-ngon-ngu select:hover { border-color: var(--nhan); color: var(--nhan); }
+  .cnn-nut:hover, .cnn-nut[aria-expanded="true"] { border-color: var(--nhan); color: var(--nhan); }
+  .cnn-menu {
+    position: absolute; right: 0; top: calc(100% + .4rem); z-index: 20; min-width: 9rem; margin: 0; padding: .3rem; list-style: none;
+    background: var(--mat); border: 1px solid var(--vien); border-radius: .7rem; box-shadow: var(--bong);
+  }
+  .cnn-menu[hidden] { display: none; }
+  .cnn-menu li { margin: 0; }
+  .cnn-menu a { display: block; padding: .5rem .8rem; border-radius: .5rem; color: var(--chu); font-size: .93rem; font-weight: 500; white-space: nowrap; }
+  .cnn-menu a:hover { background: var(--nhan-nhe); color: var(--nhan); text-decoration: none; }
+  .cnn-menu a[aria-current="true"] { color: var(--nhan); font-weight: 700; }
 </style>
 
 <script>
   // Nhớ lựa chọn rõ ràng của người dùng rồi mới chuyển trang. Lựa chọn này thắng ngôn ngữ trình duyệt ở lần sau.
-  const chon = document.getElementById("chon-ngon-ngu") as HTMLSelectElement | null;
-  chon?.addEventListener("change", () => {
-    const ma = chon.selectedOptions[0]?.dataset.ma;
+  const nut = document.getElementById("chon-ngon-ngu-nut") as HTMLButtonElement | null;
+  const menu = document.getElementById("chon-ngon-ngu-menu") as HTMLElement | null;
+
+  function dat(mo: boolean) {
+    if (!nut || !menu) return;
+    menu.hidden = !mo;
+    nut.setAttribute("aria-expanded", String(mo));
+  }
+  nut?.addEventListener("click", () => dat(menu?.hidden ?? false));
+  // Bấm ra ngoài hoặc nhấn Esc thì đóng menu
+  document.addEventListener("click", (e) => {
+    if (menu && !menu.hidden && !(e.target as Element).closest(".chon-ngon-ngu")) dat(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && menu && !menu.hidden) {
+      dat(false);
+      nut?.focus();
+    }
+  });
+  menu?.addEventListener("click", (e) => {
+    const a = (e.target as Element).closest("a");
+    if (!a) return;
+    e.preventDefault();
     try {
-      if (ma) localStorage.setItem("choico-lang", ma);
+      if (a.dataset.ma) localStorage.setItem("choico-lang", a.dataset.ma);
     } catch {
       // không nhớ được thì vẫn chuyển trang
     }
-    location.href = chon.value + location.search + location.hash;
+    location.href = a.getAttribute("href") + location.search + location.hash;
   });
 </script>

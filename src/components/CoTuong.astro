@@ -18,11 +18,6 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </span>
-    <button type="button" id="co-dang-nhap" class="co-nut-google" hidden={nhung} data-nhung={nhung ? "1" : undefined}>
-      <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-      <span>{T.dangNhapNut}</span>
-    </button>
-    <button type="button" id="co-dang-xuat" class="co-nut-chu co-nut-phu" hidden>{T.dangXuat}</button>
     <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
   </div>
   <div class="co-thanh-nut">
@@ -96,20 +91,6 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   /* Nút Đăng xuất: nút viền mảnh trung tính, không tranh với nút chính */
   .co-nut-chu.co-nut-phu { background: transparent; border: 1px solid var(--vien); color: var(--phu); font-weight: 500; box-shadow: none; padding: .35rem .85rem; font-size: .9rem; }
   .co-nut-chu.co-nut-phu:hover { border-color: var(--nhan); color: var(--nhan); background: var(--nhan-nhe); }
-  /* Nút đăng nhập theo kiểu nút Google: nền trắng (tối ở giao diện tối), viền mảnh, chữ G bốn màu */
-  .co-nut-google {
-    display: inline-flex; align-items: center; gap: .6rem; min-height: 2.4rem; padding: .4rem 1.1rem .4rem .85rem; font: inherit; font-weight: 500;
-    border-radius: 999px; border: 1px solid #dadce0; transition: background-color .15s, box-shadow .15s; background: #fff; color: #3c4043; cursor: pointer;
-  }
-  .co-nut-google:hover { background: #f8f9fa; border-color: #d2e3fc; box-shadow: 0 1px 2px rgba(60, 64, 67, .2); }
-  .co-nut-google:disabled { opacity: .6; cursor: default; }
-  .co-nut-google[hidden] { display: none; }
-  :root[data-theme="dark"] .co-nut-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
-  :root[data-theme="dark"] .co-nut-google:hover { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .co-nut-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
-    :root:not([data-theme="light"]) .co-nut-google:hover { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
-  }
   .co-lien-ket { margin: .8rem 0 0; }
   .co-dieu-khien { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1rem 0 .6rem; }
   .co-muc-hien-tai { font-weight: 600; }
@@ -386,7 +367,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     const a = document.createElement("a");
     a.textContent = chuLienKet;
     a.href = "#";
-    if (document.getElementById("co-dang-nhap")?.hasAttribute("data-nhung")) {
+    if (document.body.classList.contains("nhung")) {
       a.href = `https://choico.pages.dev${document.documentElement.dataset.tienTo || ""}/co-tuong/`;
       a.target = "_blank";
       a.rel = "noopener";
@@ -1183,30 +1164,25 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     }
   });
 
-  // Đăng nhập Google: hiện ô tên và nút Đăng xuất khi đã có hồ sơ, ngược lại hiện nút Đăng nhập
-  const dangNhapEl = document.getElementById("co-dang-nhap") as HTMLButtonElement;
-  const dangXuatEl = document.getElementById("co-dang-xuat") as HTMLButtonElement;
+  // Đăng nhập Google: nút Đăng nhập / Đăng xuất nằm ở thanh đầu trang (TaiKhoan.astro). Ở đây chỉ hiện ô tên khi đã có hồ sơ.
   const tenOEl = document.querySelector(".co-ten-o") as HTMLElement;
-  const laBanNhung = dangNhapEl.hasAttribute("hidden"); // bản nhúng không có nút đăng nhập, dùng link sang ChoiCo
+  const laBanNhung = document.body.classList.contains("nhung"); // bản nhúng không có thanh đầu, dùng link sang ChoiCo
   function datTaiKhoan(tenMoi: string) {
     ten = tenMoi;
     tenEl.value = tenMoi;
     tenOEl.hidden = laBanNhung || !tenMoi;
-    dangXuatEl.hidden = laBanNhung || !tenMoi;
-    dangNhapEl.hidden = laBanNhung || !!tenMoi;
+    document.dispatchEvent(new Event("choico:taikhoan")); // thanh đầu cập nhật nút đăng nhập / đăng xuất
   }
   async function bamDangNhap() {
-    dangNhapEl.disabled = true;
     try {
       await batDauDangNhap();
     } catch {
       hienTrangThai(T.loiDangNhap);
-      dangNhapEl.disabled = false;
     }
   }
-  dangNhapEl.addEventListener("click", () => void bamDangNhap());
-  dangXuatEl.addEventListener("click", () => {
-    xoaToken();
+  // Bấm Đăng xuất ở thanh đầu: xử lý tại chỗ, không tải lại trang để ván đang chơi không bị gián đoạn
+  document.addEventListener("choico:dang-xuat", (e) => {
+    e.preventDefault();
     datTaiKhoan("");
     thongBaoDiem("");
     void taiBangDiem();
