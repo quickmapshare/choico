@@ -1,0 +1,944 @@
+---
+// Bàn cờ tướng và các nút. nhung = true: bản gọn để nhúng vào web khác (không tiêu đề, không ô tên, không bảng điểm).
+const { nhung = false } = Astro.props;
+---
+  {!nhung && <h1>Cờ tướng với máy</h1>}
+  {!nhung && <p class="phu">Bạn cầm quân đỏ và đi trước. Bắt đầu ở mức 1/5: thắng thì lên một mức, hòa giữ nguyên, thua thì xuống một mức. Ván hòa khi đi quá 120 nước.</p>}
+
+  <div class="co-dieu-khien">
+    <span class="co-ten-o" hidden={nhung}>
+      <label class="co-ten">Tên của bạn
+        <input id="co-ten" type="text" maxlength="50" autocomplete="nickname" placeholder="Tối đa 50 ký tự" />
+      </label>
+      <button type="button" id="co-doi-ten" class="co-doi-ten" aria-label="Lưu tên mới" title="Lưu tên mới">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </span>
+    <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
+  </div>
+  <div class="co-thanh-nut">
+    <button type="button" id="co-moi" class="co-nut-chu">Ván mới</button>
+    <button type="button" id="co-hoan" class="co-nut-chu">Hoãn nước (còn 3)</button>
+    <div class="co-nut-goc">
+      <button type="button" id="co-tieng" class="co-nut-icon" aria-label="Âm thanh" aria-pressed="false" title="Bật âm thanh">
+        <svg id="co-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg id="co-loa-tat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button type="button" id="co-phong-to" class="co-nut-icon" aria-label="Phóng to bàn cờ" title="Phóng to bàn cờ">
+        <svg id="co-phong-mo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg id="co-phong-dong" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <p id="co-trang-thai" class="co-trang-thai" role="status" aria-live="polite"></p>
+  <p id="co-ghi-diem" class="phu" aria-live="polite"></p>
+  <div class="co-khung">
+    <!-- Phía trên bàn là quân đen bị ăn, phía dưới bàn là quân đỏ bị ăn (đúng phía của mỗi bên) -->
+    <div class="co-an-nua" aria-label="Quân đen bị ăn">
+      <h3>Quân đen bị ăn</h3>
+      <div id="co-an-den"></div>
+    </div>
+    <div id="co-ban" class="co-ban" aria-label="Bàn cờ tướng"></div>
+    <div class="co-an-nua" aria-label="Quân đỏ bị ăn">
+      <h3>Quân đỏ bị ăn</h3>
+      <div id="co-an-do"></div>
+    </div>
+  </div>
+  <button type="button" id="co-thu-nho" class="co-thu-nho" hidden>Thu nhỏ</button>
+
+  <section class="co-bang-diem" aria-labelledby="co-bang-diem-tieu-de" hidden={nhung}>
+    <h2 id="co-bang-diem-tieu-de">Bảng điểm</h2>
+    <p class="phu">Thắng +3 điểm, hòa +1 điểm, thua -1 điểm. Mỗi nước hoãn trừ 0,5 điểm, tối đa 3 nước hoãn mỗi ván. Ván được tính khi kết thúc.</p>
+    <p id="co-vi-tri" class="co-vi-tri"></p>
+    <ol id="co-top10" class="co-top10"></ol>
+  </section>
+  {nhung && (
+    <p class="phu co-lien-ket">
+      <a href="https://choico.pages.dev/co-tuong/" target="_blank" rel="noopener">Lưu tên và xem bảng xếp hạng trên ChoiCo →</a>
+    </p>
+  )}
+
+<!-- is:global vì bàn cờ được JavaScript vẽ, CSS có phạm vi sẽ không áp dụng cho các phần tử đó -->
+<style is:global>
+  .co-ten-o[hidden], .co-bang-diem[hidden] { display: none; }
+  .co-lien-ket { margin: .8rem 0 0; }
+  .co-dieu-khien { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1rem 0 .6rem; }
+  .co-muc-hien-tai { font-weight: 600; }
+  /* Thanh nút: nút chữ bên trái, nút biểu tượng gom bên phải */
+  .co-thanh-nut { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 1rem; }
+  .co-nut-chu, .co-nut-icon {
+    font: inherit; border-radius: .3rem; border: 1px solid var(--nhan); background: var(--nhan); color: var(--nen);
+    font-weight: 600; cursor: pointer;
+  }
+  .co-nut-chu { padding: .4rem .8rem; }
+  .co-nut-chu:disabled { opacity: .5; cursor: default; }
+  .co-nut-goc { margin-left: auto; display: inline-flex; gap: .4rem; }
+  .co-nut-icon { width: 2.3rem; height: 2.3rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  /* Nút loa: đang bật thì tô đậm, đang tắt thì chỉ có viền, để nhìn ra trạng thái dù biểu tượng là hành động */
+  #co-tieng { background: var(--nen); color: var(--nhan); }
+  #co-tieng.co-dang-bat { background: var(--nhan); color: var(--nen); }
+  /* Thuộc tính hidden không luôn ẩn phần tử SVG trên mọi trình duyệt, nên ghi rõ: mỗi nút chỉ hiện một biểu tượng */
+  .co-nut-icon > svg[hidden] { display: none; }
+  .co-ten-o { display: inline-flex; align-items: center; gap: .3rem; }
+  .co-ten input { font: inherit; padding: .35rem .5rem; border: 1px solid var(--vien); border-radius: .3rem; background: var(--nen); color: var(--chu); width: 12rem; }
+  /* Nút dấu check lưu tên: chỉ có biểu tượng, nhỏ nằm ngay cuối ô nhập */
+  .co-doi-ten { display: inline-flex; align-items: center; justify-content: center; width: 1.9rem; height: 1.9rem; padding: 0; border-radius: .3rem; border: 1px solid var(--nhan); background: var(--nhan); color: var(--nen); cursor: pointer; }
+  .co-doi-ten:disabled { opacity: .5; cursor: default; }
+  .co-trang-thai { min-height: 1.5em; font-weight: 600; }
+  .co-ban { width: 100%; max-width: 460px; margin: .5rem 0 1.5rem; }
+  .co-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; }
+  .co-khung .co-ban { max-width: none; margin: .4rem 0; }
+  .co-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .4rem .6rem; background: var(--mat); min-height: 3.2rem; }
+  .co-an-nua h3 { font-size: .85rem; margin: 0 0 .3rem; color: var(--phu); font-weight: 600; }
+  .co-an-nua > div { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .co-chip {
+    width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 2px solid currentColor; background: #fbf6e6;
+    font-size: 1.2rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+  }
+  .co-chip-r { color: #b3261e; }
+  .co-chip-b { color: #1f1f1f; }
+  .co-chip-moi { background: #fff3c4; box-shadow: 0 0 0 3px #e0a100; }
+  /* Chế độ toàn màn hình: chỉ bàn cờ, căn giữa, cao bằng màn hình */
+  .co-ban:fullscreen { max-width: none; margin: 0; padding: 1rem; box-sizing: border-box; background: var(--nen); display: flex; align-items: center; justify-content: center; }
+  .co-ban:fullscreen .co-svg { width: auto; height: 100%; max-width: 100%; max-height: 100vh; }
+  /* Phương án cho iPhone Safari (không hỗ trợ Fullscreen API cho phần tử): phủ kín màn hình bằng CSS */
+  .co-ban.co-phong-to-css {
+    position: fixed; inset: 0; z-index: 1000; width: 100%; max-width: none; height: 100vh; height: 100dvh;
+    margin: 0; padding: .5rem; box-sizing: border-box; background: var(--nen); border-radius: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .co-ban.co-phong-to-css .co-svg { width: auto; height: 100%; max-width: 100%; }
+  /* Nút thu nhỏ nằm ngoài bàn cờ, luôn trên lớp phủ, chỉ hiện khi bàn đang phóng to bằng CSS */
+  .co-thu-nho {
+    position: fixed; top: .6rem; right: .6rem; z-index: 1001; padding: .4rem .8rem; border-radius: .3rem;
+    font: inherit; font-weight: 600; cursor: pointer; background: var(--nhan); color: var(--nen); border: 1px solid var(--nhan);
+  }
+  .co-thu-nho[hidden] { display: none; }
+  /* Khi phóng to bàn cờ thì ẩn nút chat (widget bên thứ ba: nút và khung chat) để không che bàn */
+  body.co-dang-phong-to #formmailhub-widget-container,
+  body.co-dang-phong-to iframe[title="AI Chat Assistant"] { display: none !important; }
+  /* overflow visible để vòng sáng lan ra không bị cắt ở mép bàn (tướng đen đứng sát mép trên) */
+  .co-svg { width: 100%; height: auto; display: block; user-select: none; overflow: visible; }
+  /* Quân đặt trên giao điểm đường kẻ, bấm vào giao điểm để chọn hoặc đi */
+  .co-o { cursor: pointer; }
+  /* Quân không nhận nhấp chuột để nhấp xuyên xuống vùng bấm của ô, kể cả khi quân đang trượt ở lớp trên */
+  .co-quan { pointer-events: none; }
+  .co-ban.khoa .co-o { cursor: default; }
+  .co-bang-diem { margin-top: 1rem; }
+  .co-vi-tri { font-weight: 600; min-height: 1.5em; }
+  .co-top10 { max-width: 30rem; padding-left: 1.6rem; }
+  .co-top10 li { display: flex; justify-content: space-between; gap: 1rem; padding: .15rem 0; border-bottom: 1px dotted var(--vien); }
+  .co-top10 li.minh { color: var(--nhan); font-weight: 700; }
+</style>
+
+<script>
+  import {
+    khoiTao, nuocHopLe, apDung, kyHieu, chonTrongDinh, banVanBan, lamSachTen, tenHopLe, quanBiAn, biChieu,
+    NUOC_TOI_DA, HOAN_TOI_DA, timNuoc, taoTenTam,
+  } from "../lib/co-tuong.js";
+  import { timNuocMay } from "../lib/co-tuong-may.js";
+  import { taoAmThanh } from "../lib/co-tuong-am.js";
+  // Địa chỉ PocketBase công khai: chỉ đọc bảng điểm, ghi điểm đi qua /api/co-tuong-van
+
+  // Tên quân theo cách gọi thường thấy ở Việt Nam: quân đỏ có Tốt, quân đen có Chốt
+  // Quân dùng chữ Hán như bàn cờ truyền thống: bên đỏ và bên đen khác nhau
+  const TEN = { K: "帥", A: "仕", E: "相", H: "傌", R: "俥", C: "炮", P: "兵" };
+  const TEN_DEN = { K: "將", A: "士", E: "象", H: "馬", R: "車", C: "砲", P: "卒" };
+  // Kích thước bàn SVG: 9 đường dọc, 10 đường ngang, khoảng cách 50, lề 30
+  const KC = 50;
+  const LE = 30;
+  const RONG = LE * 2 + 8 * KC;
+  const CAO = LE * 2 + 9 * KC;
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const toaDoX = (c) => LE + c * KC;
+  const toaDoY = (r) => LE + r * KC;
+
+  // Năm mức chơi. doSauToiDa: giới hạn độ sâu tìm kiếm. haiku: số nước đầu để Haiku chọn (0 = không dùng).
+  // tt: bảng băm vị trí, q: tìm kiếm tĩnh, giaHan: tìm sâu thêm khi bị chiếu, cat: null-move và LMR (xem co-tuong-may.js).
+  // Mức 1 đến 3 giữ cách tìm cũ (chỉ nhanh hơn).
+  // Thời gian nghĩ tối đa của máy là số mức tính theo giây: mức n nghĩ tối đa n giây (xem thoiGianNghi).
+  // Mức 5 không giới hạn độ sâu, tìm sâu dần đến hết giờ. Chỉ mức 5 bật cat, vì cắt tỉa chỉ có lợi khi được
+  // tìm sâu hơn, mức 4 bị giới hạn độ sâu 4 nên cắt tỉa chỉ làm nó yếu đi.
+  // ld: điểm độ linh hoạt của xe, mã, pháo. Tìm chậm đi khoảng 1/3 nhưng vẫn mạnh hơn khi cùng thời gian
+  // (đấu thử 200 ván, 100 ms mỗi nước: thắng 55, thua 33, hòa 112).
+  const MUC = {
+    1: { doSauToiDa: 1, haiku: 0 },
+    2: { doSauToiDa: 2, haiku: 0 },
+    3: { doSauToiDa: 3, haiku: 0 },
+    4: { doSauToiDa: 4, tt: true, q: true, giaHan: true, ld: true, haiku: 0 },
+    5: { doSauToiDa: 30, tt: true, q: true, giaHan: true, cat: true, ld: true, haiku: 0 },
+  };
+  const thoiGianNghi = (muc) => muc * 1000; // ms
+  const MUC_TOI_DA = 5;
+  const PB_CHO_PHEP = 2500; // ms: thời gian tối đa chờ Haiku trước khi dùng nước của máy
+  const KHOA_LUU = "co-tuong-van-v2";
+
+  const banEl = document.getElementById("co-ban") as HTMLElement;
+  const trangThai = document.getElementById("co-trang-thai") as HTMLElement;
+  const mucHienTai = document.getElementById("co-muc-hien-tai") as HTMLElement;
+  const moiEl = document.getElementById("co-moi") as HTMLButtonElement;
+  const tenEl = document.getElementById("co-ten") as HTMLInputElement;
+
+  // Âm thanh: mặc định tắt, nhớ lựa chọn của người dùng
+  const KHOA_TIENG = "co-tuong-tieng";
+  const am = taoAmThanh();
+  const tiengEl = document.getElementById("co-tieng") as HTMLButtonElement;
+  const loaBatEl = document.getElementById("co-loa-bat") as unknown as SVGElement;
+  const loaTatEl = document.getElementById("co-loa-tat") as unknown as SVGElement;
+  function hienTieng() {
+    // Biểu tượng là hành động sẽ xảy ra khi bấm: đang bật thì hiện loa gạch chéo (tắt), đang tắt thì hiện loa có sóng (bật)
+    const bat = am.dangBat();
+    const nhan = bat ? "Tắt âm thanh" : "Bật âm thanh";
+    tiengEl.setAttribute("aria-label", "Âm thanh");
+    tiengEl.setAttribute("aria-pressed", String(bat));
+    tiengEl.title = nhan;
+    tiengEl.classList.toggle("co-dang-bat", bat);
+    // SVG không có thuộc tính hidden như phần tử HTML, phải đặt trực tiếp thuộc tính
+    loaBatEl.toggleAttribute("hidden", bat);
+    loaTatEl.toggleAttribute("hidden", !bat);
+  }
+  try {
+    am.datBat(localStorage.getItem(KHOA_TIENG) === "1", false);
+  } catch {
+    // Trình duyệt chặn localStorage: giữ mặc định tắt
+  }
+  hienTieng();
+  tiengEl.addEventListener("click", () => {
+    am.datBat(!am.dangBat());
+    try {
+      localStorage.setItem(KHOA_TIENG, am.dangBat() ? "1" : "0");
+    } catch {
+      // không nhớ được lựa chọn, vẫn dùng bình thường
+    }
+    hienTieng();
+    am.phat("di"); // nghe thử ngay khi vừa bật
+  });
+  // Tiếng đi quân đến đúng lúc quân trượt tới nơi (hai tiếng cộc nếu ăn quân), rồi tiếng chiếu nếu có
+  function phatTiengNuoc(anQuan: boolean, chieu: boolean) {
+    am.phat(anQuan ? "an" : "di", THOI_GIAN_DI);
+    if (chieu) am.phat("chieu", THOI_GIAN_DI);
+  }
+
+  let b: (string | null)[][];
+  let chon: [number, number] | null = null;
+  let gioDi: ReturnType<typeof nuocHopLe> = [];
+  let nuocCuoi: [number, number][] | null = null;
+  // Hiệu ứng nước vừa đi (quân trượt, vòng sáng, quân bị ăn mờ dần). Không lưu khi tải lại trang.
+  // batDau: thời điểm nước đi, để vẽ lại giữa chừng (ve() được gọi nhiều lần) vẫn chạy tiếp đúng tiến độ.
+  // chieu: nước vừa đi chiếu tướng đối phương.
+  let hieuUng: { batDau: number; quanBiAn: string | null; chieu: boolean } | null = null;
+  const THOI_GIAN_DI = 200; // ms quân trượt từ ô cũ sang ô mới
+  const THOI_GIAN_AN = 360; // ms quân bị ăn mờ dần và vòng sáng lan ra (sau khi quân đã đến nơi)
+  const THOI_GIAN_CHIEU = 800; // ms vòng sáng và nhãn "Chiếu tướng!" (sau khi quân đã đến nơi)
+  // Tổng thời gian hiệu ứng của nước vừa đi
+  const tongHieuUng = () => THOI_GIAN_DI + Math.max(THOI_GIAN_AN, hieuUng?.chieu ? THOI_GIAN_CHIEU : 0);
+  const giamChuyenDong = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let dangChoMay = false;
+  let ketThuc = false;
+  let capDo = 1; // mức hiện tại, 1 đến 5
+  let soNuoc = 0; // số nước đã đi trong ván (cả hai bên)
+  // Tên người chơi, lưu trong localStorage. Chưa có tên thì tạo tên tạm "Kỳ thủ XXXX".
+  const KHOA_TEN = "co-tuong-ten";
+  let ten = "";
+
+  function docTen() {
+    try {
+      const t = localStorage.getItem(KHOA_TEN) || "";
+      if (tenHopLe(t)) return t;
+    } catch {
+      // Không đọc được localStorage thì vẫn tạo tên tạm cho phiên này
+    }
+    const tam = taoTenTam();
+    luuTen(tam);
+    return tam;
+  }
+
+  function luuTen(t) {
+    try {
+      localStorage.setItem(KHOA_TEN, t);
+    } catch {
+      // Không lưu được tên thì vẫn dùng trong phiên hiện tại
+    }
+  }
+
+  function tenHienThi() {
+    return ten || "Bạn";
+  }
+
+  // Mã định danh cho mỗi ván, để server không tính điểm trùng cho cùng một ván
+  let maVan = "";
+  let nuocDaDi: string[] = []; // nhật ký nước đi của ván, gửi lên server khi kết thúc
+  let daNop = false; // ván đã được ghi điểm chưa
+  let soHoan = 0; // số nước đã hoãn trong ván, mỗi nước trừ 0,5 điểm
+  let anCuoi: string | null = null; // quân vừa bị ăn gần nhất (mã bên + loại, ví dụ "bR"), đánh dấu trong khay
+
+  // Điểm có thể là số lẻ 0,5: dùng dấu phẩy theo cách viết tiếng Việt
+  const soDiem = (x: number) => String(x).replace(".", ",");
+
+  function taoMaVan() {
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+  }
+
+  function hienBangDiem(items) {
+    const ds = document.getElementById("co-top10") as HTMLOListElement;
+    ds.replaceChildren();
+    for (const it of items) {
+      const li = document.createElement("li");
+      if (it.minh) li.classList.add("minh");
+      const a = document.createElement("span");
+      a.textContent = `${it.ten}`;
+      const bb = document.createElement("span");
+      bb.textContent = `${soDiem(it.diem)} điểm`;
+      li.append(a, bb);
+      ds.appendChild(li);
+    }
+  }
+
+  // Tải top 10 và vị trí của người chơi hiện tại
+  async function taiBangDiem() {
+    const viEl = document.getElementById("co-vi-tri") as HTMLElement;
+    try {
+      // Server che số trong tên trên bảng điểm và tính vị trí, trình duyệt không đọc trực tiếp PocketBase
+      const r = await fetch(`/api/co-tuong-bang-diem?ten=${encodeURIComponent(ten)}`);
+      if (!r.ok) throw new Error("bang_diem_loi");
+      const { top, vi_tri } = await r.json();
+      hienBangDiem(top || []);
+      if (!vi_tri) {
+        viEl.textContent = `${ten} chưa có điểm. Hoàn thành một ván để có điểm.`;
+        return;
+      }
+      viEl.textContent = `${ten} đang ở vị trí #${vi_tri.hang} với ${soDiem(vi_tri.diem)} điểm.`;
+    } catch {
+      viEl.textContent = "Chưa tải được bảng điểm. Thử tải lại trang sau.";
+    }
+  }
+
+  // Thông báo về việc ghi điểm nằm ở dòng riêng, không lưu vào trạng thái ván để không bị nối trùng khi tải lại
+  function thongBaoDiem(text) {
+    (document.getElementById("co-ghi-diem") as HTMLElement).textContent = text;
+  }
+
+  // Gửi nhật ký ván lên server để tính điểm. Mỗi ván chỉ gửi thành công một lần.
+  async function nopDiem() {
+    if (!ketThuc || daNop || nuocDaDi.length === 0) return;
+    if (!tenHopLe(ten)) {
+      thongBaoDiem("Nhập tên để ghi điểm.");
+      return;
+    }
+    try {
+      const r = await fetch("/api/co-tuong-van", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ma_van: maVan, ten, nuoc: nuocDaDi, so_hoan: soHoan }),
+      });
+      if (r.status === 409) {
+        daNop = true; // ván đã được tính trước đó
+      } else if (r.ok) {
+        const { diem_cong, tong_diem } = await r.json();
+        daNop = true;
+        const dau = diem_cong > 0 ? "+" : "";
+        thongBaoDiem(`Điểm ván này: ${dau}${soDiem(diem_cong)}. Tổng điểm: ${soDiem(tong_diem)}.`);
+      } else {
+        thongBaoDiem("Chưa ghi được điểm, sẽ thử lại khi tải lại trang.");
+      }
+    } catch {
+      thongBaoDiem("Chưa ghi được điểm, sẽ thử lại khi tải lại trang.");
+    }
+    luuTrangThai("r");
+    void taiBangDiem();
+  }
+
+  function luuTrangThai(luot) {
+    try {
+      localStorage.setItem(KHOA_LUU, JSON.stringify({
+        b, luot, capDo, soNuoc, ketThuc, nuocCuoi, thongBao: trangThai.textContent,
+        maVan, nuocDaDi, daNop, soHoan, anCuoi,
+      }));
+    } catch {
+      // Trình duyệt chặn localStorage: vẫn chơi bình thường, chỉ không nhớ được ván
+    }
+  }
+
+  function docTrangThai() {
+    try {
+      const d = JSON.parse(localStorage.getItem(KHOA_LUU) || "null");
+      const hopLe = d && Array.isArray(d.b) && d.b.length === 10 && d.b.every((h) => Array.isArray(h) && h.length === 9);
+      return hopLe ? d : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Tạo phần tử SVG kèm thuộc tính
+  function svgEl(tag, attrs, cha) {
+    const e = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+    if (cha) cha.appendChild(e);
+    return e;
+  }
+
+  function hienMuc() {
+    const cap = MUC[capDo];
+    mucHienTai.textContent = `Mức ${capDo}/${MUC_TOI_DA}`;
+  }
+
+  // Vẽ khung quân đã bị ăn: quân đen bị ăn ở nửa trên, quân đỏ bị ăn ở nửa dưới
+  function veQuanAn() {
+    const ket = quanBiAn(b);
+    const dien = (id, list, s) => {
+      const el = document.getElementById(id) as HTMLElement;
+      el.replaceChildren();
+      // Quân vừa bị ăn của bên s: đánh dấu quân cùng loại cuối cùng trong khay
+      const noi = anCuoi && anCuoi[0] === s ? list.lastIndexOf(anCuoi[1]) : -1;
+      list.forEach((t, i) => {
+        const chip = document.createElement("span");
+        chip.className = "co-chip co-chip-" + s + (i === noi ? " co-chip-moi" : "");
+        chip.textContent = s === "r" ? TEN[t] : TEN_DEN[t];
+        el.appendChild(chip);
+      });
+    };
+    dien("co-an-den", ket.b, "b");
+    dien("co-an-do", ket.r, "r");
+  }
+
+  // Vẽ bàn theo kiểu Việt Nam: hàng 0 ở trên (phía đen), hàng 9 ở dưới (phía đỏ), có khoảng sông ở giữa
+  function ve() {
+    banEl.replaceChildren();
+    veQuanAn();
+    banEl.classList.toggle("khoa", ketThuc || dangChoMay);
+    hienMuc();
+    capNhatHoan();
+    const s = svgEl("svg", { viewBox: `0 0 ${RONG} ${CAO}`, class: "co-svg", role: "img", "aria-label": "Bàn cờ tướng" }, banEl);
+    const net = { stroke: "#7a4b1e", "stroke-width": 1.5, fill: "none" };
+
+    svgEl("rect", { x: 0, y: 0, width: RONG, height: CAO, rx: 10, fill: "#f1dca8" }, s);
+    // Đường ngang: cả 10 hàng chạy suốt bàn
+    for (let r = 0; r < 10; r++) svgEl("line", { ...net, x1: toaDoX(0), y1: toaDoY(r), x2: toaDoX(8), y2: toaDoY(r) }, s);
+    // Đường dọc: cột ngoài cùng chạy suốt, các cột giữa bị ngắt ở sông
+    for (let c = 0; c < 9; c++) {
+      if (c === 0 || c === 8) {
+        svgEl("line", { ...net, x1: toaDoX(c), y1: toaDoY(0), x2: toaDoX(c), y2: toaDoY(9) }, s);
+      } else {
+        svgEl("line", { ...net, x1: toaDoX(c), y1: toaDoY(0), x2: toaDoX(c), y2: toaDoY(4) }, s);
+        svgEl("line", { ...net, x1: toaDoX(c), y1: toaDoY(5), x2: toaDoX(c), y2: toaDoY(9) }, s);
+      }
+    }
+    // Hai đường chéo trong mỗi cung tướng
+    for (const r0 of [0, 7]) {
+      svgEl("line", { ...net, x1: toaDoX(3), y1: toaDoY(r0), x2: toaDoX(5), y2: toaDoY(r0 + 2) }, s);
+      svgEl("line", { ...net, x1: toaDoX(5), y1: toaDoY(r0), x2: toaDoX(3), y2: toaDoY(r0 + 2) }, s);
+    }
+    // Sông: hai đường sóng nước giữa hàng 4 và hàng 5
+    // Hai đầu sóng cách mép bàn bằng nhau, và chia đúng số đoạn để sóng đối xứng qua tâm bàn
+    const xTrai = toaDoX(0) + 6;
+    const xPhai = toaDoX(8) - 6;
+    const nSong = 32;
+    const rongSong = (xPhai - xTrai) / nSong;
+    for (const dy of [-10, 10]) {
+      let d = `M${xTrai} ${toaDoY(4.5) + dy} q${rongSong / 2} -5 ${rongSong} 0`;
+      for (let i = 1; i < nSong; i++) d += ` t${rongSong} 0`;
+      svgEl("path", { d, fill: "none", stroke: "#2f6f9f", "stroke-width": 2, "stroke-linecap": "round" }, s);
+    }
+
+    const dich = new Set(gioDi.filter((m) => chon && m.tu[0] === chon[0] && m.tu[1] === chon[1]).map((m) => m.den.join(",")));
+    const laO = (o, r, c) => o && o[0] === r && o[1] === c;
+    const oDi = nuocCuoi ? nuocCuoi[0] : null; // ô quân vừa rời
+    const oDen = nuocCuoi ? nuocCuoi[1] : null; // ô quân vừa đến
+    const dangBiChieu = { r: biChieu(b, "r"), b: biChieu(b, "b") }; // tướng bên nào đang bị chiếu
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 9; c++) {
+        const x = toaDoX(c);
+        const y = toaDoY(r);
+        const p = b[r][c];
+        const g = svgEl("g", { class: "co-o", "data-r": r, "data-c": c }, s);
+        // Ô quân vừa rời: vòng nét đứt, nền vàng nhạt. Ô quân vừa đến: vòng liền đậm hơn, nền vàng.
+        if (laO(oDi, r, c)) svgEl("circle", { cx: x, cy: y, r: 22, fill: "rgba(224,161,0,.22)", stroke: "#e0a100", "stroke-width": 2, "stroke-dasharray": "4 3" }, g);
+        if (laO(oDen, r, c)) svgEl("circle", { cx: x, cy: y, r: 24, fill: "rgba(224,161,0,.35)", stroke: "#e0a100", "stroke-width": 3.5 }, g);
+        if (chon && chon[0] === r && chon[1] === c) svgEl("circle", { cx: x, cy: y, r: 22, fill: "none", stroke: "#1e88e5", "stroke-width": 3 }, g);
+        if (dich.has(`${r},${c}`)) svgEl("circle", { cx: x, cy: y, r: 7, fill: "rgba(30,136,229,.65)" }, g);
+        // Tướng đang bị chiếu: vòng đỏ đậm quanh quân, giữ nguyên cho đến khi hết bị chiếu
+        if (p && p[1] === "K" && dangBiChieu[p[0]]) svgEl("circle", { cx: x, cy: y, r: 25, fill: "rgba(229,57,53,.28)", stroke: "#e53935", "stroke-width": 3.5 }, g);
+        if (p) vePhanQuan(g, p, x, y);
+        // Vùng bấm trong suốt phủ lên trên để nhận nhấp chuột
+        svgEl("circle", { cx: x, cy: y, r: KC / 2 - 2, fill: "transparent" }, g);
+      }
+    }
+    chayHieuUng(s);
+  }
+
+  // Vị trí tướng của bên bn ("r" hoặc "b"), null nếu không thấy
+  function timTuong(bn: string): [number, number] | null {
+    for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++) if (b[r][c] === bn + "K") return [r, c];
+    return null;
+  }
+
+  // Vẽ một quân trong nhóm .co-quan để có thể làm hoạt ảnh riêng
+  function vePhanQuan(cha, p: string, x: number, y: number) {
+    const laDo = p[0] === "r";
+    const mau = laDo ? "#b3261e" : "#1f1f1f";
+    const q = svgEl("g", { class: "co-quan" }, cha);
+    svgEl("circle", { cx: x, cy: y, r: 20, fill: "#fbf6e6", stroke: mau, "stroke-width": 2 }, q);
+    svgEl("text", {
+      x, y: y + 8, "text-anchor": "middle", "font-size": 24, "font-weight": "bold", fill: mau,
+    }, q).textContent = laDo ? TEN[p[1]] : TEN_DEN[p[1]];
+    return q;
+  }
+
+  // Hiệu ứng nước vừa đi: quân trượt từ ô cũ sang ô mới, nếu ăn quân thì quân bị ăn mờ dần và vòng sáng lan ra.
+  // ve() dựng lại toàn bộ bàn nên hiệu ứng được bắt đầu lại ở đúng tiến độ theo thời gian đã trôi qua.
+  function chayHieuUng(s) {
+    if (!hieuUng || !nuocCuoi || giamChuyenDong || !s.animate) return;
+    const troi = Date.now() - hieuUng.batDau;
+    if (troi >= tongHieuUng()) {
+      hieuUng = null;
+      return;
+    }
+    const [tu, den] = nuocCuoi;
+    const x = toaDoX(den[1]);
+    const y = toaDoY(den[0]);
+    const GIUA = "transform-box: fill-box; transform-origin: center;";
+
+    // Quân bị ăn nằm yên ở ô đến cho đến khi quân đi tới, rồi mờ dần
+    if (hieuUng.quanBiAn) {
+      const ma = svgEl("g", { style: GIUA, "pointer-events": "none" }, s);
+      vePhanQuan(ma, hieuUng.quanBiAn, x, y);
+      ma.animate(
+        [
+          { opacity: 1, transform: "scale(1)", offset: 0 },
+          { opacity: 1, transform: "scale(1)", offset: THOI_GIAN_DI / (THOI_GIAN_DI + THOI_GIAN_AN) },
+          { opacity: 0, transform: "scale(1.5)", offset: 1 },
+        ],
+        { duration: THOI_GIAN_DI + THOI_GIAN_AN, delay: -troi, fill: "forwards" },
+      );
+    }
+
+    // Vòng sáng lan ra khi quân đến nơi: đỏ nếu ăn quân, vàng nếu chỉ đi
+    const vong = svgEl("circle", {
+      cx: x, cy: y, r: 22, fill: "none", stroke: hieuUng.quanBiAn ? "#e53935" : "#e0a100", "stroke-width": 4,
+      opacity: 0, style: GIUA, "pointer-events": "none",
+    }, s);
+    vong.animate(
+      [{ opacity: 0.95, transform: "scale(1)" }, { opacity: 0, transform: "scale(2)" }],
+      { duration: THOI_GIAN_AN, delay: THOI_GIAN_DI - troi, easing: "ease-out", fill: "forwards" },
+    );
+
+    // Chiếu tướng: vòng đỏ lan ra quanh tướng bị chiếu và nhãn nổi lên (bên bị chiếu là đối phương của quân vừa đi)
+    if (hieuUng.chieu) {
+      const benBiChieu = b[den[0]][den[1]][0] === "r" ? "b" : "r";
+      const tuong = timTuong(benBiChieu);
+      if (tuong) {
+        const kx = toaDoX(tuong[1]);
+        const ky = toaDoY(tuong[0]);
+        const vongChieu = svgEl("circle", {
+          cx: kx, cy: ky, r: 24, fill: "none", stroke: "#e53935", "stroke-width": 4, opacity: 0, style: GIUA, "pointer-events": "none",
+        }, s);
+        vongChieu.animate(
+          [{ opacity: 0.95, transform: "scale(1)" }, { opacity: 0, transform: "scale(2.4)" }],
+          { duration: THOI_GIAN_CHIEU, delay: THOI_GIAN_DI - troi, easing: "ease-out", fill: "forwards" },
+        );
+        // Nhãn đặt phía trong bàn: tướng đen ở trên nên nhãn nằm dưới, tướng đỏ ở dưới nên nhãn nằm trên
+        const nhan = svgEl("text", {
+          x: kx, y: benBiChieu === "b" ? ky + 46 : ky - 34, "text-anchor": "middle", "font-size": 20, "font-weight": 800,
+          fill: "#e53935", stroke: "#fff", "stroke-width": 4, "paint-order": "stroke", opacity: 0, style: GIUA, "pointer-events": "none",
+        }, s);
+        nhan.textContent = "Chiếu tướng!";
+        nhan.animate(
+          [
+            { opacity: 0, transform: "translateY(8px) scale(.8)", offset: 0 },
+            { opacity: 1, transform: "translateY(0) scale(1)", offset: 0.2 },
+            { opacity: 1, transform: "translateY(0) scale(1)", offset: 0.75 },
+            { opacity: 0, transform: "translateY(-6px) scale(1)", offset: 1 },
+          ],
+          { duration: THOI_GIAN_CHIEU, delay: THOI_GIAN_DI - troi, fill: "forwards" },
+        );
+      }
+    }
+
+    // Quân vừa đi trượt từ ô cũ, đưa lên lớp trên cùng để không bị quân khác che
+    const quan = banEl.querySelector(`g.co-o[data-r="${den[0]}"][data-c="${den[1]}"] .co-quan`);
+    if (quan && THOI_GIAN_DI > troi) {
+      s.appendChild(quan);
+      quan.animate(
+        [
+          { transform: `translate(${(tu[1] - den[1]) * KC}px, ${(tu[0] - den[0]) * KC}px)` },
+          { transform: "translate(0px, 0px)" },
+        ],
+        { duration: THOI_GIAN_DI, delay: -troi, easing: "ease-out", fill: "backwards" },
+      );
+    }
+  }
+
+  function hienTrangThai(text) {
+    trangThai.textContent = text;
+  }
+
+  // Cập nhật mức theo kết quả: thắng +1 (tối đa 5), thua -1 (tối thiểu 1), hòa giữ nguyên
+  function ketThucVan(ketQua) {
+    ketThuc = true;
+    am.phat(ketQua, THOI_GIAN_DI + 500); // sau khi tiếng đi quân và hiệu ứng nước cuối
+    if (ketQua === "thang") capDo = Math.min(MUC_TOI_DA, capDo + 1);
+    if (ketQua === "thua") capDo = Math.max(1, capDo - 1);
+    if (ketQua === "thang") hienTrangThai(`${tenHienThi()} thắng! Lên mức ${capDo}/${MUC_TOI_DA}.`);
+    if (ketQua === "thua") hienTrangThai(`${tenHienThi()} thua. Xuống mức ${capDo}/${MUC_TOI_DA}.`);
+    if (ketQua === "hoa") hienTrangThai(`Ván hòa. Giữ nguyên mức ${capDo}/${MUC_TOI_DA}.`);
+    void nopDiem();
+  }
+
+  // Trả về true nếu bên s hết nước đi (bị chiếu hết hoặc hết nước)
+  function kiemHetNuoc(s) {
+    return nuocHopLe(b, s).length === 0;
+  }
+
+  // Máy tìm nước chạy trong Web Worker để trang vẫn bấm được và hiệu ứng vẫn mượt khi máy nghĩ lâu.
+  // Trình duyệt không có Worker hoặc worker lỗi thì tính ngay trong trang (như trước, trang sẽ đứng hình trong lúc nghĩ).
+  let mayWorker: Worker | null = null;
+  let demMay = 0; // tăng mỗi lần bỏ lượt tính đang chạy (ván mới), để kết quả muộn bị bỏ
+  let choKetQua: ((r: any) => void) | null = null;
+
+  function huyTinh() {
+    demMay++;
+    if (mayWorker) {
+      mayWorker.terminate(); // dừng hẳn việc đang tính
+      mayWorker = null;
+    }
+    if (choKetQua) {
+      choKetQua(null);
+      choKetQua = null;
+    }
+  }
+
+  // Trả về { xep, doSau, nodes }, hoặc null nếu lượt tính bị hủy
+  function tinhNuoc(tuyChon) {
+    const ma = demMay;
+    return new Promise((xong) => {
+      const tinhTrongTrang = () => setTimeout(() => xong(ma === demMay ? timNuocMay(b, "b", tuyChon) : null), 30);
+      if (typeof Worker === "undefined") return tinhTrongTrang();
+      try {
+        if (!mayWorker) mayWorker = new Worker(new URL("../lib/co-tuong-may-worker.js", import.meta.url), { type: "module" });
+        const w = mayWorker;
+        choKetQua = xong;
+        w.onmessage = (e) => {
+          if (choKetQua === xong) choKetQua = null;
+          xong(e.data);
+        };
+        w.onerror = () => {
+          if (mayWorker === w) mayWorker = null;
+          if (choKetQua !== xong) return; // lượt tính này đã xong hoặc bị hủy
+          choKetQua = null;
+          tinhTrongTrang();
+        };
+        w.postMessage({ ban: b, ben: "b", tuyChon });
+      } catch {
+        choKetQua = null;
+        tinhTrongTrang();
+      }
+    });
+  }
+
+  // Máy chọn nước. Nếu mức có haiku > 0 thì Haiku chọn trong các nước minimax xếp đầu, lỗi thì dùng nước tốt nhất. Hiện tất cả mức đều tắt Haiku (haiku: 0).
+  async function mayDi() {
+    const luot = demMay; // nếu bắt đầu ván mới trong lúc máy nghĩ thì demMay đổi và bỏ kết quả này
+    dangChoMay = true;
+    hienTrangThai(hieuUng?.chieu ? "Chiếu tướng! Máy đang nghĩ…" : "Máy đang nghĩ…");
+    ve();
+    const cap = MUC[capDo];
+    let chonNuoc;
+    const kq = await tinhNuoc({
+      doSauToiDa: cap.doSauToiDa, thoiGianMs: thoiGianNghi(capDo), soNuoc: Math.max(1, cap.haiku), tt: cap.tt, q: cap.q,
+      pst: true, // điểm theo vị trí quân: máy đánh đều hơn ở mọi mức (đấu thử thắng 145-6, hòa 49 trên 200 ván)
+      giaHan: cap.giaHan, cat: cap.cat, ld: cap.ld,
+      lichSu: nuocDaDi, // để máy nhận ra thế lặp và biết ván sắp hòa vì đủ 120 nước
+    });
+    if (!kq || luot !== demMay) return;
+    const bangXep = kq.xep;
+    // Máy nghĩ song song với hiệu ứng nước vừa đi: đợi hiệu ứng chạy xong rồi mới đi để không bị cắt ngang
+    const conLai = hieuUng && !giamChuyenDong ? tongHieuUng() - (Date.now() - hieuUng.batDau) : 0;
+    if (conLai > 0) await new Promise((r) => setTimeout(r, conLai));
+    if (luot !== demMay) return;
+    if (cap.haiku > 0) {
+      const xep = bangXep.slice(0, cap.haiku);
+      chonNuoc = xep[0];
+      try {
+        const ctrl = new AbortController();
+        const hen = setTimeout(() => ctrl.abort(), PB_CHO_PHEP);
+        const r = await fetch("/api/co-tuong", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ban: banVanBan(b), nuoc: xep.map((x) => x.nuoc) }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(hen);
+        if (r.ok) {
+          const { nuoc } = await r.json();
+          chonNuoc = xep.find((x) => x.nuoc === nuoc) || chonNuoc;
+        }
+      } catch {
+        // Lỗi mạng hoặc hết giờ: giữ nước tốt nhất của minimax
+      }
+    } else {
+      chonNuoc = chonTrongDinh(bangXep);
+    }
+    if (luot !== demMay) return; // ván mới bắt đầu trong lúc chờ Haiku
+    dangChoMay = false;
+    if (chonNuoc) {
+      apDung(b, chonNuoc.m);
+      nuocCuoi = [chonNuoc.m.tu, chonNuoc.m.den];
+      if (chonNuoc.m.an) anCuoi = chonNuoc.m.an;
+      hieuUng = { batDau: Date.now(), quanBiAn: chonNuoc.m.an || null, chieu: biChieu(b, "r") };
+      phatTiengNuoc(Boolean(chonNuoc.m.an), hieuUng.chieu);
+      soNuoc++;
+      nuocDaDi.push(chonNuoc.nuoc);
+    }
+    if (kiemHetNuoc("r")) {
+      ketThucVan("thua"); // đỏ hết nước đi: người chơi thua
+      luuTrangThai("r");
+      return ve();
+    }
+    if (soNuoc >= NUOC_TOI_DA) {
+      ketThucVan("hoa");
+      luuTrangThai("r");
+      return ve();
+    }
+    hienTrangThai(`Máy đi ${chonNuoc ? chonNuoc.nuoc : ""}.${biChieu(b, "r") ? " Chiếu tướng!" : ""} Đến lượt ${tenHienThi()}.`);
+    luuTrangThai("r");
+    ve();
+  }
+
+  banEl.addEventListener("click", (e) => {
+    am.mo(); // tạo hoặc mở lại ngữ cảnh âm thanh ngay trong lúc người dùng bấm (iPhone chỉ cho phép như vậy)
+    const o = (e.target as Element).closest("g.co-o");
+    if (!o || ketThuc || dangChoMay) return;
+    const r = Number(o.getAttribute("data-r"));
+    const c = Number(o.getAttribute("data-c"));
+    const p = b[r][c];
+
+    if (chon) {
+      const m = gioDi.find((x) => x.tu[0] === chon![0] && x.tu[1] === chon![1] && x.den[0] === r && x.den[1] === c);
+      if (m) {
+        apDung(b, m);
+        nuocCuoi = [m.tu, m.den];
+        if (m.an) anCuoi = m.an;
+        hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, chieu: biChieu(b, "b") };
+        phatTiengNuoc(Boolean(m.an), hieuUng.chieu);
+        soNuoc++;
+        nuocDaDi.push(kyHieu(m));
+        chon = null;
+        gioDi = [];
+        if (kiemHetNuoc("b")) {
+          ketThucVan("thang"); // đen hết nước đi: người chơi thắng
+          luuTrangThai("r");
+          return ve();
+        }
+        if (soNuoc >= NUOC_TOI_DA) {
+          ketThucVan("hoa");
+          luuTrangThai("r");
+          return ve();
+        }
+        luuTrangThai("b"); // đã đến lượt máy: nếu tải lại trang thì máy sẽ đi tiếp
+        ve();
+        return void mayDi();
+      }
+    }
+    if (p && p[0] === "r") {
+      chon = [r, c];
+      gioDi = nuocHopLe(b, "r");
+    } else {
+      chon = null;
+      gioDi = [];
+    }
+    ve();
+  });
+
+  const hoanEl = document.getElementById("co-hoan") as HTMLButtonElement;
+  // Được hoãn khi đến lượt người chơi, ván chưa kết thúc, còn lượt hoãn và đã có nước của cả hai bên
+  const hoanDuocDung = () => !ketThuc && !dangChoMay && soHoan < HOAN_TOI_DA && nuocDaDi.length >= 2;
+
+  function capNhatHoan() {
+    hoanEl.disabled = !hoanDuocDung();
+    hoanEl.textContent = `Hoãn nước (còn ${HOAN_TOI_DA - soHoan})`;
+  }
+
+  // Lùi lại nước cuối của người chơi và nước đáp của máy. Bàn được dựng lại từ nhật ký còn lại (đỏ đi trước).
+  function hoanNuoc() {
+    if (!hoanDuocDung()) return;
+    nuocDaDi.splice(-2, 2);
+    b = khoiTao();
+    let s = "r";
+    nuocCuoi = null;
+    anCuoi = null;
+    for (const ky of nuocDaDi) {
+      const m = timNuoc(b, s, ky)!;
+      apDung(b, m);
+      nuocCuoi = [m.tu, m.den];
+      if (m.an) anCuoi = m.an;
+      s = s === "r" ? "b" : "r";
+    }
+    soNuoc = nuocDaDi.length;
+    soHoan++;
+    chon = null;
+    gioDi = [];
+    hieuUng = null;
+    hienTrangThai(`Đã hoãn 2 nước (còn ${HOAN_TOI_DA - soHoan} lượt, mỗi lượt trừ 0,5 điểm). Đến lượt ${tenHienThi()}.`);
+    luuTrangThai("r");
+    ve();
+  }
+
+  function vanMoi() {
+    huyTinh(); // bỏ lượt máy đang nghĩ (nếu có)
+    b = khoiTao();
+    chon = null;
+    gioDi = nuocHopLe(b, "r");
+    nuocCuoi = null;
+    hieuUng = null;
+    ketThuc = false;
+    dangChoMay = false;
+    soNuoc = 0;
+    maVan = taoMaVan();
+    nuocDaDi = [];
+    daNop = false;
+    soHoan = 0;
+    anCuoi = null;
+    thongBaoDiem("");
+    hienTrangThai(`${tenHienThi()} đi trước (quân đỏ).`);
+    luuTrangThai("r");
+    ve();
+  }
+
+  moiEl.addEventListener("click", vanMoi);
+  hoanEl.addEventListener("click", hoanNuoc);
+
+  // Phóng to: chỉ bàn cờ chiếm toàn màn hình. Trình duyệt hỗ trợ Fullscreen API (máy tính, Android) thì dùng nó,
+  // còn iPhone Safari thì phủ kín màn hình bằng CSS.
+  const phongEl = document.getElementById("co-phong-to") as HTMLButtonElement;
+  const thuNhoEl = document.getElementById("co-thu-nho") as HTMLButtonElement;
+  const coFullscreen = !!banEl.requestFullscreen;
+  const phongMoEl = document.getElementById("co-phong-mo") as unknown as SVGElement;
+  const phongDongEl = document.getElementById("co-phong-dong") as unknown as SVGElement;
+  const dangPhong = () => document.fullscreenElement === banEl || banEl.classList.contains("co-phong-to-css");
+  const nhanPhong = () => (dangPhong() ? "Thu nhỏ bàn cờ" : "Phóng to bàn cờ");
+  // Đổi trạng thái phóng to bằng CSS (iPhone): cập nhật nút và nút thu nhỏ cố định
+  const datPhongCss = (bat) => {
+    banEl.classList.toggle("co-phong-to-css", bat);
+    thuNhoEl.hidden = !bat;
+    capNhatPhongTo();
+  };
+  // Ẩn nút chat khi bàn đang phóng to (cả chế độ toàn màn hình thật lẫn CSS)
+  const capNhatPhongTo = () => {
+    const dang = dangPhong();
+    document.body.classList.toggle("co-dang-phong-to", dang);
+    phongEl.setAttribute("aria-label", nhanPhong());
+    phongEl.title = nhanPhong();
+    phongMoEl.toggleAttribute("hidden", dang);
+    phongDongEl.toggleAttribute("hidden", !dang);
+  };
+  phongEl.addEventListener("click", () => {
+    if (coFullscreen) {
+      if (document.fullscreenElement === banEl) {
+        void document.exitFullscreen();
+      } else {
+        void banEl.requestFullscreen().catch(() => {});
+      }
+    } else {
+      datPhongCss(!banEl.classList.contains("co-phong-to-css"));
+    }
+  });
+  thuNhoEl.addEventListener("click", () => datPhongCss(false));
+  if (coFullscreen) {
+    document.addEventListener("fullscreenchange", capNhatPhongTo);
+  }
+
+  // Gõ tên: bỏ ký tự đặc biệt
+  tenEl.addEventListener("input", () => {
+    tenEl.value = lamSachTen(tenEl.value);
+  });
+  // Đổi tên trên server: cập nhật bảng điểm và các ván đã tính điểm. Trả về thông báo lỗi nếu không đổi được.
+  async function doiTenTrenServer(tenCu: string, tenMoi: string): Promise<string | null> {
+    try {
+      const r = await fetch("/api/co-tuong-ten", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ten_cu: tenCu, ten_moi: tenMoi }),
+      });
+      if (r.status === 409) return "Tên này đã có người dùng. Hãy chọn tên khác.";
+      if (!r.ok) return "Chưa đổi được tên trên bảng điểm. Thử lại sau.";
+      return null;
+    } catch {
+      return "Chưa đổi được tên: không kết nối được máy chủ.";
+    }
+  }
+
+  // Lưu tên mới khi bấm dấu check hoặc nhấn Enter. Tên mới được đổi trên server rồi tải lại bảng điểm (đã che số).
+  const doiTenEl = document.getElementById("co-doi-ten") as HTMLButtonElement;
+  let dangDoiTen = false;
+  async function doiTen() {
+    if (dangDoiTen) return;
+    const t = tenEl.value.trim();
+    // Xóa trắng ô thì giữ tên đang dùng
+    if (!t) {
+      tenEl.value = ten;
+      return;
+    }
+    if (!tenHopLe(t)) {
+      hienTrangThai("Tên chỉ gồm chữ cái và chữ số, tối đa 50 ký tự.");
+      return;
+    }
+    if (t === ten) return;
+    const tenCu = ten;
+    dangDoiTen = true;
+    doiTenEl.disabled = true;
+    try {
+      const loi = await doiTenTrenServer(tenCu, t);
+      if (loi) {
+        hienTrangThai(loi);
+        tenEl.value = tenCu;
+        return;
+      }
+      ten = t;
+      tenEl.value = t;
+      luuTen(t);
+      // Ván đã kết thúc nhưng chưa ghi điểm: ghi ngay bây giờ bằng tên mới
+      if (ketThuc && !daNop) void nopDiem();
+      void taiBangDiem();
+    } finally {
+      dangDoiTen = false;
+      doiTenEl.disabled = false;
+    }
+  }
+  doiTenEl.addEventListener("click", () => void doiTen());
+  tenEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void doiTen();
+    }
+  });
+
+  ten = docTen();
+  tenEl.value = ten;
+
+  // Khôi phục ván đang dở (nếu có), không thì bắt đầu ván mới
+  const d = docTrangThai();
+  if (d) {
+    b = d.b;
+    capDo = Number.isInteger(d.capDo) && d.capDo >= 1 && d.capDo <= MUC_TOI_DA ? d.capDo : 1;
+    soNuoc = Number.isInteger(d.soNuoc) ? d.soNuoc : 0;
+    ketThuc = !!d.ketThuc;
+    nuocCuoi = Array.isArray(d.nuocCuoi) ? d.nuocCuoi : null;
+    maVan = typeof d.maVan === "string" && d.maVan ? d.maVan : taoMaVan();
+    nuocDaDi = Array.isArray(d.nuocDaDi) ? d.nuocDaDi : [];
+    daNop = !!d.daNop;
+    soHoan = Number.isInteger(d.soHoan) && d.soHoan >= 0 && d.soHoan <= HOAN_TOI_DA ? d.soHoan : 0;
+    anCuoi = typeof d.anCuoi === "string" ? d.anCuoi : null;
+    chon = null;
+    gioDi = [];
+    hienTrangThai(d.thongBao || "");
+    ve();
+    if (d.luot === "b" && !ketThuc) void mayDi();
+    // Ván đã kết thúc nhưng chưa ghi điểm (ví dụ mạng lỗi lúc trước): thử ghi lại
+    if (ketThuc && !daNop) void nopDiem();
+  } else {
+    vanMoi();
+  }
+  void taiBangDiem();
+</script>

@@ -19,4 +19,5 @@ Mã này tách ra từ dự án Chợ phiên Việt Nam (repo `quickmapshare/cho
 - Mới tách code, chưa deploy. Cần tạo project Cloudflare Pages: build command `npm run build`, output `dist`, thêm các biến môi trường nói trên.
 - Các hàm API đang chỉ cho phép nguồn `https://choico.pages.dev` (hằng `NGUON_CHO_PHEP`). Khi nhúng vào web khác cần quyết định cách xử lý nguồn.
 - Hướng đi: trang Chợ phiên chỉ nhúng widget bàn cờ từ ChoiCo (iframe). Cần đăng nhập, lưu tên, bảng xếp hạng thì widget link sang ChoiCo, không làm trên Chợ phiên.
-- Chưa làm: trang nhúng riêng (bản gọn chỉ bàn cờ và nút), script nhúng.
+- Đã có trang nhúng gọn /nhung/co-tuong/ (bàn cờ và nút, không tiêu đề, ô tên, bảng điểm, có link sang /co-tuong/). Dùng chung component src/components/CoTuong.astro với trang đầy đủ. Nhúng bằng iframe, trang nhúng báo chiều cao qua postMessage({ choicoCao }).
+- Chưa làm: script nhúng một dòng tự tạo iframe.

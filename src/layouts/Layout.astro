@@ -1,6 +1,7 @@
 ---
 // Khung tối giản cho trang cờ tướng: chỉ có biến màu, giao diện sáng/tối theo máy và báo chiều cao cho trang cha khi nhúng iframe.
-const { tieuDe, moTa, lang = "vi" } = Astro.props;
+// nhung: bản nhúng vào web khác (iframe), không lập chỉ mục, mở liên kết ở tab mới.
+const { tieuDe, moTa, lang = "vi", nhung = false } = Astro.props;
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 ---
 <!doctype html>
@@ -10,6 +11,8 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tieuDe}</title>
     <meta name="description" content={moTa} />
+    {nhung && <meta name="robots" content="noindex" />}
+    {nhung && <base target="_blank" />}
     <link rel="canonical" href={duongCanhTac} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <style is:global>
@@ -73,10 +76,11 @@ const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
       }
       ul { padding-left: 1.2rem; }
       ul li { margin: .2rem 0; }
+      body.nhung main { padding: .5rem; }
       :focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; border-radius: 4px; }
     </style>
   </head>
-  <body>
+  <body class={nhung ? "nhung" : undefined}>
     <main>
       <slot />
     </main>
