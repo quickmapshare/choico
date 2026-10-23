@@ -20,7 +20,7 @@ import Layout from "../layouts/Layout.astro";
     <button type="button" id="co-moi" class="co-nut-chu">Ván mới</button>
     <button type="button" id="co-hoan" class="co-nut-chu">Hoãn nước (còn 3)</button>
     <div class="co-nut-goc">
-      <button type="button" id="co-tieng" class="co-nut-icon" aria-pressed="false" aria-label="Âm thanh: tắt" title="Bật âm thanh">
+      <button type="button" id="co-tieng" class="co-nut-icon" aria-label="Bật âm thanh" title="Bật âm thanh">
         <svg id="co-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <svg id="co-loa-tat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
@@ -71,8 +71,6 @@ import Layout from "../layouts/Layout.astro";
   .co-nut-icon { width: 2.3rem; height: 2.3rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
   /* Thuộc tính hidden không luôn ẩn phần tử SVG trên mọi trình duyệt, nên ghi rõ: mỗi nút chỉ hiện một biểu tượng */
   .co-nut-icon > svg[hidden] { display: none; }
-  /* Nút bật tiếng: đang bật thì đổi sang kiểu viền */
-  .co-nut-icon[aria-pressed="true"] { background: var(--nen); color: var(--nhan); }
   .co-ten-o { display: inline-flex; align-items: center; gap: .3rem; }
   .co-ten input { font: inherit; padding: .35rem .5rem; border: 1px solid var(--vien); border-radius: .3rem; background: var(--nen); color: var(--chu); width: 12rem; }
   /* Nút dấu check lưu tên: chỉ có biểu tượng, nhỏ nằm ngay cuối ô nhập */
@@ -180,13 +178,13 @@ import Layout from "../layouts/Layout.astro";
   const loaBatEl = document.getElementById("co-loa-bat") as unknown as SVGElement;
   const loaTatEl = document.getElementById("co-loa-tat") as unknown as SVGElement;
   function hienTieng() {
+    // Biểu tượng là hành động sẽ xảy ra khi bấm: đang bật thì hiện loa gạch chéo (tắt), đang tắt thì hiện loa có sóng (bật)
     const bat = am.dangBat();
-    const nhan = bat ? "Âm thanh: bật" : "Âm thanh: tắt";
-    tiengEl.setAttribute("aria-pressed", String(bat));
+    const nhan = bat ? "Tắt âm thanh" : "Bật âm thanh";
     tiengEl.setAttribute("aria-label", nhan);
-    tiengEl.title = bat ? "Tắt âm thanh" : "Bật âm thanh";
-    loaBatEl.hidden = !bat;
-    loaTatEl.hidden = bat;
+    tiengEl.title = nhan;
+    loaBatEl.hidden = bat;
+    loaTatEl.hidden = !bat;
   }
   try {
     am.datBat(localStorage.getItem(KHOA_TIENG) === "1", false);
