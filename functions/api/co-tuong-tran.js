@@ -7,16 +7,21 @@
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
 import { docNguoiVaTran, capNhatTran, ketThucTran, sauPhut, MAU_MA } from "../_lib/tran.js";
-import { diNuocMay } from "../_lib/may-dai.js";
 import { timNuoc, tenBangDiem } from "../../src/lib/co-tuong.js";
 import {
-  duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo, laMay,
+  duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo, laMay, denLuotMay, duocDiNuoc,
 } from "../../src/lib/co-tuong-tran.js";
 
 // Trận bị bỏ dở (quá hạn mà không ai quyết định).
 //  - Thượng đài: bên đang đến lượt mà bỏ đi thì bị xử thua và có tính điểm, để không ai tránh bị trừ điểm bằng cách bỏ đi.
 //  - Khép kín: đóng trận, không có bên thắng thua.
 async function dongBoDo(pb, H, tran) {
+  // Trận với máy: máy đứng yên chờ người chơi (trình duyệt của họ tính nước cho máy), nên người chơi bỏ đi lúc đến lượt máy
+  // không được tính thắng. Đóng trận không điểm. Đến lượt người chơi mà bỏ đi thì vẫn bị xử thua như thường.
+  if (denLuotMay(tran)) {
+    await capNhatTran(pb, H, tran, { trang_thai: "huy", ly_do: "bo_do", han_nuoc: "" });
+    return { ...tran, trang_thai: "huy", ly_do: "bo_do", han_nuoc: "" };
+  }
   if (tran.loai === "dai") {
     const ketQua = benDenLuot((tran.nuoc || []).length) === "r" ? "den" : "do";
     await ketThucTran(pb, H, tran, { ket_qua: ketQua, ly_do: "bo_do", nuoc: null });
@@ -33,6 +38,7 @@ function ban(tran, benCua) {
     trang_thai: tran.trang_thai,
     ten_do: laMay(tran.do) ? tran.ten_do : tenBangDiem(tran.ten_do || ""), // che chữ số trong tên như bảng điểm, để không lộ số điện thoại (tên máy thì giữ)
     het_han: tran.het_han,
+    may_muc: laMay(tran.do) ? tran.cap_do : null, // trận với máy trên thượng đài: mức của máy, để trình duyệt người chơi tính nước cho máy
     bay_gio: new Date().toISOString(), // giờ server, để trình duyệt đếm ngược đúng dù đồng hồ máy lệch
   };
   if (!benCua) return co;
@@ -58,8 +64,13 @@ export async function onRequestGet({ request, env }) {
   const pb = env.PB_URL;
   const { loiTra, nguoi, H, tran: tranGoc } = await docNguoiVaTran(env, request, ma);
   if (loiTra) return loiTra;
-  // Đến lượt máy mà máy chưa đi (ví dụ phản hồi trước bị mất) thì máy đi bây giờ
-  const tran = kiemBoDo(tranGoc) ? await dongBoDo(pb, H, tranGoc) : await diNuocMay(pb, H, tranGoc);
+  let tran = kiemBoDo(tranGoc) ? await dongBoDo(pb, H, tranGoc) : tranGoc;
+  // Trận với máy: máy không ngồi chờ để quyết định, nên người chơi hết giờ thì xử thua ngay (không có bước nghĩ thêm)
+  const het = laMay(tran.do) ? kiemHetGio(tran) : null;
+  if (het) {
+    await ketThucTran(pb, H, tran, { ket_qua: het.ket_qua, ly_do: het.ly_do, nuoc: null });
+    tran = { ...tran, trang_thai: "ket_thuc", ket_qua: het.ket_qua, ly_do: het.ly_do, han_nuoc: "" };
+  }
 
   return tra(200, ban(tran, nguoi && benCuaToi(tran, nguoi.id)));
 }
@@ -112,8 +123,10 @@ export async function onRequestPost({ request, env }) {
   const nuocCu = tran.nuoc || [];
   const hienTai = duyetNuoc(nuocCu);
   if (!hienTai.hop_le) return tra(500, { loi: "van_hong" });
-  if (benDenLuot(nuocCu.length) !== benCua) return tra(409, { loi: "chua_den_luot" });
-  if (!timNuoc(hienTai.b, benCua, ky)) return tra(422, { loi: "nuoc_sai_luat" });
+  // Đến lượt máy (trận với máy) thì người thách đấu gửi nước do trình duyệt của họ tính cho máy; server chỉ kiểm luật như mọi nước
+  if (!duocDiNuoc(tran, benCua)) return tra(409, { loi: "chua_den_luot" });
+  const benDi = benDenLuot(nuocCu.length);
+  if (!timNuoc(hienTai.b, benDi, ky)) return tra(422, { loi: "nuoc_sai_luat" });
 
   const nuocMoi = [...nuocCu, ky];
   const sau = duyetNuoc(nuocMoi);
@@ -125,11 +138,10 @@ export async function onRequestPost({ request, env }) {
   }
   // Trả luôn trạng thái mới để trình duyệt không phải gọi thêm một lượt đọc.
   // gui: giờ bấm nước (trình duyệt đã quy theo giờ server) chuyển qua chuông để bên kia đo độ trễ; giá trị lạ thì bỏ.
-  const hanMoi = sauPhut(GIAY_MOI_NUOC);
+  // Máy không có hạn nước: tới lượt máy thì để trống (người chơi chỉ phải đi nước của mình trong 60 giây)
+  const hanMoi = denLuotMay(tran, nuocMoi.length) ? "" : sauPhut(GIAY_MOI_NUOC);
   const gui = Number.isFinite(body.gui) && Math.abs(Date.now() - body.gui) < 60000 ? Math.round(body.gui) : 0;
   const r = await capNhatTran(pb, H, tran, { nuoc: nuocMoi, han_nuoc: hanMoi }, { gui });
   if (!r.ok) return tra(502, { loi: "khong_luu_duoc_nuoc" });
-  // Trận với máy: máy đáp lại ngay trong yêu cầu này, người chơi thấy cả nước đi của máy
-  const sauMay = await diNuocMay(pb, H, { ...tran, nuoc: nuocMoi, han_nuoc: hanMoi });
-  return tra(200, ban(sauMay, benCua));
+  return tra(200, ban({ ...tran, nuoc: nuocMoi, han_nuoc: hanMoi }, benCua));
 }

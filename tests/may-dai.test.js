@@ -1,135 +1,84 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { diNuocMay, nuocMay, bamDanhMay } from "../functions/_lib/may-dai.js";
-import { ketThucTran } from "../functions/_lib/tran.js";
-import { khoiTao, nuocHopLe, kyHieu } from "../src/lib/co-tuong.js";
-import { duyetNuoc, benDenLuot } from "../src/lib/co-tuong-tran.js";
+import { bamDanhMay } from "../functions/_lib/may-dai.js";
+import { denLuotMay, duocDiNuoc, kiemHetGio } from "../src/lib/co-tuong-tran.js";
+import { MUC, MUC_TOI_DA, thoiGianNghi } from "../src/lib/co-tuong-muc.js";
 
-// PocketBase giả trong bộ nhớ: chỉ đủ cho các lời gọi mà trận thượng đài dùng
-function taoPocketBase(trans = {}) {
-  const dong = { co_tuong_tran: trans, cho_phien_co_diem: {} };
-  const ghi = [];
+// PocketBase giả trong bộ nhớ, đủ cho việc đặt máy lên đài
+function taoPocketBase() {
+  const trans = {};
   globalThis.fetch = async (url, opt = {}) => {
-    const m = String(url).match(/\/collections\/([a-z_]+)\/records(?:\/([a-z0-9]+))?/);
-    const ok = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
-    if (!m) return ok({}, 404);
-    const [, bang, id] = m;
+    const ok = (body) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    const bang = String(url).match(/\/collections\/([a-z_]+)\/records/)?.[1];
     if (bang === "co_tuong_tin_hieu") return ok({ id: "tin" });
-    if (bang === "cho_phien_co_diem") {
-      if (opt.method === "POST") ghi.push({ bang, data: JSON.parse(opt.body) });
-      return ok({ items: [] });
-    }
-    if (bang !== "co_tuong_tran") return ok({}, 404);
-    if (opt.method === "PATCH" && id) {
-      const data = JSON.parse(opt.body);
-      ghi.push({ bang, id, data });
-      Object.assign(dong.co_tuong_tran[id], data);
-      return ok(dong.co_tuong_tran[id]);
-    }
-    if (opt.method === "POST") {
+    if (bang === "co_tuong_tran" && opt.method === "POST") {
       const moi = { id: "x" + Math.random().toString(36).slice(2), ...JSON.parse(opt.body) };
-      dong.co_tuong_tran[moi.id] = moi;
+      trans[moi.id] = moi;
       return ok(moi);
     }
-    // Đọc danh sách: trả các trận đang có (đủ để bamDanhMay và docTran tìm)
-    const items = Object.values(dong.co_tuong_tran);
-    return ok({ items });
+    return ok({ items: Object.values(trans) });
   };
-  return { dong, ghi };
+  return trans;
 }
-
-function tranMay(muc, extra = {}) {
-  return {
-    id: "t" + muc,
-    ma: "a".repeat(32),
-    loai: "dai",
-    che_do: "cung",
-    cap_do: muc,
-    trang_thai: "dang_dau",
-    do: `may_${muc}`,
-    ten_do: `Máy mức ${muc}`,
-    den: "nguoi-that",
-    ten_den: "Người",
-    nuoc: [],
-    da_tinh_diem: false,
-    created: "2026-10-23 12:00:00.000Z",
-    ...extra,
-  };
-}
-
-const H = { authorization: "x" };
-const PB = "http://pb";
 
 afterEach(() => {
   delete globalThis.fetch;
 });
 
-describe("máy đi nước trên thượng đài", () => {
-  it("máy đỏ đi trước khi có người vào: thêm đúng một nước hợp lệ", async () => {
-    const { dong } = taoPocketBase({ t1: tranMay(1) });
-    const tran = await diNuocMay(PB, H, dong.co_tuong_tran.t1);
-    expect(tran.nuoc.length).toBe(1);
-    expect(duyetNuoc(tran.nuoc).hop_le).toBe(true);
-    expect(tran.han_nuoc).not.toBe("");
+const tranMay = (nuoc = [], extra = {}) => ({ loai: "dai", do: "may_3", den: "nguoi", cap_do: 3, trang_thai: "dang_dau", nuoc, ...extra });
+
+describe("máy đứng sẵn trên đài", () => {
+  it("mỗi mức có đúng một máy, chế độ cùng mức", async () => {
+    const trans = taoPocketBase();
+    await bamDanhMay("http://pb", {});
+    const ds = Object.values(trans);
+    expect(ds.map((t) => t.cap_do).sort()).toEqual([1, 2, 3, 4, 5]);
+    expect(ds.every((t) => t.do === `may_${t.cap_do}` && t.che_do === "cung" && t.trang_thai === "cho")).toBe(true);
   });
 
-  it("không đến lượt máy thì không đi", async () => {
-    const { ghi } = taoPocketBase({});
-    const tran = tranMay(1, { nuoc: [kyHieu(nuocHopLe(khoiTao(), "r")[0])] });
-    const sau = await diNuocMay(PB, H, tran);
-    expect(sau).toBe(tran);
-    expect(ghi.length).toBe(0);
-  });
-
-  it("trận của người chơi thật thì máy không đụng vào", async () => {
-    const { ghi } = taoPocketBase({});
-    const tran = tranMay(1, { do: "nguoi-that" });
-    expect(await diNuocMay(PB, H, tran)).toBe(tran);
-    expect(ghi.length).toBe(0);
-  });
-
-  it("ván đầy đủ với người đi ngẫu nhiên: nước nào cũng hợp luật, không cộng điểm cho máy", async () => {
-    const { dong, ghi } = taoPocketBase({ t1: tranMay(1) });
-    let tran = dong.co_tuong_tran.t1;
-    let hat = 7;
-    const ngauNhien = () => ((hat = (hat * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
-    for (let buoc = 0; buoc < 200 && tran.trang_thai === "dang_dau"; buoc++) {
-      const nuoc = tran.nuoc;
-      const hienTai = duyetNuoc(nuoc);
-      expect(hienTai.hop_le).toBe(true);
-      if (benDenLuot(nuoc.length) === "b") {
-        // Người đi ngẫu nhiên, rồi máy đáp lại
-        const ds = nuocHopLe(hienTai.b, "b");
-        if (ds.length === 0) break;
-        const ky = kyHieu(ds[Math.floor(ngauNhien() * ds.length)]);
-        Object.assign(tran, { nuoc: [...nuoc, ky] });
-        const sau = duyetNuoc(tran.nuoc);
-        if (sau.ket_thuc) {
-          await ketThucTran(PB, H, tran, { ket_qua: sau.ket_qua, ly_do: sau.ly_do, nuoc: tran.nuoc });
-          break;
-        }
-      }
-      tran = await diNuocMay(PB, H, tran);
-    }
-    expect(tran.nuoc.length).toBeGreaterThan(0);
-    // Máy không có tài khoản: mọi bản ghi điểm (nếu ván đã kết thúc) đều là của người chơi, không bao giờ của máy
-    const diem = ghi.filter((g) => g.bang === "cho_phien_co_diem");
-    expect(diem.every((g) => g.data.nguoi_choi === "nguoi-that")).toBe(true);
+  it("mức nào còn máy thì không tạo thêm", async () => {
+    const trans = taoPocketBase();
+    await bamDanhMay("http://pb", {});
+    await bamDanhMay("http://pb", {});
+    expect(Object.keys(trans).length).toBe(5);
   });
 });
 
-describe("mức máy và bảng mời", () => {
-  it("nước của máy là một nước hợp lệ trên bàn hiện tại", () => {
-    const b = khoiTao();
-    const ky = nuocMay(b, 1, []);
-    expect(ky).toMatch(/^[a-i][0-9][a-i][0-9]$/);
-    expect(nuocHopLe(b, "r").map(kyHieu)).toContain(ky);
+describe("lượt đi trong trận với máy", () => {
+  it("máy đỏ đi trước: lượt chẵn là của máy, lượt lẻ là của người", () => {
+    expect(denLuotMay(tranMay([]))).toBe(true);
+    expect(denLuotMay(tranMay(["a0a1"]))).toBe(false);
+    expect(denLuotMay(tranMay(["a0a1", "a9a8"]))).toBe(true);
   });
 
-  it("mỗi mức có đúng một máy đứng sẵn trên đài", async () => {
-    const { dong } = taoPocketBase({});
-    await bamDanhMay(PB, H);
-    const tao = Object.values(dong.co_tuong_tran);
-    expect(tao.map((t) => t.cap_do).sort()).toEqual([1, 2, 3, 4, 5]);
-    expect(tao.every((t) => t.do.startsWith("may_") && t.che_do === "cung")).toBe(true);
+  it("trận hai người thì không có lượt của máy", () => {
+    expect(denLuotMay(tranMay([], { do: "nguoi-1" }))).toBe(false);
+  });
+
+  it("đến lượt máy thì người thách đấu (bên đen) gửi nước thay cho máy, bên khác thì không", () => {
+    expect(duocDiNuoc(tranMay([]), "b")).toBe(true);
+    expect(duocDiNuoc(tranMay([]), "r")).toBe(true); // bên đỏ (máy) đúng lượt; người dùng không bao giờ là bên đỏ trong trận máy
+    expect(duocDiNuoc(tranMay(["a0a1"]), "b")).toBe(true); // lượt của chính người chơi
+    expect(duocDiNuoc(tranMay(["a0a1"]), "r")).toBe(false); // máy không đi khi chưa đến lượt
+  });
+
+  it("trận hai người: chỉ đúng bên đến lượt mới đi được", () => {
+    const t = tranMay([], { do: "nguoi-1" });
+    expect(duocDiNuoc(t, "r")).toBe(true);
+    expect(duocDiNuoc(t, "b")).toBe(false);
+  });
+
+  it("máy không có hạn nước nên không bao giờ hết giờ; người chơi quá hạn thì thua", () => {
+    const muoi = Date.parse("2026-10-23T12:00:00Z");
+    expect(kiemHetGio(tranMay([], { han_nuoc: "" }), muoi)).toBe(null);
+    const quaHan = tranMay(["a0a1"], { han_nuoc: "2026-10-23T11:59:00Z" });
+    expect(kiemHetGio(quaHan, muoi)).toEqual({ ket_qua: "do", ly_do: "het_gio" }); // lượt bên đen, bên đỏ (máy) thắng
+  });
+});
+
+describe("mức của máy", () => {
+  it("đủ năm mức và thời gian nghĩ bằng số mức tính theo giây", () => {
+    expect(Object.keys(MUC).map(Number)).toEqual([1, 2, 3, 4, 5]);
+    expect(MUC_TOI_DA).toBe(5);
+    expect(thoiGianNghi(5)).toBe(5000);
   });
 });

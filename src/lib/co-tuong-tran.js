@@ -93,6 +93,16 @@ export function kiemBoDo(tran, now = Date.now()) {
 export const TIEN_TO_MAY = "may_";
 export const laMay = (id) => typeof id === "string" && id.startsWith(TIEN_TO_MAY);
 
+// Trận với máy trên thượng đài chạy như trận với máy: máy là bên đỏ (đi trước) và do trình duyệt của người thách đấu tính nước,
+// rồi gửi lên server như một nước đi (server chỉ kiểm luật). Máy không có hạn nước và không bao giờ hết giờ.
+export const denLuotMay = (tran, soNuoc = (tran.nuoc || []).length) => laMay(tran.do) && benDenLuot(soNuoc) === "r";
+
+// Bên benCua (r hoặc b) có được gửi một nước lúc này không: đúng lượt của mình, hoặc là người thách đấu gửi nước thay cho máy
+export const duocDiNuoc = (tran, benCua) => {
+  const luot = benDenLuot((tran.nuoc || []).length);
+  return luot === benCua || (denLuotMay(tran) && benCua === "b");
+};
+
 // Người lên đài còn đứng trên đài: đang chờ đối thủ và chưa quá 30 phút kể từ lúc lên đài. Máy thì luôn đứng sẵn trên đài.
 export function soDaiConHieuLuc(tran, now = Date.now()) {
   if (tran.loai !== "dai" || tran.trang_thai !== "cho") return false;

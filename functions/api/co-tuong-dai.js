@@ -4,13 +4,14 @@
 //  - POST "roi_dai" {ma}: rời đài khi chưa có ai thách đấu.
 //  - POST "vao_dai" {ma}: thách đấu một người đang trên đài. Ai vào trước thì trận bắt đầu.
 // Mỗi người chỉ có một trận thượng đài chưa xong cùng lúc. Lên đài mà 30 phút không ai thách đấu thì tự rời đài.
-// Mỗi mức có sẵn một máy đứng trên đài (xem _lib/may-dai.js): thách đấu máy thì đánh như trận với máy, chỉ người chơi được cộng trừ điểm.
+// Mỗi mức có sẵn một máy đứng trên đài (xem _lib/may-dai.js): thách đấu máy thì đánh như trận với máy (trình duyệt tính nước của máy),
+// chỉ người chơi được cộng trừ điểm.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
 import { tenBangDiem } from "../../src/lib/co-tuong.js";
 import { layNguoi, headerAdmin, docTran, capNhatTran, taoTran, sauPhut, baoTinHieu, donTranCu, BANG_TRAN, MAU_MA, TIN_HIEU_SANH } from "../_lib/tran.js";
 import { GIAY_MOI_NUOC, HAN_SANH_PHUT, soDaiConHieuLuc, laMay } from "../../src/lib/co-tuong-tran.js";
-import { bamDanhMay, diNuocMay } from "../_lib/may-dai.js";
+import { bamDanhMay } from "../_lib/may-dai.js";
 
 const loc = (c) => encodeURIComponent(c);
 
@@ -139,14 +140,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
       den: nguoi.id,
       ten_den: nguoi.ten,
       trang_thai: "dang_dau",
-      han_nuoc: sauPhut(GIAY_MOI_NUOC),
+      han_nuoc: laMay(tran.do) ? "" : sauPhut(GIAY_MOI_NUOC), // máy đi trước và không có hạn nước
     });
     if (!r.ok) return tra(502, { loi: "khong_vao_duoc" });
     await baoTinHieu(pb, H, TIN_HIEU_SANH); // người này rời khỏi danh sách chờ
     // Hai người cùng thách đấu một lúc: đọc lại, chỉ người ghi cuối được coi là đã vào
     const sau = await docTran(pb, H, ma);
     if (sau.loi || sau.tran?.den !== nguoi.id) return tra(409, { loi: "da_co_nguoi_vao" });
-    await diNuocMay(pb, H, sau.tran); // thách đấu máy: máy (bên đỏ, đi trước) đi nước đầu ngay
     return tra(200, { ma });
   }
 

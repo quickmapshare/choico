@@ -125,10 +125,12 @@ const T = chuCaTrang(lang);
 </style>
 
 <script>
-  import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu, diemCongVan, quanBiAn } from "../lib/co-tuong.js";
+  import { khoiTao, nuocHopLe, kyHieu, timNuoc, apDung, biChieu, diemCongVan, quanBiAn, chonTrongDinh } from "../lib/co-tuong.js";
+  import { timNuocMay } from "../lib/co-tuong-may.js";
+  import { MUC, thoiGianNghi } from "../lib/co-tuong-muc.js";
   import { duyetNuoc, benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
-  import { taoToa, veBanCo, veKhayQuanAn, chayHieuUng, phatTiengNuoc, gaiNutTieng, gaiPhongTo, oBamDuoc, THOI_GIAN } from "../lib/co-tuong-ban.js";
+  import { taoToa, veBanCo, veKhayQuanAn, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutTieng, gaiPhongTo, oBamDuoc, THOI_GIAN } from "../lib/co-tuong-ban.js";
   import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
   import { docToken, headerXacThuc, damBaoCoTen } from "../lib/co-tuong-tai-khoan.js";
 
@@ -296,13 +298,14 @@ const T = chuCaTrang(lang);
   }
 
   // Đi nước: hiện ngay trên màn hình rồi gửi server ngầm, không phải chờ mạng mới thấy quân di chuyển
-  async function diNuoc(m: any) {
+  // s: bên đi nước này. Mặc định là bên mình; trận với máy thì trình duyệt này cũng đi nước của máy (s = "r").
+  async function diNuoc(m: any, s: string = tran.ban_cua) {
     const ky = kyHieu(m);
-    const s = tran.ban_cua;
     apMove(m, s);
     tran.nuoc = [...tran.nuoc, ky];
     tran.den_luot = doiBen(s);
-    tran.han_nuoc = new Date(Date.now() + lechGio + GIAY_MOI_NUOC * 1000).toISOString();
+    // Máy không có hạn nước: tới lượt máy thì để trống, giống server
+    tran.han_nuoc = tran.may_muc && tran.den_luot === "r" ? "" : new Date(Date.now() + lechGio + GIAY_MOI_NUOC * 1000).toISOString();
     const kt = duyetNuoc(tran.nuoc);
     if (kt.hop_le && kt.ket_thuc) {
       tran.trang_thai = "ket_thuc";
@@ -327,12 +330,68 @@ const T = chuCaTrang(lang);
         dungBan();
         hienKhoi();
       }
+      void kiemTraLuotMay(); // người chơi vừa đi xong, tới lượt máy
       return;
     }
     // Server từ chối (sai luật, hết giờ, đối thủ đã đầu hàng...): bỏ hiệu ứng, tải trạng thái thật và báo
     hieuUng = null;
     await taiTran();
     if (tran.trang_thai === "dang_dau") baoLoi(T.trNuocSai); // trận đã đóng thì thông báo đóng trận đã hiện rồi
+  }
+
+  // Trận với máy trên thượng đài chạy như trận với máy: trình duyệt này tính nước cho máy (Web Worker, cùng mức, cùng thời gian
+  // nghĩ, cùng cách chọn nước) rồi gửi lên như một nước đi; server chỉ kiểm luật. Người chơi đóng trang thì máy đứng chờ.
+  let mayWorker: Worker | null = null;
+  let dangMay = false; // máy đang nghĩ hoặc đang gửi nước
+  let soLanMayLoi = 0; // số lần liên tiếp server từ chối nước của máy, quá 3 thì thôi để khỏi lặp mãi
+  const nghi = (ms: number) => new Promise((xong) => setTimeout(xong, ms));
+
+  function tinhNuocMay(b: any, tuyChon: any): Promise<any> {
+    return new Promise((xong) => {
+      const tinhTrongTrang = () => setTimeout(() => xong(timNuocMay(b, "r", tuyChon)), 30);
+      if (typeof Worker === "undefined") return tinhTrongTrang();
+      try {
+        mayWorker ??= new Worker(new URL("../lib/co-tuong-may-worker.js", import.meta.url), { type: "module" });
+        const w = mayWorker;
+        w.onmessage = (e) => xong(e.data);
+        w.onerror = () => {
+          if (mayWorker === w) mayWorker = null;
+          tinhTrongTrang();
+        };
+        w.postMessage({ ban: b, ben: "r", tuyChon });
+      } catch {
+        tinhTrongTrang();
+      }
+    });
+  }
+
+  // Tới lượt máy (và mình là người thách đấu) thì tính nước cho máy rồi đi
+  async function kiemTraLuotMay() {
+    if (dangMay || dangGui || !ban || !tran?.may_muc || tran.ban_cua !== "b") return;
+    if (tran.trang_thai !== "dang_dau" || tran.den_luot !== "r" || soLanMayLoi >= 3) return;
+    dangMay = true;
+    const soNuoc: number = tran.nuoc.length;
+    const muc: number = tran.may_muc;
+    try {
+      giuTrangThaiDen = Date.now() + thoiGianNghi(muc) + 2000;
+      batTrangThai(T.mayNghi);
+      const kq = await tinhNuocMay(duyetNuoc(tran.nuoc).b, {
+        ...(MUC as Record<number, any>)[muc], thoiGianMs: thoiGianNghi(muc), pst: true, lichSu: tran.nuoc,
+      });
+      // Máy nghĩ song song với hiệu ứng nước vừa đi: đợi hiệu ứng chạy xong (và nước của mình gửi xong) rồi mới đi
+      const conLai = hieuUng ? tongThoiGianHieuUng(hieuUng.chieu) - (Date.now() - hieuUng.batDau) : 0;
+      if (conLai > 0) await nghi(conLai);
+      while (dangGui) await nghi(50);
+      if (tran?.trang_thai !== "dang_dau" || tran.nuoc.length !== soNuoc) return; // trận đổi trong lúc máy nghĩ
+      const chonMay = chonTrongDinh(kq.xep);
+      const m = chonMay && timNuoc(ban, "r", chonMay.nuoc);
+      if (!m) return;
+      await diNuoc(m, "r");
+      soLanMayLoi = tran.nuoc.length === soNuoc + 1 ? 0 : soLanMayLoi + 1;
+    } finally {
+      dangMay = false;
+    }
+    if (soLanMayLoi > 0 && soLanMayLoi < 3) setTimeout(() => void kiemTraLuotMay(), 1500);
   }
 
   // Nhấp vào bàn: chọn quân của mình, rồi nhấp vào ô đích để đi
@@ -480,6 +539,7 @@ const T = chuCaTrang(lang);
       giuTrangThaiDen = 0;
       capNhatGio();
       gioTimer = window.setInterval(capNhatGio, 1000);
+      void kiemTraLuotMay(); // trận với máy: tới lượt máy thì tính nước cho máy
       return datPoll();
     }
     // Đã kết thúc
