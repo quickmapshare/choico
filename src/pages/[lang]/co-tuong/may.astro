@@ -1,6 +1,6 @@
 ---
-import Trang from "../../views/TrangCoTuong.astro";
-import { NGON_NGU_PHU } from "../../i18n/strings.js";
+import Trang from "../../../views/TrangCoTuong.astro";
+import { NGON_NGU_PHU } from "../../../i18n/strings.js";
 
 export function getStaticPaths() {
   return NGON_NGU_PHU.map((n) => ({ params: { lang: n.ma }, props: { ma: n.ma } }));

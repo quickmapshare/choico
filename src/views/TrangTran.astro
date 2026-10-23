@@ -685,12 +685,6 @@ const T = chuCaTrang(lang);
     }
   }
 
-  // Trận thượng đài cũng chạy ở trang này nên menu phải sáng mục Thượng đài thay vì Khép kín
-  function danhDauMenu() {
-    document.querySelector('nav a[href$="/tran/"]')?.removeAttribute("aria-current");
-    document.querySelector('nav a[href$="/thuong-dai/"]')?.setAttribute("aria-current", "page");
-  }
-
   // Sau khi trận xong: đường đi tiếp (về sảnh thượng đài, hoặc tạo trận khép kín mới)
   function hienBuocTiep() {
     const tienTo = document.documentElement.dataset.tienTo || "";
@@ -716,7 +710,6 @@ const T = chuCaTrang(lang);
     const tieuDe = tran?.loai === "dai" ? T.tdTieuDe : tran?.loai === "khep_kin" ? T.trTieuDeKhepKin : T.trTieuDe;
     $("tr-h1").textContent = tieuDe;
     document.title = tieuDe;
-    if (tran?.loai === "dai") danhDauMenu();
     doiEl.textContent = "";
     clearInterval(gioTimer);
 

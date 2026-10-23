@@ -1,16 +1,12 @@
 ---
-// Trang chủ, dùng chung cho mọi ngôn ngữ.
+// Trang chủ, dùng chung cho mọi ngôn ngữ: mỗi loại cờ một thẻ lớn. Thêm loại cờ mới thì thêm một phần tử vào danh sách.
 import Layout from "../layouts/Layout.astro";
 import Logo from "../components/Logo.astro";
 import { t, duongDan } from "../i18n/strings.js";
 
 const { lang = "vi" } = Astro.props;
-const trang = [
-  { href: duongDan(lang, "/co-tuong/"), ten: t(lang, "homeThe1"), mo: t(lang, "homeThe1Mo") },
-  { href: duongDan(lang, "/thuong-dai/"), ten: t(lang, "homeThe4"), mo: t(lang, "homeThe4Mo") },
-  { href: duongDan(lang, "/tran/"), ten: t(lang, "homeThe5"), mo: t(lang, "homeThe5Mo") },
-  { href: duongDan(lang, "/co-tuong/") + "#co-bang-diem-tieu-de", ten: t(lang, "homeThe2"), mo: t(lang, "homeThe2Mo") },
-  { href: duongDan(lang, "/nhung/"), ten: t(lang, "homeThe3"), mo: t(lang, "homeThe3Mo") },
+const loaiCo = [
+  { href: duongDan(lang, "/co-tuong/"), ten: t(lang, "homeCo1"), mo: t(lang, "homeCo1Mo") },
 ];
 ---
 <Layout lang={lang} tieuDe={t(lang, "homeTieuDe")} moTa={t(lang, "homeMoTa")}>
@@ -24,7 +20,7 @@ const trang = [
   <p>{t(lang, "homeGioiThieu")}</p>
 
   <ul class="danh-sach">
-    {trang.map((x) => (
+    {loaiCo.map((x) => (
       <li>
         <a class="the-lien-ket" href={x.href}>
           <strong>{x.ten}</strong>
@@ -40,12 +36,12 @@ const trang = [
   .dau-trang h1 { margin: 0; font-size: clamp(2rem, 7vw, 2.8rem); letter-spacing: -.03em; }
   .nhan { color: var(--nhan); }
   .khau-hieu { margin: .1rem 0 0; font-size: 1rem; }
-  .danh-sach { list-style: none; padding: 0; margin: 1.2rem 0; display: grid; gap: .75rem; }
+  .danh-sach { list-style: none; padding: 0; margin: 1.2rem 0; display: grid; gap: .9rem; }
   .danh-sach li { margin: 0; }
   .the-lien-ket {
-    display: block; padding: .9rem 1.1rem; background: var(--mat); border: 1px solid var(--vien);
-    border-radius: 14px; box-shadow: var(--bong); color: var(--chu); text-decoration: none;
+    display: block; padding: 1.4rem 1.4rem; background: var(--mat); border: 1px solid var(--vien);
+    border-radius: 18px; box-shadow: var(--bong); color: var(--chu); text-decoration: none;
   }
   .the-lien-ket:hover { border-color: var(--nhan); text-decoration: none; }
-  .the-lien-ket strong { display: block; color: var(--nhan); }
+  .the-lien-ket strong { display: block; color: var(--nhan); font-size: 1.5rem; letter-spacing: -.02em; margin-bottom: .2rem; }
 </style>

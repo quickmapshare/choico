@@ -70,8 +70,8 @@ export async function hoanTatDangNhap() {
   localStorage.setItem(KHOA_TOKEN, (await r.json()).token);
   localStorage.removeItem(KHOA_DANG_NHAP);
   // Quay lại đúng trang (giữ tiền tố ngôn ngữ); bản nhúng thì về trang đầy đủ
-  const diaChi = (luu.quayLai || "/co-tuong/").replace("/nhung/co-tuong/", "/co-tuong/");
-  return /^\/(?!\/)/.test(diaChi) ? diaChi : "/co-tuong/"; // chỉ quay về đường dẫn trong site
+  const diaChi = (luu.quayLai || "/co-tuong/may/").replace("/nhung/co-tuong/", "/co-tuong/may/");
+  return /^\/(?!\/)/.test(diaChi) ? diaChi : "/co-tuong/may/"; // chỉ quay về đường dẫn trong site
 }
 
 // Người mới đăng nhập chưa có tên hiển thị. GET hồ sơ sẽ tạo tên từ tên Google (trang chơi với máy gọi việc này khi mở trang).

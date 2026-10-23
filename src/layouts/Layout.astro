@@ -11,6 +11,8 @@ import { NGON_NGU, t, thongTin, duongDan, boTienTo } from "../i18n/strings.js";
 const { tieuDe, moTa, lang = "vi", nhung = false, khongDich = false, khongLapChiMuc = false } = Astro.props;
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 const duongGoc = boTienTo(Astro.url.pathname); // đường dẫn tiếng Việt của cùng trang
+// Mọi trang của loại cờ tướng (cổng, chơi với máy, thượng đài, chơi với bạn, xem lại, nhúng) làm sáng mục menu Cờ tướng
+const thuocCoTuong = /^\/(co-tuong|thuong-dai|tran|xem-van|nhung)\//.test(duongGoc);
 // Tự chọn ngôn ngữ chỉ ở trang tiếng Việt thường (không phải bản nhúng, không phải trang trung tính)
 const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
 ---
@@ -170,10 +172,7 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
           <a class="ten-web" href={duongDan(lang, "/")} aria-label={t(lang, "logoAria")}><Logo size={30} /><span>Choi<span>Co</span></span></a>
           <div class="thanh-tren-phai">
             <nav id="menu-chinh" aria-label={t(lang, "menuAria")}>
-              <a href={duongDan(lang, "/co-tuong/")} aria-current={duongGoc === "/co-tuong/" ? "page" : undefined}>{t(lang, "menuCoTuong")}</a>
-              <a href={duongDan(lang, "/tran/")} aria-current={duongGoc === "/tran/" ? "page" : undefined}>{t(lang, "menuKhepKin")}</a>
-              <a href={duongDan(lang, "/thuong-dai/")} aria-current={duongGoc === "/thuong-dai/" ? "page" : undefined}>{t(lang, "menuThuongDai")}</a>
-              <a href={duongDan(lang, "/nhung/")} aria-current={duongGoc === "/nhung/" ? "page" : undefined}>{t(lang, "menuNhung")}</a>
+              <a href={duongDan(lang, "/co-tuong/")} aria-current={thuocCoTuong ? "page" : undefined}>{t(lang, "menuCoTuong")}</a>
             </nav>
             <ChuyenTheme lang={lang} />
             {!khongDich && <TaiKhoan lang={lang} />}

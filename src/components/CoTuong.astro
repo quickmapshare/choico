@@ -81,7 +81,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   </section>
   {nhung && (
     <p class="phu co-lien-ket">
-      <a href={`https://choico.pages.dev${duongDan(lang, "/co-tuong/")}`} target="_blank" rel="noopener">{T.lienKetNhung}</a>
+      <a href={`https://choico.pages.dev${duongDan(lang, "/co-tuong/may/")}`} target="_blank" rel="noopener">{T.lienKetNhung}</a>
     </p>
   )}
 
@@ -368,7 +368,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     a.textContent = chuLienKet;
     a.href = "#";
     if (document.body.classList.contains("nhung")) {
-      a.href = `https://choico.pages.dev${document.documentElement.dataset.tienTo || ""}/co-tuong/`;
+      a.href = `https://choico.pages.dev${document.documentElement.dataset.tienTo || ""}/co-tuong/may/`;
       a.target = "_blank";
       a.rel = "noopener";
     } else {
