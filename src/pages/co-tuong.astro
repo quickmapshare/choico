@@ -20,7 +20,7 @@ import Layout from "../layouts/Layout.astro";
     <button type="button" id="co-moi" class="co-nut-chu">Ván mới</button>
     <button type="button" id="co-hoan" class="co-nut-chu">Hoãn nước (còn 3)</button>
     <div class="co-nut-goc">
-      <button type="button" id="co-tieng" class="co-nut-icon" aria-label="Bật âm thanh" title="Bật âm thanh">
+      <button type="button" id="co-tieng" class="co-nut-icon" aria-label="Âm thanh" aria-pressed="false" title="Bật âm thanh">
         <svg id="co-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <svg id="co-loa-tat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
@@ -69,6 +69,9 @@ import Layout from "../layouts/Layout.astro";
   .co-nut-chu:disabled { opacity: .5; cursor: default; }
   .co-nut-goc { margin-left: auto; display: inline-flex; gap: .4rem; }
   .co-nut-icon { width: 2.3rem; height: 2.3rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  /* Nút loa: đang bật thì tô đậm, đang tắt thì chỉ có viền, để nhìn ra trạng thái dù biểu tượng là hành động */
+  #co-tieng { background: var(--nen); color: var(--nhan); }
+  #co-tieng.co-dang-bat { background: var(--nhan); color: var(--nen); }
   /* Thuộc tính hidden không luôn ẩn phần tử SVG trên mọi trình duyệt, nên ghi rõ: mỗi nút chỉ hiện một biểu tượng */
   .co-nut-icon > svg[hidden] { display: none; }
   .co-ten-o { display: inline-flex; align-items: center; gap: .3rem; }
@@ -181,8 +184,10 @@ import Layout from "../layouts/Layout.astro";
     // Biểu tượng là hành động sẽ xảy ra khi bấm: đang bật thì hiện loa gạch chéo (tắt), đang tắt thì hiện loa có sóng (bật)
     const bat = am.dangBat();
     const nhan = bat ? "Tắt âm thanh" : "Bật âm thanh";
-    tiengEl.setAttribute("aria-label", nhan);
+    tiengEl.setAttribute("aria-label", "Âm thanh");
+    tiengEl.setAttribute("aria-pressed", String(bat));
     tiengEl.title = nhan;
+    tiengEl.classList.toggle("co-dang-bat", bat);
     loaBatEl.hidden = bat;
     loaTatEl.hidden = !bat;
   }
