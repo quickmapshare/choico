@@ -7,7 +7,8 @@ import { PB_URL } from "./co-tuong-tai-khoan.js";
 
 const CHO_MO_LAI_MS = 3000; // EventSource đóng hẳn (không tự thử lại) thì mở lại sau từng này
 
-// idChuong: mã bản ghi chuông. khiDoi(): gọi khi chuông rung, và khi vừa kết nối lại (có thể đã lỡ thay đổi trong lúc mất kết nối).
+// idChuong: mã bản ghi chuông. khiDoi(banGhi): gọi khi chuông rung (kèm bản ghi chuông, có thể có tóm tắt trận "tom_tat"),
+// và khi vừa kết nối lại (không kèm gì, vì có thể đã lỡ thay đổi trong lúc mất kết nối).
 // khiTrangThai(dangNghe): báo đang nghe được hay không, để trang chọn nhịp đọc dự phòng. Trả về hàm dừng nghe.
 export function ngheTinHieu(idChuong, khiDoi, khiTrangThai = () => {}) {
   if (typeof EventSource === "undefined" || !idChuong) {
@@ -39,7 +40,15 @@ export function ngheTinHieu(idChuong, khiDoi, khiTrangThai = () => {}) {
         khiTrangThai(false);
       }
     });
-    es.addEventListener(chuDe, () => khiDoi());
+    es.addEventListener(chuDe, (e) => {
+      let banGhi = null;
+      try {
+        banGhi = JSON.parse(e.data).record ?? null;
+      } catch {
+        // dữ liệu lạ: vẫn báo đổi, trang tự đọc lại cả trận
+      }
+      khiDoi(banGhi);
+    });
     es.onerror = () => {
       khiTrangThai(false);
       // Thường EventSource tự kết nối lại; nếu nó đã đóng hẳn thì tự mở lại

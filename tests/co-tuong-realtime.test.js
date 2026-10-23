@@ -58,8 +58,9 @@ describe("ngheTinHieu", () => {
     const es = ESGia.tatCa[0];
     es.phat("PB_CONNECT", { clientId: "c1" });
     await cho();
-    es.phat("co_tuong_tin_hieu/abc123", { action: "update", record: { phien: 1 } });
+    es.phat("co_tuong_tin_hieu/abc123", { action: "update", record: { phien: 1, tom_tat: { n: 3, ky: "b2e2" } } });
     expect(khiDoi).toHaveBeenCalledTimes(1);
+    expect(khiDoi).toHaveBeenCalledWith({ phien: 1, tom_tat: { n: 3, ky: "b2e2" } }); // trang dùng tóm tắt để đi quân ngay
   });
 
   it("kết nối lại (clientId mới) thì đăng ký lại và đọc lại một lần để bù thay đổi đã lỡ", async () => {
@@ -72,6 +73,7 @@ describe("ngheTinHieu", () => {
     await cho();
     expect(JSON.parse(fetchGia.mock.calls[1][1].body).clientId).toBe("c2");
     expect(khiDoi).toHaveBeenCalledTimes(1);
+    expect(khiDoi).toHaveBeenCalledWith(); // không kèm tóm tắt: trang đọc lại cả trận
   });
 
   it("đăng ký lỗi thì báo không nghe được (trang quay về đọc lại theo nhịp)", async () => {

@@ -559,7 +559,7 @@ const T = chuCaTrang(lang);
     hienKhoi();
     dangGui = true;
     const { ok, data } = await goi("/api/co-tuong-tran", {
-      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "nuoc", ma, ky }),
+      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "nuoc", ma, ky, gui: Date.now() + lechGio }),
     });
     dangGui = false;
     if (ok) {
@@ -809,6 +809,34 @@ const T = chuCaTrang(lang);
     hienKhoi();
   }
 
+  // Chuông mang kèm tóm tắt trận (số nước, nước cuối, hạn nước, trạng thái): đối thủ vừa đi một nước, hoặc vừa cho thêm giờ,
+  // thì làm luôn trên bàn mà không gọi server. Trường hợp khác (trận đổi trạng thái, lệch số nước...) trả false để đọc lại cả trận.
+  function apTomTat(t: any): boolean {
+    if (!t || !ban || tran?.trang_thai !== "dang_dau" || t.trang_thai !== "dang_dau") return false;
+    const cu: number = tran.nuoc.length;
+    if (t.n === cu) {
+      if (t.han !== tran.han_nuoc) {
+        tran.han_nuoc = t.han;
+        capNhatGio();
+      }
+      return true;
+    }
+    const s = benDenLuot(cu);
+    if (t.n !== cu + 1 || s === tran.ban_cua) return false; // nước của chính mình từ tab khác: đọc lại cho chắc
+    const m = timNuoc(ban, s, t.ky);
+    if (!m) return false;
+    apMove(m, s);
+    tran.nuoc = [...tran.nuoc, t.ky];
+    tran.den_luot = doiBen(s);
+    tran.han_nuoc = t.han;
+    chon = null;
+    gioDi = [];
+    hienKhoi();
+    // Độ trễ từ lúc đối thủ bấm tới lúc quân hiện ở đây (theo giờ server ước lượng ở hai máy, sai số cỡ vài chục ms)
+    if (t.gui) console.info(`[choico] nước đối thủ tới sau ${Math.round(Date.now() + lechGio - t.gui)} ms`);
+    return true;
+  }
+
   // Chuông báo realtime của trận: đang nghe được thì chỉ đọc lại khi chuông rung, cộng một lần dự phòng thưa.
   // Không nghe được (trận cũ chưa có chuông, mạng chặn SSE...) thì quay về đọc lại theo nhịp như trước.
   const DU_PHONG_MS = 20000;
@@ -825,8 +853,11 @@ const T = chuCaTrang(lang);
     if (!id) return;
     dungNghe = ngheTinHieu(
       id,
-      () => {
-        if (!dangGui) void docMoi().then(() => datPoll()); // chuông rung: đọc trạng thái mới, hẹn lại lần dự phòng
+      (banGhi: any) => {
+        if (dangGui) return;
+        // Chuông rung: có tóm tắt dùng được thì đi quân ngay, không thì đọc trạng thái mới; rồi hẹn lại lần dự phòng
+        if (apTomTat(banGhi?.tom_tat)) return datPoll();
+        void docMoi().then(() => datPoll());
       },
       (ok: boolean) => {
         const doi = ok !== dangNghe;

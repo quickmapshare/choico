@@ -6,7 +6,7 @@
 // nước này) hoặc xử thua. Trong lúc chưa ai quyết định, bên chậm vẫn đi nước được.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
 import { tra } from "../_lib/pocketbase.js";
-import { layNguoi, headerAdmin, docTran, capNhatTran, ketThucTran, sauPhut, MAU_MA } from "../_lib/tran.js";
+import { docNguoiVaTran, capNhatTran, ketThucTran, sauPhut, MAU_MA } from "../_lib/tran.js";
 import { timNuoc, tenBangDiem } from "../../src/lib/co-tuong.js";
 import {
   duyetNuoc, kiemHetGio, benCuaToi, benDenLuot, GIAY_MOI_NUOC, MAU_KY_HOP_LE, xuLyHetGio, kiemBoDo,
@@ -55,16 +55,8 @@ export async function onRequestGet({ request, env }) {
   const ma = new URL(request.url).searchParams.get("ma") || "";
   if (!MAU_MA.test(ma)) return tra(400, { loi: "ma_khong_hop_le" });
   const pb = env.PB_URL;
-  const nguoi = await layNguoi(pb, request);
-  let H;
-  try {
-    H = await headerAdmin(env);
-  } catch {
-    return tra(502, { loi: "khong_ket_noi_pocketbase" });
-  }
-  const { tran: tranGoc, loi } = await docTran(pb, H, ma);
-  if (loi) return tra(502, { loi });
-  if (!tranGoc) return tra(404, { loi: "khong_tim_thay" });
+  const { loiTra, nguoi, H, tran: tranGoc } = await docNguoiVaTran(env, request, ma);
+  if (loiTra) return loiTra;
   const tran = kiemBoDo(tranGoc) ? await dongBoDo(pb, H, tranGoc) : tranGoc;
 
   return tra(200, ban(tran, nguoi && benCuaToi(tran, nguoi.id)));
@@ -79,20 +71,11 @@ export async function onRequestPost({ request, env }) {
     return tra(400, { loi: "json_khong_hop_le" });
   }
   const pb = env.PB_URL;
-  const nguoi = await layNguoi(pb, request);
-  if (!nguoi) return tra(401, { loi: "chua_co_danh_tinh" });
   const ma = typeof body?.ma === "string" ? body.ma : "";
   if (!MAU_MA.test(ma)) return tra(400, { loi: "ma_khong_hop_le" });
-
-  let H;
-  try {
-    H = await headerAdmin(env);
-  } catch {
-    return tra(502, { loi: "khong_ket_noi_pocketbase" });
-  }
-  const { tran, loi } = await docTran(pb, H, ma);
-  if (loi) return tra(502, { loi });
-  if (!tran) return tra(404, { loi: "khong_tim_thay" });
+  const { loiTra, nguoi, H, tran } = await docNguoiVaTran(env, request, ma);
+  if (loiTra) return loiTra;
+  if (!nguoi) return tra(401, { loi: "chua_co_danh_tinh" });
   const benCua = benCuaToi(tran, nguoi.id);
   if (!benCua) return tra(403, { loi: "khong_trong_tran" });
   if (kiemBoDo(tran)) {
@@ -138,9 +121,11 @@ export async function onRequestPost({ request, env }) {
     await ketThucTran(pb, H, tran, { ket_qua: sau.ket_qua, ly_do: sau.ly_do, nuoc: nuocMoi });
     return tra(200, ban({ ...tran, nuoc: nuocMoi, trang_thai: "ket_thuc", ket_qua: sau.ket_qua, ly_do: sau.ly_do, han_nuoc: "" }, benCua));
   }
-  // Trả luôn trạng thái mới để trình duyệt không phải gọi thêm một lượt đọc
+  // Trả luôn trạng thái mới để trình duyệt không phải gọi thêm một lượt đọc.
+  // gui: giờ bấm nước (trình duyệt đã quy theo giờ server) chuyển qua chuông để bên kia đo độ trễ; giá trị lạ thì bỏ.
   const hanMoi = sauPhut(GIAY_MOI_NUOC);
-  const r = await capNhatTran(pb, H, tran, { nuoc: nuocMoi, han_nuoc: hanMoi });
+  const gui = Number.isFinite(body.gui) && Math.abs(Date.now() - body.gui) < 60000 ? Math.round(body.gui) : 0;
+  const r = await capNhatTran(pb, H, tran, { nuoc: nuocMoi, han_nuoc: hanMoi }, { gui });
   if (!r.ok) return tra(502, { loi: "khong_luu_duoc_nuoc" });
   return tra(200, ban({ ...tran, nuoc: nuocMoi, han_nuoc: hanMoi }, benCua));
 }
