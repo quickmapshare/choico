@@ -30,6 +30,7 @@ migrate((app) => {
 
   const diem = app.findCollectionByNameOrId("cho_phien_co_diem");
   diem.fields.add(new TextField({ name: "nguoi_choi", max: 40 }));
+  diem.fields.add(new NumberField({ name: "muc", min: 1, max: 5 })); // mức chơi theo tài khoản
   diem.indexes.push("CREATE UNIQUE INDEX `idx_cho_phien_co_diem_nguoi` ON `cho_phien_co_diem` (`nguoi_choi`) WHERE `nguoi_choi` != ''");
   app.save(diem);
 

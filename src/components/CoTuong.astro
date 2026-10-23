@@ -388,8 +388,13 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
       if (r.status === 409 && (await r.clone().json().catch(() => ({}))).loi === "van_da_tinh_diem") {
         daNop = true; // ván đã được tính trước đó
       } else if (r.ok) {
-        const { diem_cong, tong_diem } = await r.json();
+        const { diem_cong, tong_diem, muc } = await r.json();
         daNop = true;
+        // Mức do server tính theo tài khoản; dùng làm mức cho ván sau
+        if (Number.isInteger(muc) && muc >= 1 && muc <= MUC_TOI_DA) {
+          capDo = muc;
+          hienMuc();
+        }
         const dau = diem_cong > 0 ? "+" : "";
         thongBaoDiem(f(T.diemVan, { dau, diem: soDiem(diem_cong), tong: soDiem(tong_diem) }));
       } else {
@@ -1003,7 +1008,16 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     if (!docToken()) return datTaiKhoan("");
     try {
       const r = await fetch("/api/co-tuong-ho-so", { headers: headerXacThuc() });
-      if (r.ok) return datTaiKhoan((await r.json()).ten || "");
+      if (r.ok) {
+        const ho = await r.json();
+        datTaiKhoan(ho.ten || "");
+        // Mức chơi lưu theo tài khoản nên giống nhau ở mọi trình duyệt. Ván đang đi dở giữ mức của ván đó.
+        if (Number.isInteger(ho.muc) && ho.muc >= 1 && ho.muc <= MUC_TOI_DA && (soNuoc === 0 || ketThuc)) {
+          capDo = ho.muc;
+          hienMuc();
+        }
+        return;
+      }
       if (r.status === 401) xoaToken();
     } catch {
       // mất mạng: giữ token, thử lại lần tải sau

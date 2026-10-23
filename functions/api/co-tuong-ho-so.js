@@ -26,10 +26,14 @@ export async function onRequestGet({ request, env }) {
   if (loi) return loi;
   const nguoi = await xacThuc(env.PB_URL, request);
   if (!nguoi) return tra(401, { loi: "chua_dang_nhap" });
-  if (nguoi.ten) return tra(200, { ten: nguoi.ten });
 
   try {
     const H = await vaoAdmin(env);
+    // Mức chơi hiện tại của tài khoản (chưa chơi ván nào thì là mức 1)
+    const r0 = await fetch(`${env.PB_URL}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`nguoi_choi="${nguoi.id}"`)}`, { headers: H });
+    const muc = r0.ok ? (await r0.json()).items?.[0]?.muc || 1 : 1;
+    if (nguoi.ten) return tra(200, { ten: nguoi.ten, muc });
+
     const ten = await chonTenMoi(env.PB_URL, H, nguoi.name, nguoi.id);
     const r = await fetch(`${env.PB_URL}/api/collections/${NGUOI_CHOI}/records/${nguoi.id}`, {
       method: "PATCH",
@@ -37,7 +41,7 @@ export async function onRequestGet({ request, env }) {
       body: JSON.stringify({ ten }),
     });
     if (!r.ok) return tra(502, { loi: "khong_luu_duoc_ten" });
-    return tra(200, { ten });
+    return tra(200, { ten, muc });
   } catch {
     return tra(502, { loi: "khong_ket_noi_pocketbase" });
   }

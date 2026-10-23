@@ -58,6 +58,8 @@ export async function onRequestPost({ request, env }) {
   const diemCu = dong ? dong.diem : 0;
   const diemMoi = Math.max(0, diemCu + diemCong); // điểm tối thiểu là 0
   const thayDoi = diemMoi - diemCu; // phần điểm thực tế được cộng hoặc trừ
+  // Mức chơi lưu theo tài khoản (không theo trình duyệt): thắng lên một mức, thua xuống một mức, hòa giữ nguyên
+  const mucMoi = Math.min(5, Math.max(1, (dong?.muc || 1) + (kq.ket_qua === "thang" ? 1 : kq.ket_qua === "thua" ? -1 : 0)));
 
   const ghiVan = await fetch(`${pb}/api/collections/cho_phien_co_van/records`, {
     method: "POST",
@@ -75,6 +77,7 @@ export async function onRequestPost({ request, env }) {
       headers: H,
       body: JSON.stringify({
         diem: diemMoi,
+        muc: mucMoi,
         so_van: dong.so_van + 1,
         thang: dong.thang + (kq.ket_qua === "thang" ? 1 : 0),
         hoa: dong.hoa + (kq.ket_qua === "hoa" ? 1 : 0),
@@ -88,6 +91,7 @@ export async function onRequestPost({ request, env }) {
         ten,
         nguoi_choi: nguoi.id,
         diem: diemMoi,
+        muc: mucMoi,
         so_van: 1,
         thang: kq.ket_qua === "thang" ? 1 : 0,
         hoa: kq.ket_qua === "hoa" ? 1 : 0,
@@ -98,5 +102,5 @@ export async function onRequestPost({ request, env }) {
     await boVan();
     return tra(502, { loi: "khong_cong_duoc_diem" });
   }
-  return tra(200, { ket_qua: kq.ket_qua, diem_cong: thayDoi, tong_diem: diemMoi });
+  return tra(200, { ket_qua: kq.ket_qua, diem_cong: thayDoi, tong_diem: diemMoi, muc: mucMoi });
 }
