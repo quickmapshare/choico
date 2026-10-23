@@ -69,6 +69,8 @@ import Layout from "../layouts/Layout.astro";
   .co-nut-chu:disabled { opacity: .5; cursor: default; }
   .co-nut-goc { margin-left: auto; display: inline-flex; gap: .4rem; }
   .co-nut-icon { width: 2.3rem; height: 2.3rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  /* Thuộc tính hidden không luôn ẩn phần tử SVG trên mọi trình duyệt, nên ghi rõ: mỗi nút chỉ hiện một biểu tượng */
+  .co-nut-icon > svg[hidden] { display: none; }
   /* Nút bật tiếng: đang bật thì đổi sang kiểu viền */
   .co-nut-icon[aria-pressed="true"] { background: var(--nen); color: var(--nhan); }
   .co-ten-o { display: inline-flex; align-items: center; gap: .3rem; }
