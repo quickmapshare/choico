@@ -6,7 +6,7 @@ const { nhung = false } = Astro.props;
   {!nhung && <p class="phu">Bạn cầm quân đỏ và đi trước. Bắt đầu ở mức 1/5: thắng thì lên một mức, hòa giữ nguyên, thua thì xuống một mức. Ván hòa khi đi quá 120 nước.</p>}
 
   <div class="co-dieu-khien">
-    <span class="co-ten-o" hidden={nhung}>
+    <span class="co-ten-o" hidden>
       <label class="co-ten">Tên của bạn
         <input id="co-ten" type="text" maxlength="50" autocomplete="nickname" placeholder="Tối đa 50 ký tự" />
       </label>
@@ -14,6 +14,8 @@ const { nhung = false } = Astro.props;
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </span>
+    <button type="button" id="co-dang-nhap" class="co-nut-chu" hidden={nhung}>Đăng nhập Google</button>
+    <button type="button" id="co-dang-xuat" class="co-nut-chu co-nut-phu" hidden>Đăng xuất</button>
     <span id="co-muc-hien-tai" class="co-muc-hien-tai"></span>
   </div>
   <div class="co-thanh-nut">
@@ -55,13 +57,14 @@ const { nhung = false } = Astro.props;
   </section>
   {nhung && (
     <p class="phu co-lien-ket">
-      <a href="https://choico.pages.dev/co-tuong/" target="_blank" rel="noopener">Lưu tên và xem bảng xếp hạng trên ChoiCo →</a>
+      <a href="https://choico.pages.dev/co-tuong/" target="_blank" rel="noopener">Đăng nhập, lưu tên và xem bảng xếp hạng trên ChoiCo →</a>
     </p>
   )}
 
 <!-- is:global vì bàn cờ được JavaScript vẽ, CSS có phạm vi sẽ không áp dụng cho các phần tử đó -->
 <style is:global>
-  .co-ten-o[hidden], .co-bang-diem[hidden] { display: none; }
+  .co-ten-o[hidden], .co-bang-diem[hidden], .co-nut-chu[hidden] { display: none; }
+  .co-nut-phu { background: var(--nen); color: var(--nhan); }
   .co-lien-ket { margin: .8rem 0 0; }
   .co-dieu-khien { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1rem 0 .6rem; }
   .co-muc-hien-tai { font-weight: 600; }
@@ -135,8 +138,9 @@ const { nhung = false } = Astro.props;
 <script>
   import {
     khoiTao, nuocHopLe, apDung, kyHieu, chonTrongDinh, banVanBan, lamSachTen, tenHopLe, quanBiAn, biChieu,
-    NUOC_TOI_DA, HOAN_TOI_DA, timNuoc, taoTenTam,
+    NUOC_TOI_DA, HOAN_TOI_DA, timNuoc,
   } from "../lib/co-tuong.js";
+  import { batDauDangNhap, headerXacThuc, docToken, xoaToken } from "../lib/co-tuong-tai-khoan.js";
   import { timNuocMay } from "../lib/co-tuong-may.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
   // Địa chỉ PocketBase công khai: chỉ đọc bảng điểm, ghi điểm đi qua /api/co-tuong-van
@@ -238,29 +242,8 @@ const { nhung = false } = Astro.props;
   let ketThuc = false;
   let capDo = 1; // mức hiện tại, 1 đến 5
   let soNuoc = 0; // số nước đã đi trong ván (cả hai bên)
-  // Tên người chơi, lưu trong localStorage. Chưa có tên thì tạo tên tạm "Kỳ thủ XXXX".
-  const KHOA_TEN = "co-tuong-ten";
+  // Tên người chơi lấy từ hồ sơ trên server sau khi đăng nhập Google. Chưa đăng nhập thì ten rỗng và ván không ghi điểm.
   let ten = "";
-
-  function docTen() {
-    try {
-      const t = localStorage.getItem(KHOA_TEN) || "";
-      if (tenHopLe(t)) return t;
-    } catch {
-      // Không đọc được localStorage thì vẫn tạo tên tạm cho phiên này
-    }
-    const tam = taoTenTam();
-    luuTen(tam);
-    return tam;
-  }
-
-  function luuTen(t) {
-    try {
-      localStorage.setItem(KHOA_TEN, t);
-    } catch {
-      // Không lưu được tên thì vẫn dùng trong phiên hiện tại
-    }
-  }
 
   function tenHienThi() {
     return ten || "Bạn";
@@ -301,10 +284,14 @@ const { nhung = false } = Astro.props;
     const viEl = document.getElementById("co-vi-tri") as HTMLElement;
     try {
       // Server che số trong tên trên bảng điểm và tính vị trí, trình duyệt không đọc trực tiếp PocketBase
-      const r = await fetch(`/api/co-tuong-bang-diem?ten=${encodeURIComponent(ten)}`);
+      const r = await fetch("/api/co-tuong-bang-diem", { headers: headerXacThuc() });
       if (!r.ok) throw new Error("bang_diem_loi");
       const { top, vi_tri } = await r.json();
       hienBangDiem(top || []);
+      if (!ten) {
+        viEl.textContent = "Đăng nhập Google để ghi điểm và có tên trên bảng xếp hạng.";
+        return;
+      }
       if (!vi_tri) {
         viEl.textContent = `${ten} chưa có điểm. Hoàn thành một ván để có điểm.`;
         return;
@@ -323,17 +310,23 @@ const { nhung = false } = Astro.props;
   // Gửi nhật ký ván lên server để tính điểm. Mỗi ván chỉ gửi thành công một lần.
   async function nopDiem() {
     if (!ketThuc || daNop || nuocDaDi.length === 0) return;
-    if (!tenHopLe(ten)) {
-      thongBaoDiem("Nhập tên để ghi điểm.");
+    if (!ten) {
+      thongBaoDiem("Đăng nhập Google để ghi điểm ván này lên bảng xếp hạng.");
       return;
     }
     try {
       const r = await fetch("/api/co-tuong-van", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ma_van: maVan, ten, nuoc: nuocDaDi, so_hoan: soHoan }),
+        headers: { "content-type": "application/json", ...headerXacThuc() },
+        body: JSON.stringify({ ma_van: maVan, nuoc: nuocDaDi, so_hoan: soHoan }),
       });
-      if (r.status === 409) {
+      if (r.status === 401) {
+        xoaToken(); // token hết hạn hoặc không hợp lệ
+        datTaiKhoan("");
+        thongBaoDiem("Phiên đăng nhập đã hết hạn. Đăng nhập lại để ghi điểm.");
+        return;
+      }
+      if (r.status === 409 && (await r.clone().json().catch(() => ({}))).loi === "van_da_tinh_diem") {
         daNop = true; // ván đã được tính trước đó
       } else if (r.ok) {
         const { diem_cong, tong_diem } = await r.json();
@@ -854,13 +847,18 @@ const { nhung = false } = Astro.props;
     tenEl.value = lamSachTen(tenEl.value);
   });
   // Đổi tên trên server: cập nhật bảng điểm và các ván đã tính điểm. Trả về thông báo lỗi nếu không đổi được.
-  async function doiTenTrenServer(tenCu: string, tenMoi: string): Promise<string | null> {
+  async function doiTenTrenServer(tenMoi: string): Promise<string | null> {
     try {
-      const r = await fetch("/api/co-tuong-ten", {
+      const r = await fetch("/api/co-tuong-ho-so", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ten_cu: tenCu, ten_moi: tenMoi }),
+        headers: { "content-type": "application/json", ...headerXacThuc() },
+        body: JSON.stringify({ ten_moi: tenMoi }),
       });
+      if (r.status === 401) {
+        xoaToken();
+        datTaiKhoan("");
+        return "Phiên đăng nhập đã hết hạn. Đăng nhập lại để đổi tên.";
+      }
       if (r.status === 409) return "Tên này đã có người dùng. Hãy chọn tên khác.";
       if (!r.ok) return "Chưa đổi được tên trên bảng điểm. Thử lại sau.";
       return null;
@@ -889,7 +887,7 @@ const { nhung = false } = Astro.props;
     dangDoiTen = true;
     doiTenEl.disabled = true;
     try {
-      const loi = await doiTenTrenServer(tenCu, t);
+      const loi = await doiTenTrenServer(t);
       if (loi) {
         hienTrangThai(loi);
         tenEl.value = tenCu;
@@ -897,7 +895,6 @@ const { nhung = false } = Astro.props;
       }
       ten = t;
       tenEl.value = t;
-      luuTen(t);
       // Ván đã kết thúc nhưng chưa ghi điểm: ghi ngay bây giờ bằng tên mới
       if (ketThuc && !daNop) void nopDiem();
       void taiBangDiem();
@@ -914,8 +911,45 @@ const { nhung = false } = Astro.props;
     }
   });
 
-  ten = docTen();
-  tenEl.value = ten;
+  // Đăng nhập Google: hiện ô tên và nút Đăng xuất khi đã có hồ sơ, ngược lại hiện nút Đăng nhập
+  const dangNhapEl = document.getElementById("co-dang-nhap") as HTMLButtonElement;
+  const dangXuatEl = document.getElementById("co-dang-xuat") as HTMLButtonElement;
+  const tenOEl = document.querySelector(".co-ten-o") as HTMLElement;
+  const laBanNhung = dangNhapEl.hasAttribute("hidden"); // bản nhúng không có nút đăng nhập, dùng link sang ChoiCo
+  function datTaiKhoan(tenMoi: string) {
+    ten = tenMoi;
+    tenEl.value = tenMoi;
+    tenOEl.hidden = laBanNhung || !tenMoi;
+    dangXuatEl.hidden = laBanNhung || !tenMoi;
+    dangNhapEl.hidden = laBanNhung || !!tenMoi;
+  }
+  dangNhapEl.addEventListener("click", async () => {
+    dangNhapEl.disabled = true;
+    try {
+      await batDauDangNhap();
+    } catch {
+      hienTrangThai("Chưa đăng nhập Google được. Thử lại sau.");
+      dangNhapEl.disabled = false;
+    }
+  });
+  dangXuatEl.addEventListener("click", () => {
+    xoaToken();
+    datTaiKhoan("");
+    thongBaoDiem("");
+    void taiBangDiem();
+  });
+  // Có token thì hỏi server lấy tên; token sai hoặc hết hạn thì coi như chưa đăng nhập
+  async function taiHoSo() {
+    if (!docToken()) return datTaiKhoan("");
+    try {
+      const r = await fetch("/api/co-tuong-ho-so", { headers: headerXacThuc() });
+      if (r.ok) return datTaiKhoan((await r.json()).ten || "");
+      if (r.status === 401) xoaToken();
+    } catch {
+      // mất mạng: giữ token, thử lại lần tải sau
+    }
+    datTaiKhoan(""); // chưa lấy được tên: tạm coi như chưa đăng nhập
+  }
 
   // Khôi phục ván đang dở (nếu có), không thì bắt đầu ván mới
   const d = docTrangThai();
@@ -935,10 +969,12 @@ const { nhung = false } = Astro.props;
     hienTrangThai(d.thongBao || "");
     ve();
     if (d.luot === "b" && !ketThuc) void mayDi();
-    // Ván đã kết thúc nhưng chưa ghi điểm (ví dụ mạng lỗi lúc trước): thử ghi lại
-    if (ketThuc && !daNop) void nopDiem();
   } else {
     vanMoi();
   }
-  void taiBangDiem();
+  // Lấy tên từ hồ sơ trước, rồi mới ghi điểm ván đã kết thúc mà chưa ghi (mạng lỗi lúc trước, hoặc vừa đăng nhập xong) và tải bảng điểm
+  void taiHoSo().then(() => {
+    if (ketThuc && !daNop) void nopDiem();
+    void taiBangDiem();
+  });
 </script>

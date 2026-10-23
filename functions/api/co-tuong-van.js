@@ -1,8 +1,8 @@
 // Cloudflare Pages Function: nhận nhật ký một ván cờ tướng đã kết thúc, chạy lại ván để kiểm tra, rồi cộng điểm.
 // Điểm chỉ được tính khi cả ván hợp lệ. Mỗi ván (ma_van) chỉ được tính một lần.
 // Secret cần đặt trong Cloudflare Pages: PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD. Biến PB_URL lấy từ build.
-import { xacMinhVan, tenHopLe, diemCongVan, NUOC_TOI_DA, HOAN_TOI_DA } from "../../src/lib/co-tuong.js";
-import { tra, dangNhap } from "../_lib/pocketbase.js";
+import { xacMinhVan, diemCongVan, NUOC_TOI_DA, HOAN_TOI_DA } from "../../src/lib/co-tuong.js";
+import { tra, dangNhap, xacThuc } from "../_lib/pocketbase.js";
 
 const NGUON_CHO_PHEP = ["https://choico.pages.dev"];
 const MAU_MA_VAN = /^[A-Za-z0-9-]{16,64}$/;
@@ -20,9 +20,14 @@ export async function onRequestPost({ request, env }) {
   } catch {
     return tra(400, { loi: "json_khong_hop_le" });
   }
-  const { ma_van, ten, nuoc, so_hoan = 0 } = body ?? {};
+  // Chỉ người đã đăng nhập Google mới được ghi điểm; tên lấy từ hồ sơ, không nhận từ trình duyệt
+  const nguoi = await xacThuc(env.PB_URL, request);
+  if (!nguoi) return tra(401, { loi: "chua_dang_nhap" });
+  if (!nguoi.ten) return tra(409, { loi: "chua_co_ten" });
+  const ten = nguoi.ten;
+
+  const { ma_van, nuoc, so_hoan = 0 } = body ?? {};
   if (typeof ma_van !== "string" || !MAU_MA_VAN.test(ma_van)) return tra(400, { loi: "ma_van_khong_hop_le" });
-  if (typeof ten !== "string" || !tenHopLe(ten)) return tra(400, { loi: "ten_khong_hop_le" });
   if (!Array.isArray(nuoc) || nuoc.length === 0 || nuoc.length > NUOC_TOI_DA) return tra(400, { loi: "nuoc_khong_hop_le" });
   if (!nuoc.every((x) => typeof x === "string" && MAU_NUOC.test(x))) return tra(400, { loi: "nuoc_khong_hop_le" });
   if (!Number.isInteger(so_hoan) || so_hoan < 0 || so_hoan > HOAN_TOI_DA) return tra(400, { loi: "so_hoan_khong_hop_le" });
@@ -47,7 +52,7 @@ export async function onRequestPost({ request, env }) {
   if ((await daCo.json()).totalItems > 0) return tra(409, { loi: "van_da_tinh_diem" });
 
   // Đọc điểm hiện tại của tên này trước, để điểm không xuống dưới 0
-  const timTen = await fetch(`${pb}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`ten="${ten}"`)}`, { headers: H });
+  const timTen = await fetch(`${pb}/api/collections/cho_phien_co_diem/records?perPage=1&filter=${encodeURIComponent(`nguoi_choi="${nguoi.id}"`)}`, { headers: H });
   if (!timTen.ok) return tra(502, { loi: "khong_doc_duoc_diem" });
   const dong = (await timTen.json()).items?.[0] ?? null;
   const diemCu = dong ? dong.diem : 0;
@@ -57,7 +62,7 @@ export async function onRequestPost({ request, env }) {
   const ghiVan = await fetch(`${pb}/api/collections/cho_phien_co_van/records`, {
     method: "POST",
     headers: H,
-    body: JSON.stringify({ ma_van, ten, ket_qua: kq.ket_qua, diem_cong: thayDoi }),
+    body: JSON.stringify({ ma_van, ten, nguoi_choi: nguoi.id, ket_qua: kq.ket_qua, diem_cong: thayDoi }),
   });
   if (!ghiVan.ok) return tra(502, { loi: "khong_ghi_duoc_van" });
   const idVan = (await ghiVan.json()).id;
@@ -81,6 +86,7 @@ export async function onRequestPost({ request, env }) {
       headers: H,
       body: JSON.stringify({
         ten,
+        nguoi_choi: nguoi.id,
         diem: diemMoi,
         so_van: 1,
         thang: kq.ket_qua === "thang" ? 1 : 0,

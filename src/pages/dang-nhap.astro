@@ -1,0 +1,20 @@
+---
+// Trang Google chuyển về sau khi đăng nhập. Đổi mã lấy token rồi quay lại bàn cờ.
+import Layout from "../layouts/Layout.astro";
+---
+<Layout lang="vi" tieuDe="Đang đăng nhập" moTa="Hoàn tất đăng nhập Google cho cờ tướng.">
+  <h1>Đang đăng nhập...</h1>
+  <p id="thong-bao" class="phu">Vui lòng chờ trong giây lát.</p>
+  <p><a href="/co-tuong/">Về bàn cờ</a></p>
+</Layout>
+
+<script>
+  import { hoanTatDangNhap } from "../lib/co-tuong-tai-khoan.js";
+  const tb = document.getElementById("thong-bao") as HTMLElement;
+  hoanTatDangNhap().then(
+    (diaChi) => location.replace(diaChi),
+    (loi) => {
+      tb.textContent = loi.message === "da_huy" ? "Bạn đã hủy đăng nhập." : "Chưa đăng nhập được. Hãy quay lại bàn cờ và thử lại.";
+    },
+  );
+</script>
