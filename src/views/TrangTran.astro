@@ -1,5 +1,5 @@
 ---
-// Trang trận khép kín: tạo link mời (cần đăng nhập) hoặc vào chơi qua link (không cần đăng nhập). Không tính điểm.
+// Trang trận khép kín: tạo link mời hoặc vào chơi qua link, đều không cần đăng nhập. Không tính điểm.
 import Layout from "../layouts/Layout.astro";
 import { t, chuCaTrang } from "../i18n/strings.js";
 
@@ -12,15 +12,12 @@ const T = chuCaTrang(lang);
   <p id="tr-mo-ta" class="phu">{T.trMoTa}</p>
 
   <section id="tr-tao" class="tr-khoi" hidden>
+    <!-- Khách (chưa đăng nhập) tự nhập tên; người đã đăng nhập dùng tên tài khoản nên ô này ẩn -->
+    <label id="tr-ten-tao-hang" class="tr-hang">
+      <span>{T.trTenVao}</span>
+      <input id="tr-ten-tao" type="text" maxlength="50" autocomplete="nickname" />
+    </label>
     <button type="button" id="tr-nut-tao" class="tr-nut tr-nut-chinh">{T.trTaoLink}</button>
-    <!-- Chưa đăng nhập: nói rõ cần đăng nhập và có nút đăng nhập Google ngay tại đây -->
-    <div id="tr-can-dang-nhap" class="tr-can-dang-nhap" hidden>
-      <p class="phu">{T.trCanDangNhap}</p>
-      <button type="button" id="tr-nut-dang-nhap" class="tr-nut-google">
-        <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-        <span>{T.dangNhapNut}</span>
-      </button>
-    </div>
   </section>
 
   <section id="tr-link" class="tr-khoi" hidden>
@@ -133,20 +130,7 @@ const T = chuCaTrang(lang);
   /* Nút trong thẻ: chia đều hàng, chữ dài tự xuống dòng trong nút thay vì tràn ra ngoài */
   .tr-het-gio .tr-nut { flex: 1 1 8rem; font-size: .9rem; padding: .4rem .8rem; background: var(--mat); }
   .tr-het-gio .tr-nut-chinh { background: var(--nhan); }
-  /* Chưa đăng nhập: lời nhắc và nút đăng nhập Google, kiểu giống trang chơi với máy */
-  .tr-can-dang-nhap { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; }
-  .tr-can-dang-nhap[hidden] { display: none; }
-  .tr-nut-google {
-    display: inline-flex; align-items: center; gap: .6rem; min-height: 2.4rem; padding: .4rem 1.1rem .4rem .85rem; font: inherit; font-weight: 500;
-    border-radius: 999px; border: 1px solid #dadce0; transition: background-color .15s, box-shadow .15s; background: #fff; color: #3c4043; cursor: pointer;
-  }
-  .tr-nut-google:hover { background: #f8f9fa; border-color: #d2e3fc; box-shadow: 0 1px 2px rgba(60, 64, 67, .2); }
-  :root[data-theme="dark"] .tr-nut-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
-  :root[data-theme="dark"] .tr-nut-google:hover { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .tr-nut-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
-    :root:not([data-theme="light"]) .tr-nut-google:hover { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
-  }
+  .tr-hang[hidden] { display: none; }
   .tr-nut-icon {
     flex: none; width: 2.4rem; height: 2.4rem; min-width: 2.4rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;
     border-radius: 50%; border: 1px solid var(--vien); background: var(--mat); color: var(--chu); box-shadow: var(--bong); cursor: pointer;
@@ -183,7 +167,7 @@ const T = chuCaTrang(lang);
   import { duyetNuoc, benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/co-tuong-tran.js";
   import { taoAmThanh } from "../lib/co-tuong-am.js";
   import { ngheTinHieu } from "../lib/co-tuong-realtime.js";
-  import { docToken, headerXacThuc, batDauDangNhap, damBaoCoTen } from "../lib/co-tuong-tai-khoan.js";
+  import { docToken, headerXacThuc, damBaoCoTen } from "../lib/co-tuong-tai-khoan.js";
 
   const T = JSON.parse(document.getElementById("tran-chu")?.textContent || "{}");
   const f = (mau: string, v: Record<string, string | number> = {}) => mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
@@ -656,9 +640,7 @@ const T = chuCaTrang(lang);
 
   function hienKhoiTao() {
     $("tr-tao").hidden = false;
-    const coToken = !!docToken();
-    ($("tr-nut-tao") as HTMLButtonElement).hidden = !coToken;
-    $("tr-can-dang-nhap").hidden = coToken;
+    $("tr-ten-tao-hang").hidden = !!docToken(); // đã đăng nhập thì dùng tên tài khoản
     batTrangThai("");
   }
 
@@ -885,10 +867,11 @@ const T = chuCaTrang(lang);
 
   const nut = (id: string) => $(id) as HTMLButtonElement;
 
-  // Tạo link: cần đăng nhập, xong thì chuyển sang trang có mã
+  // Tạo link (tài khoản hoặc khách), xong thì chuyển sang trang có mã
   nut("tr-nut-tao").addEventListener("click", () => void chay(nut("tr-nut-tao"), T.trDangTao, async () => {
+    const tenKhach = ($("tr-ten-tao") as HTMLInputElement).value.trim();
     const tao = () => goi("/api/co-tuong-khep-kin", {
-      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "tao" }),
+      method: "POST", headers: yeuCau(), body: JSON.stringify({ hanh_dong: "tao", ten_khach: tenKhach }),
     });
     let { ok, status, data } = await tao();
     // Người mới đăng nhập chưa có tên: tạo tên từ tên Google (như trang chơi với máy) rồi tạo link lại
@@ -897,13 +880,7 @@ const T = chuCaTrang(lang);
       location.href = `${location.pathname}?ma=${data.ma}`;
       return true;
     }
-    if (status === 401) {
-      // Phiên đăng nhập đã hết: thay nút tạo bằng lời nhắc và nút đăng nhập Google
-      nut("tr-nut-tao").hidden = true;
-      $("tr-can-dang-nhap").hidden = false;
-      return batTrangThai(T.trCanDangNhap);
-    }
-    batTrangThai(T.tdLoi);
+    batTrangThai(status === 429 ? T.trTaoQuaNhieu : T.tdLoi);
   }));
 
   nut("tr-nut-chep").addEventListener("click", async () => {
@@ -968,9 +945,6 @@ const T = chuCaTrang(lang);
     location.href = `${document.documentElement.dataset.tienTo || ""}/thuong-dai/`;
     return true;
   }));
-
-  // Nút đăng nhập ngay trong thông báo cần đăng nhập
-  $("tr-nut-dang-nhap").addEventListener("click", () => void batDauDangNhap());
 
   void taiTran();
 </script>
