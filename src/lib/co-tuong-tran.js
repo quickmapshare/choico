@@ -58,3 +58,6 @@ export function maKhepKinConHieuLuc(tran, now = Date.now()) {
   if (!tran.het_han) return false;
   return now < Date.parse(tran.het_han);
 }
+
+// Ký hiệu nước đi hợp lệ về hình thức: cột a–i, hàng 0–9, ví dụ "a3a4"
+export const MAU_KY_HOP_LE = /^[a-i][0-9][a-i][0-9]$/;
