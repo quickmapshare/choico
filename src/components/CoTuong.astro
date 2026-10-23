@@ -108,7 +108,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   .co-nut-goc { margin-left: auto; display: inline-flex; gap: .5rem; }
   /* Nút biểu tượng tròn, trung tính; rê chuột hoặc bật thì ngả sang màu nhấn */
   .co-nut-icon {
-    width: 2.4rem; height: 2.4rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+    flex: none; width: 2.4rem; height: 2.4rem; min-width: 2.4rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;
     border-radius: 50%; border: 1px solid var(--vien); background: var(--mat); color: var(--chu); box-shadow: var(--bong);
   }
   .co-nut-icon:hover { border-color: var(--nhan); color: var(--nhan); }
