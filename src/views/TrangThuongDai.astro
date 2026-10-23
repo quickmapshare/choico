@@ -45,7 +45,8 @@ const T = chuCaTrang(lang);
   </section>
   <p id="td-thong-bao" class="td-thong-bao" role="status" aria-live="polite"></p>
 
-<style>
+<style is:global>
+  /* Global vì thẻ và nút trong danh sách được tạo bằng JS, không có mã scope của Astro */
   .td-muc { font-weight: 600; margin: 1rem 0 .5rem; }
   .td-khoi { margin: 1rem 0; display: flex; flex-direction: column; gap: .8rem; align-items: flex-start; }
   .td-khoi[hidden], #td-chinh[hidden], #td-trong[hidden], #td-dang-nhap[hidden] { display: none; }
