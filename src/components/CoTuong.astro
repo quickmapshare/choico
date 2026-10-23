@@ -5,7 +5,6 @@ const { nhung = false, lang = "vi" } = Astro.props;
 const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấy tiếng Việt; cũng được gửi cho script phía trình duyệt
 ---
   <script is:inline type="application/json" id="co-chu" set:html={JSON.stringify(T)}></script>
-  <div class="co-cot">
   {!nhung && <h1>{T.ctTieuDe}</h1>}
   {!nhung && <p class="phu">{T.ctGioiThieu}</p>}
 
@@ -69,7 +68,6 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
       <a href={`https://choico.pages.dev${duongDan(lang, "/co-tuong/")}`} target="_blank" rel="noopener">{T.lienKetNhung}</a>
     </p>
   )}
-  </div>
 
 <!-- is:global vì bàn cờ được JavaScript vẽ, CSS có phạm vi sẽ không áp dụng cho các phần tử đó -->
 <style is:global>
@@ -92,9 +90,6 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     :root:not([data-theme="light"]) .co-nut-google:hover { background: #1f1f20; border-color: #a8abad; box-shadow: none; }
   }
   .co-lien-ket { margin: .8rem 0 0; }
-  /* Cả khối chơi nằm giữa trang, rộng bằng bàn cờ để nút, bàn và bảng điểm thẳng hàng */
-  .co-cot { width: 100%; max-width: 460px; margin: 0 auto; }
-  .co-top10 { max-width: none; }
   .co-dieu-khien { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1rem 0 .6rem; }
   .co-muc-hien-tai { font-weight: 600; }
   /* Thanh nút: nút chữ bên trái, nút biểu tượng gom bên phải */
@@ -133,7 +128,8 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   .co-doi-ten:disabled { opacity: .5; cursor: default; }
   .co-trang-thai { min-height: 1.5em; font-weight: 600; }
   .co-ban { width: 100%; max-width: 460px; margin: .5rem 0 1.5rem; }
-  .co-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; }
+  /* Hai khay quân bị ăn và bàn cờ nằm giữa trang; phần chữ và nút vẫn căn trái */
+  .co-khung { display: flex; flex-direction: column; width: 100%; max-width: 460px; margin: 0 auto; }
   .co-khung .co-ban { max-width: none; margin: .4rem 0; }
   .co-an-nua { border: 1px solid var(--vien); border-radius: .5rem; padding: .4rem .6rem; background: var(--mat); min-height: 3.2rem; }
   .co-an-nua h3 { font-size: .85rem; margin: 0 0 .3rem; color: var(--phu); font-weight: 600; }
