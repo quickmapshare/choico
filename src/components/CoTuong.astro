@@ -1,10 +1,11 @@
 ---
 // Bàn cờ tướng và các nút. nhung = true: bản gọn để nhúng vào web khác (không tiêu đề, không ô tên, không bảng điểm).
+// xemVan = true: trang mở một ván qua link (/xem-van/?ma=...), chỉ xem lại, không chơi và không ghi điểm.
 import { chuCaTrang, duongDan } from "../i18n/strings.js";
-const { nhung = false, lang = "vi" } = Astro.props;
+const { nhung = false, lang = "vi", xemVan = false } = Astro.props;
 const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấy tiếng Việt; cũng được gửi cho script phía trình duyệt
 ---
-  <script is:inline type="application/json" id="co-chu" set:html={JSON.stringify(T)}></script>
+  <script is:inline type="application/json" id="co-chu" data-xem-van={xemVan ? "1" : undefined} set:html={JSON.stringify(T)}></script>
   {!nhung && <h1>{T.ctTieuDe}</h1>}
   {!nhung && <p class="phu">{T.ctGioiThieu}</p>}
 
@@ -28,6 +29,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     <button type="button" id="co-moi" class="co-nut-chu">{T.vanMoi}</button>
     <button type="button" id="co-hoan" class="co-nut-chu">{T.hoan.replace("{n}", "3")}</button>
     <button type="button" id="co-xem-lai" class="co-nut-chu" hidden>{T.xemLai}</button>
+    <button type="button" id="co-chep-link" class="co-nut-chu co-nut-phu" hidden>{T.chepLink}</button>
     <div class="co-nut-goc">
       <button type="button" id="co-tieng" class="co-nut-icon" aria-label={T.amThanh} aria-pressed="false" title={T.batAm}>
         <svg id="co-loa-bat" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" hidden><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -131,6 +133,9 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   .co-xl .co-nut-icon:disabled { opacity: .4; cursor: default; }
   .co-xl .co-nut-icon:disabled:hover { border-color: var(--vien); color: var(--chu); }
   #co-xl-thoat { margin-left: auto; }
+  /* Trang xem ván qua link: chỉ có bàn cờ và thanh xem lại, không có phần chơi và bảng điểm */
+  body.co-xem-van .co-dieu-khien, body.co-xem-van .co-bang-diem, body.co-xem-van #co-moi, body.co-xem-van #co-hoan,
+  body.co-xem-van #co-xl-thoat, body.co-xem-van #co-xem-lai, body.co-xem-van #co-chep-link { display: none !important; }
   .co-nut-chu:disabled { opacity: .45; cursor: default; box-shadow: none; }
   .co-nut-goc { margin-left: auto; display: inline-flex; gap: .5rem; }
   /* Nút biểu tượng tròn, trung tính; rê chuột hoặc bật thì ngả sang màu nhấn */
@@ -211,6 +216,9 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
   const T = JSON.parse(document.getElementById("co-chu")?.textContent || "{}");
   const f = (mau: string, v: Record<string, string | number> = {}) => mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
   const NGON_NGU_TRANG = document.documentElement.lang; // thông báo lưu cùng ván chỉ dùng lại khi cùng ngôn ngữ
+  // Trang xem ván qua link: không chơi, không lưu trạng thái, chỉ tải ván rồi xem lại
+  const XEM_VAN = document.getElementById("co-chu")?.dataset.xemVan === "1";
+  if (XEM_VAN) document.body.classList.add("co-xem-van");
 
   // Tên quân theo cách gọi thường thấy ở Việt Nam: quân đỏ có Tốt, quân đen có Chốt
   // Quân dùng chữ Hán như bàn cờ truyền thống: bên đỏ và bên đen khác nhau
@@ -431,11 +439,13 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     } catch {
       thongBaoDiem(T.loiGhiDiem);
     }
+    capNhatXemLai(); // ván đã có mã trên server nên bật được nút chép link
     luuTrangThai("r");
     void taiBangDiem();
   }
 
   function luuTrangThai(luot) {
+    if (XEM_VAN) return; // không ghi đè ván đang chơi của người dùng bằng ván đang xem
     try {
       // Đang xem lại thì lưu thế cờ và thông báo thật của ván, không lưu thế đang xem
       localStorage.setItem(KHOA_LUU, JSON.stringify({
@@ -893,6 +903,7 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
 
   function capNhatXemLai() {
     xemEl.hidden = !ketThuc || nuocDaDi.length === 0 || !!xem;
+    chepEl.hidden = !ketThuc || !daNop || nuocDaDi.length === 0 || !!xem;
     xlEl.hidden = !xem;
     if (!xem) return;
     const n = nuocDaDi.length;
@@ -982,6 +993,46 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     xem = null;
     hieuUng = null;
     ve();
+  }
+
+  // Chép link xem ván: chỉ khi ván đã được ghi lên server (có mã và nước đi) thì link mới mở được
+  const chepEl = document.getElementById("co-chep-link") as HTMLButtonElement;
+  const linkXemVan = () => `${location.origin}${document.documentElement.dataset.tienTo || ""}/xem-van/?ma=${maVan}`;
+  async function chepLink() {
+    const url = linkXemVan();
+    try {
+      await navigator.clipboard.writeText(url);
+      chepEl.textContent = T.daChepLink;
+      setTimeout(() => (chepEl.textContent = T.chepLink), 2000);
+    } catch {
+      hienTrangThai(url); // trình duyệt chặn clipboard: hiện link để người dùng tự chép
+    }
+  }
+  chepEl.addEventListener("click", () => void chepLink());
+
+  // Mở ván qua link: tải nhật ký nước đi từ server rồi xem lại từ thế khởi đầu
+  async function moVanChiaSe() {
+    const ma = new URLSearchParams(location.search).get("ma") || "";
+    hienTrangThai(T.dangTaiVan);
+    let v;
+    try {
+      const r = await fetch(`/api/co-tuong-van-xem?ma_van=${encodeURIComponent(ma)}`);
+      if (r.status === 400 || r.status === 404) return hienTrangThai(T.vanKhongCo);
+      if (!r.ok) throw new Error("tai_loi");
+      v = await r.json();
+    } catch {
+      return hienTrangThai(T.loiMang);
+    }
+    if (!v.nuoc) return hienTrangThai(T.vanKhongNuoc);
+    const kq = v.ket_qua === "thang" ? T.kqThang : v.ket_qua === "thua" ? T.kqThua : T.kqHoa;
+    nuocDaDi = v.nuoc;
+    soHoan = v.so_hoan || 0;
+    soNuoc = nuocDaDi.length;
+    ketThuc = true;
+    daNop = true; // trang này không ghi điểm
+    b = khoiTao();
+    thongBaoDiem(f(T.vanCuaAi, { ten: v.ten, kq }));
+    batDauXem();
   }
 
   xemEl.addEventListener("click", batDauXem);
@@ -1184,9 +1235,11 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     datTaiKhoan(""); // chưa lấy được tên: tạm coi như chưa đăng nhập
   }
 
-  // Khôi phục ván đang dở (nếu có), không thì bắt đầu ván mới
-  const d = docTrangThai();
-  if (d) {
+  // Khôi phục ván đang dở (nếu có), không thì bắt đầu ván mới. Trang xem ván qua link chỉ tải ván đó.
+  const d = XEM_VAN ? null : docTrangThai();
+  if (XEM_VAN) {
+    void moVanChiaSe();
+  } else if (d) {
     b = d.b;
     capDo = Number.isInteger(d.capDo) && d.capDo >= 1 && d.capDo <= MUC_TOI_DA ? d.capDo : 1;
     soNuoc = Number.isInteger(d.soNuoc) ? d.soNuoc : 0;
@@ -1206,8 +1259,10 @@ const T = chuCaTrang(lang); // chuỗi của ngôn ngữ này, thiếu thì lấ
     vanMoi();
   }
   // Lấy tên từ hồ sơ trước, rồi mới ghi điểm ván đã kết thúc mà chưa ghi (mạng lỗi lúc trước, hoặc vừa đăng nhập xong) và tải bảng điểm
-  void taiHoSo().then(() => {
-    if (ketThuc && !daNop) void nopDiem();
-    void taiBangDiem();
-  });
+  if (!XEM_VAN) {
+    void taiHoSo().then(() => {
+      if (ketThuc && !daNop) void nopDiem();
+      void taiBangDiem();
+    });
+  }
 </script>
