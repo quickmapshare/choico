@@ -84,7 +84,8 @@ const OG_LOCALE: Record<string, string> = {
           function gtag() { dataLayer.push(arguments); }
           gtag("js", new Date());
           gtag("config", "G-YXVCXJ9ZXQ", {
-            page_location: location.origin + location.pathname,
+            // Giữ tham số utm_* để đo chiến dịch quảng cáo (banner); các tham số khác (kể cả ?ma=) bị bỏ
+            page_location: location.origin + location.pathname + (() => { const u = new URLSearchParams([...new URLSearchParams(location.search)].filter(([k]) => k.startsWith("utm_"))).toString(); return u ? "?" + u : ""; })(),
             page_referrer: document.referrer.split(/[?#]/)[0],
           });
         </script>
