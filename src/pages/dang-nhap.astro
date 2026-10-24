@@ -20,14 +20,19 @@ const chu = JSON.stringify(Object.fromEntries(Object.entries(CHU).map(([ma, c]) 
   let ma = "";
   try {
     const quayLai: string = JSON.parse(localStorage.getItem("co-tuong-dang-nhap") || "null")?.quayLai || "";
-    ma = quayLai.match(/^\/(en|zh-tw|ko|ja)\//)?.[1] || (quayLai ? "vi" : "");
+    const tienTo = quayLai.split("/")[1] || "";
+    ma = tienTo !== "vi" && chu[tienTo] ? tienTo : quayLai ? "vi" : "";
     if (!ma) ma = localStorage.getItem("choico-lang") || "";
   } catch {
     // bỏ qua
   }
   if (!chu[ma]) {
     const l = (navigator.language || "en").toLowerCase();
-    ma = l.startsWith("vi") ? "vi" : l.startsWith("ko") ? "ko" : l.startsWith("ja") ? "ja" : /^zh-(tw|hk|mo|hant)/.test(l) ? "zh-tw" : "en";
+    // Cùng quy tắc với theoMay trong Layout.astro: zh-TW/HK/MO là phồn thể, zh khác là giản thể, pt là Brazil
+    if (/^zh-(tw|hk|mo|hant)/.test(l)) ma = "zh-tw";
+    else if (l.startsWith("zh")) ma = "zh-cn";
+    else if (l.startsWith("pt")) ma = "pt-br";
+    else ma = chu[l.slice(0, 2)] ? l.slice(0, 2) : "en";
   }
   const c = chu[ma];
   const tb = document.getElementById("thong-bao") as HTMLElement;

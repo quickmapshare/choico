@@ -40,7 +40,10 @@ const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
 // public/og/caro/<ngôn ngữ>.png; tạo bằng tools/tao-anh-chia-se.mjs).
 const THU_MUC_OG: Record<string, string> = { co_vua: "co-vua/", caro: "caro/" };
 const anhChiaSe = new URL(`/og/${THU_MUC_OG[menuSang] || ""}${lang}.png`, Astro.site);
-const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "zh_TW", ko: "ko_KR", ja: "ja_JP" };
+const OG_LOCALE: Record<string, string> = {
+  vi: "vi_VN", en: "en_US", "zh-tw": "zh_TW", ko: "ko_KR", ja: "ja_JP",
+  "zh-cn": "zh_CN", es: "es_ES", ru: "ru_RU", "pt-br": "pt_BR", fr: "fr_FR", de: "de_DE", id: "id_ID",
+};
 ---
 <!doctype html>
 <html lang={thongTin(lang).html} data-tien-to={thongTin(lang).tienTo} data-tu-chon={tuChonNgonNgu ? "1" : undefined}>
@@ -78,15 +81,16 @@ const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "
       try {
         const goc = document.documentElement;
         if (goc.dataset.tuChon === "1" && !/bot|crawl|spider|slurp|lighthouse/i.test(navigator.userAgent)) {
-          const TIEN_TO = { en: "/en", "zh-tw": "/zh-tw", ko: "/ko", ja: "/ja" };
+          const TIEN_TO = { en: "/en", "zh-tw": "/zh-tw", ko: "/ko", ja: "/ja", "zh-cn": "/zh-cn", es: "/es", ru: "/ru", "pt-br": "/pt-br", fr: "/fr", de: "/de", id: "/id" };
           const theoMay = () => {
             for (const l of navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"]) {
               const s = String(l).toLowerCase();
               if (s === "vi" || s.startsWith("vi-")) return "vi";
-              if (s === "en" || s.startsWith("en-")) return "en";
-              if (s === "ko" || s.startsWith("ko-")) return "ko";
-              if (s === "ja" || s.startsWith("ja-")) return "ja";
+              // zh-TW/HK/MO là phồn thể, các zh khác là giản thể; pt là Brazil; còn lại khớp mã 2 chữ
               if (/^zh-(tw|hk|mo|hant)/.test(s)) return "zh-tw";
+              if (s.startsWith("zh")) return "zh-cn";
+              if (s.startsWith("pt")) return "pt-br";
+              if (s.slice(0, 2) in TIEN_TO) return s.slice(0, 2);
             }
             return "en";
           };

@@ -1,5 +1,13 @@
 // Chuỗi riêng của cờ vua, đè lên chuỗi chung (strings.js, viết theo cờ tướng) khi trang hoặc trận là cờ vua.
-// Thêm chuỗi ở đây thì thêm đủ 5 ngôn ngữ. Bản dịch en/zh-tw/ko/ja do AI viết, chưa có người bản ngữ kiểm tra.
+// Thêm chuỗi ở đây thì thêm đủ 5 ngôn ngữ. Bản dịch en/zh-tw/ko/ja và 7 ngôn ngữ ở ./them/ do AI viết, chưa có người bản ngữ kiểm tra.
+import zhCn from "./them/zh-cn.js";
+import es from "./them/es.js";
+import ru from "./them/ru.js";
+import ptBr from "./them/pt-br.js";
+import fr from "./them/fr.js";
+import de from "./them/de.js";
+import id from "./them/id.js";
+
 export const CHU_CO_VUA = {
   vi: {
     tenCo: "Cờ vua",
@@ -156,4 +164,11 @@ export const CHU_CO_VUA = {
     quanB: "ビショップ",
     quanN: "ナイト",
   },
+  "zh-cn": zhCn.coVua,
+  "es": es.coVua,
+  "ru": ru.coVua,
+  "pt-br": ptBr.coVua,
+  "fr": fr.coVua,
+  "de": de.coVua,
+  "id": id.coVua,
 };

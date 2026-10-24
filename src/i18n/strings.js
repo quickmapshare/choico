@@ -1,8 +1,16 @@
-// Chuỗi giao diện 5 ngôn ngữ: Việt (gốc, không tiền tố), Anh, Trung phồn thể Đài Loan, Hàn, Nhật.
+// Chuỗi giao diện 12 ngôn ngữ: Việt (gốc, không tiền tố), Anh, Trung phồn thể Đài Loan, Hàn, Nhật, Trung giản thể,
+// Tây Ban Nha, Nga, Bồ Đào Nha (Brazil), Pháp, Đức, Indonesia. Bản các ngôn ngữ thêm sau nằm ở thư mục ./them/.
 // Mẫu có chỗ thay dạng {ten}; hàm dien() điền vào. {link} là chỗ đặt liên kết trong câu.
 // Chuỗi chung viết theo cờ tướng; chuỗi riêng của loại cờ khác nằm ở file riêng (co-vua.js) và đè lên khi cần.
 import { CHU_CO_VUA } from "./co-vua.js";
 import { CHU_CARO } from "./caro.js";
+import zhCn from "./them/zh-cn.js";
+import es from "./them/es.js";
+import ru from "./them/ru.js";
+import ptBr from "./them/pt-br.js";
+import fr from "./them/fr.js";
+import de from "./them/de.js";
+import id from "./them/id.js";
 
 export const NGON_NGU = [
   { ma: "vi", html: "vi", ten: "Tiếng Việt", tienTo: "" },
@@ -10,6 +18,13 @@ export const NGON_NGU = [
   { ma: "zh-tw", html: "zh-TW", ten: "繁體中文", tienTo: "/zh-tw" },
   { ma: "ko", html: "ko", ten: "한국어", tienTo: "/ko" },
   { ma: "ja", html: "ja", ten: "日本語", tienTo: "/ja" },
+  { ma: "zh-cn", html: "zh-CN", ten: "简体中文", tienTo: "/zh-cn" },
+  { ma: "es", html: "es", ten: "Español", tienTo: "/es" },
+  { ma: "ru", html: "ru", ten: "Русский", tienTo: "/ru" },
+  { ma: "pt-br", html: "pt-BR", ten: "Português (Brasil)", tienTo: "/pt-br" },
+  { ma: "fr", html: "fr", ten: "Français", tienTo: "/fr" },
+  { ma: "de", html: "de", ten: "Deutsch", tienTo: "/de" },
+  { ma: "id", html: "id", ten: "Bahasa Indonesia", tienTo: "/id" },
 ];
 export const MA_NGON_NGU = NGON_NGU.map((n) => n.ma);
 export const NGON_NGU_PHU = NGON_NGU.filter((n) => n.ma !== "vi"); // các ngôn ngữ có tiền tố đường dẫn
@@ -18,7 +33,9 @@ export const thongTin = (lang) => NGON_NGU.find((n) => n.ma === lang) ?? NGON_NG
 // Đường dẫn của một trang ở ngôn ngữ lang. p bắt đầu bằng "/", ví dụ "/co-tuong/".
 export const duongDan = (lang, p) => thongTin(lang).tienTo + p;
 // Bỏ tiền tố ngôn ngữ khỏi đường dẫn hiện tại, ví dụ "/ja/co-tuong/" -> "/co-tuong/"
-export const boTienTo = (p) => p.replace(/^\/(en|zh-tw|ko|ja)(?=\/)/, "");
+// Bỏ tiền tố ngôn ngữ; danh sách lấy từ NGON_NGU nên thêm ngôn ngữ không phải sửa thêm ở đây
+const RE_TIEN_TO = new RegExp(`^\\/(${NGON_NGU_PHU.map((n) => n.tienTo.slice(1)).join("|")})(?=\\/)`);
+export const boTienTo = (p) => p.replace(RE_TIEN_TO, "");
 
 export function dien(mau, v = {}) {
   return mau.replace(/\{(\w+)\}/g, (_, k) => (k in v ? String(v[k]) : `{${k}}`));
@@ -1127,4 +1144,11 @@ export const CHU = {
     homeCo3Mo: "コンピューターと対戦、友だちと非公開で対局、またはアリーナで他の人と対局できます。",
     trLyNamLienTiep: "5つ並んだ",
   },
+  "zh-cn": zhCn.chung,
+  es: es.chung,
+  ru: ru.chung,
+  "pt-br": ptBr.chung,
+  fr: fr.chung,
+  de: de.chung,
+  id: id.chung,
 };

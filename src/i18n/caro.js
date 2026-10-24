@@ -1,7 +1,15 @@
 // Chuỗi riêng của cờ caro, đè lên chuỗi chung (strings.js, viết theo cờ tướng) khi trang hoặc trận là cờ caro.
 // Caro đánh trên giấy ô li: bên đi trước ("r") đánh X đỏ, bên đi sau ("b") đánh O xanh, nên đè các khóa nói tên bên
 // (trBanDo, trBanDen, trKetDo, trKetDen, diTruoc) cùng các khóa mô tả loại cờ. Không ăn quân, không chiếu nên giữ khóa chung khác.
-// Thêm chuỗi ở đây thì thêm đủ 5 ngôn ngữ. Bản dịch en/zh-tw/ko/ja do AI viết, chưa có người bản ngữ kiểm tra.
+// Thêm chuỗi ở đây thì thêm đủ 5 ngôn ngữ. Bản dịch en/zh-tw/ko/ja và 7 ngôn ngữ ở ./them/ do AI viết, chưa có người bản ngữ kiểm tra.
+import zhCn from "./them/zh-cn.js";
+import es from "./them/es.js";
+import ru from "./them/ru.js";
+import ptBr from "./them/pt-br.js";
+import fr from "./them/fr.js";
+import de from "./them/de.js";
+import id from "./them/id.js";
+
 export const CHU_CARO = {
   vi: {
     tenCo: "Cờ caro",
@@ -118,4 +126,11 @@ export const CHU_CARO = {
     nhungBanTieuDe: "五目並べ対コンピューター（埋め込み版）",
     nhungBanMoTa: "コンピューターと対戦する五目並べの盤。他のサイトに埋め込むための簡易版です。",
   },
+  "zh-cn": zhCn.caro,
+  "es": es.caro,
+  "ru": ru.caro,
+  "pt-br": ptBr.caro,
+  "fr": fr.caro,
+  "de": de.caro,
+  "id": id.caro,
 };

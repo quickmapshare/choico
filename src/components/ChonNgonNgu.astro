@@ -4,7 +4,7 @@
 import { NGON_NGU, t, thongTin, duongDan } from "../i18n/strings.js";
 const { lang = "vi", duongGoc = "/" } = Astro.props;
 // Nhãn ngắn trên nút, mỗi ngôn ngữ một ký hiệu gọn
-const NHAN_NGAN = { vi: "VI", en: "EN", "zh-tw": "繁", ko: "한", ja: "日" };
+const NHAN_NGAN = { vi: "VI", en: "EN", "zh-tw": "繁", ko: "한", ja: "日", "zh-cn": "简", es: "ES", ru: "RU", "pt-br": "PT", fr: "FR", de: "DE", id: "ID" };
 ---
 <div class="chon-ngon-ngu">
   <button type="button" id="chon-ngon-ngu-nut" class="cnn-nut" aria-haspopup="true" aria-expanded="false" aria-controls="chon-ngon-ngu-menu" aria-label={t(lang, "ngonNguAria")} title={t(lang, "ngonNguAria")}>
