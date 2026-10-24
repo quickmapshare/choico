@@ -69,19 +69,27 @@ function banCoVua() {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${rong}" height="${cao}" viewBox="0 0 ${rong} ${cao}">${svg}</svg>`;
 }
 
-// Bàn cờ caro cắt một góc (giao điểm, giống src/lib/caro/ve.js) kèm vài quân tròn đặc đỏ/đen, có một dãy gần thắng
+// Trang giấy ô li cắt một góc (5 x 6 ô, giống src/lib/caro/ve.js) kèm vài dấu X đỏ / O xanh, có một dãy gần thắng
 function banCaro() {
-  const KC = 84, SC = 4, SH = 5; // 5 x 6 giao điểm, cùng khung với banCo() cờ tướng
-  const x = (c) => 40 + c * KC;
-  const y = (r) => 40 + r * KC;
-  const net = 'stroke="#7a4b1e" stroke-width="3" fill="none"';
-  let svg = `<rect width="${40 * 2 + KC * SC}" height="${40 * 2 + KC * SH}" rx="22" fill="#f1dca8"/>`;
-  for (let r = 0; r <= SH; r++) svg += `<line ${net} x1="${x(0)}" y1="${y(r)}" x2="${x(SC)}" y2="${y(r)}"/>`;
-  for (let c = 0; c <= SC; c++) svg += `<line ${net} x1="${x(c)}" y1="${y(0)}" x2="${x(c)}" y2="${y(SH)}"/>`;
-  const quan = (c, r, mau) => `<circle cx="${x(c)}" cy="${y(r)}" r="30" fill="${mau}" stroke="#00000030" stroke-width="2"/>`;
-  const DO = "#b3261e", DEN = "#1f1f1f";
-  svg += quan(0, 4, DO) + quan(1, 3, DO) + quan(2, 2, DO) + quan(3, 1, DO) + quan(1, 1, DEN) + quan(3, 3, DEN);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${40 * 2 + KC * SC}" height="${40 * 2 + KC * SH}" viewBox="0 0 ${40 * 2 + KC * SC} ${40 * 2 + KC * SH}">${svg}</svg>`;
+  const KC = 84, LE = 18, SC = 5, SH = 6;
+  const rong = LE * 2 + KC * SC, cao = LE * 2 + KC * SH;
+  const x = (c) => LE + c * KC + KC / 2;
+  const y = (r) => LE + r * KC + KC / 2;
+  let svg = `<rect width="${rong}" height="${cao}" rx="22" fill="#fdfbf3"/>`;
+  for (let i = 0; i < SC; i++) svg += `<line stroke="#dceaf6" stroke-width="2" x1="${x(i)}" y1="${LE}" x2="${x(i)}" y2="${cao - LE}"/>`;
+  for (let i = 0; i < SH; i++) svg += `<line stroke="#dceaf6" stroke-width="2" x1="${LE}" y1="${y(i)}" x2="${rong - LE}" y2="${y(i)}"/>`;
+  for (let i = 0; i <= SC; i++) svg += `<line stroke="#a9cbe8" stroke-width="2.5" x1="${LE + i * KC}" y1="${LE}" x2="${LE + i * KC}" y2="${cao - LE}"/>`;
+  for (let i = 0; i <= SH; i++) svg += `<line stroke="#a9cbe8" stroke-width="2.5" x1="${LE}" y1="${LE + i * KC}" x2="${rong - LE}" y2="${LE + i * KC}"/>`;
+  svg += `<line stroke="#e57373" stroke-width="3.5" x1="${LE - 8}" y1="8" x2="${LE - 8}" y2="${cao - 8}"/>`;
+  const but = (mau) => `fill="none" stroke="${mau}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"`;
+  const n = KC * 0.3;
+  const X = (c, r) => { const cx = x(c), cy = y(r);
+    return `<path ${but("#d32f2f")} d="M${cx - n} ${cy - n + 3} Q${cx + 3} ${cy - 3} ${cx + n} ${cy + n}"/>` +
+      `<path ${but("#d32f2f")} d="M${cx + n - 3} ${cy - n} Q${cx - 3} ${cy + 3} ${cx - n + 3} ${cy + n - 3}"/>`; };
+  const O = (c, r) => { const cx = x(c), cy = y(r);
+    return `<path ${but("#1565c0")} transform="rotate(-12 ${cx} ${cy})" d="M${cx + 5} ${cy - n} C${cx + n + 8} ${cy - n} ${cx + n + 3} ${cy + n} ${cx} ${cy + n} C${cx - n - 5} ${cy + n} ${cx - n - 3} ${cy - n + 3} ${cx + 8} ${cy - n - 3}"/>`; };
+  svg += X(0, 5) + X(1, 4) + X(2, 3) + X(3, 2) + O(1, 2) + O(3, 4) + O(2, 1);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${rong}" height="${cao}" viewBox="0 0 ${rong} ${cao}">${svg}</svg>`;
 }
 
 // Logo quân cờ tròn đỏ chữ Co (giống src/components/Logo.astro)
