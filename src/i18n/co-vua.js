@@ -4,7 +4,7 @@ export const CHU_CO_VUA = {
   vi: {
     tenCo: "Cờ vua",
     ctcTieuDe: "ChoiCo: cờ vua với máy",
-    ctcMoTa: "Chơi cờ vua với máy miễn phí, có bảng xếp hạng. Có thể nhúng bàn cờ vào trang web của bạn.",
+    ctcMoTa: "Chơi cờ vua miễn phí trên trình duyệt: đấu máy, mời bạn chơi riêng, hoặc lên thượng đài so tài theo bảng xếp hạng. Có thể nhúng bàn cờ vào trang web của bạn.",
     ctcKhauHieu: "Cờ vua với máy, chơi ngay trên trình duyệt.",
     ctcGioiThieu: "Chơi cờ vua với máy hoặc với người khác ngay trên trình duyệt, không cần cài đặt. Chơi với máy thoải mái không cần tài khoản. Muốn chơi với bạn bè thì tạo link mời, cả người mời lẫn người vào đều không cần tài khoản. Đăng nhập Google để ghi điểm lên bảng xếp hạng và để thượng đài.",
     ctcThe1: "Chơi cờ vua với máy",
@@ -35,7 +35,7 @@ export const CHU_CO_VUA = {
   en: {
     tenCo: "Chess",
     ctcTieuDe: "ChoiCo: Chess vs Computer",
-    ctcMoTa: "Play chess against the computer for free, with a leaderboard. You can embed the board on your own website.",
+    ctcMoTa: "Play chess for free right in your browser: against the computer, privately with a friend, or in the ranked arena. You can embed the board on your own website.",
     ctcKhauHieu: "Chess against the computer, right in your browser.",
     ctcGioiThieu: "Play chess against the computer or other people right in your browser, no installation needed. Playing the computer needs no account. To play a friend privately, create an invite link. Neither of you needs an account. Sign in with Google to put your score on the leaderboard and to enter the arena.",
     ctcThe1: "Play chess vs computer",
@@ -66,7 +66,7 @@ export const CHU_CO_VUA = {
   "zh-tw": {
     tenCo: "西洋棋",
     ctcTieuDe: "ChoiCo：西洋棋人機對戰",
-    ctcMoTa: "免費與電腦對弈西洋棋，設有排行榜。可將棋盤嵌入您自己的網站。",
+    ctcMoTa: "在瀏覽器免費下西洋棋：可與電腦對弈、私下邀請朋友對局，或在排名擂台上切磋。也可將棋盤嵌入您自己的網站。",
     ctcKhauHieu: "直接在瀏覽器中與電腦下西洋棋。",
     ctcGioiThieu: "直接在瀏覽器中與電腦或其他玩家下西洋棋，無需安裝。人機對弈不用帳號。想和朋友私下對弈，建立邀請連結即可，雙方都不需要帳號。使用 Google 登入即可把成績記上排行榜並登上擂台。",
     ctcThe1: "與電腦下西洋棋",
@@ -97,7 +97,7 @@ export const CHU_CO_VUA = {
   ko: {
     tenCo: "체스",
     ctcTieuDe: "ChoiCo: 체스 컴퓨터 대전",
-    ctcMoTa: "컴퓨터와 체스를 무료로 즐기세요. 순위표가 있으며, 체스판을 내 웹사이트에 삽입할 수도 있습니다.",
+    ctcMoTa: "브라우저에서 무료로 체스를 즐기세요: 컴퓨터와 대전하거나, 친구와 비공개로 두거나, 순위 경쟁 무대에서 겨뤄보세요. 체스판을 내 웹사이트에 삽입할 수도 있습니다.",
     ctcKhauHieu: "브라우저에서 바로 컴퓨터와 체스를 즐기세요.",
     ctcGioiThieu: "설치 없이 브라우저에서 바로 컴퓨터 또는 다른 사람과 체스를 두세요. 컴퓨터 대국은 계정이 필요 없습니다. 친구와 비공개로 두려면 초대 링크를 만드세요. 초대하는 사람도, 참여하는 친구도 계정이 필요 없습니다. Google로 로그인하면 점수를 순위표에 올리고 무대에 오를 수 있습니다.",
     ctcThe1: "컴퓨터와 체스 두기",
@@ -128,7 +128,7 @@ export const CHU_CO_VUA = {
   ja: {
     tenCo: "チェス",
     ctcTieuDe: "ChoiCo：チェス対コンピューター",
-    ctcMoTa: "コンピューターと無料でチェスを対戦できます。ランキング付き。盤面をご自身のサイトに埋め込むこともできます。",
+    ctcMoTa: "ブラウザで無料でチェスを楽しめます：コンピューター対戦、友達との非公開対局、ランキング制のアリーナでの対局が可能。盤面をご自身のサイトに埋め込むこともできます。",
     ctcKhauHieu: "ブラウザですぐにコンピューターとチェス。",
     ctcGioiThieu: "インストール不要で、ブラウザからすぐにコンピューターや他の人とチェスを指せます。コンピューター戦はアカウントなしで遊べます。友だちと非公開で対局するには招待リンクを作成してください。招待する側もされる側もアカウントは不要です。Googleでログインするとスコアをランキングに載せたりアリーナに上がったりできます。",
     ctcThe1: "コンピューターとチェスを指す",
