@@ -75,6 +75,21 @@ const OG_LOCALE: Record<string, string> = {
     {!khongDich && NGON_NGU.map((n) => <link rel="alternate" hreflang={n.html} href={new URL(duongDan(n.ma, duongGoc), Astro.site)} />)}
     {!khongDich && <link rel="alternate" hreflang="x-default" href={new URL(duongDan("en", duongGoc), Astro.site)} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {!nhung && (
+      <>
+        <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-YXVCXJ9ZXQ"></script>
+        {/* Bỏ query string khỏi địa chỉ gửi đi: link mời (?ma=...) không được lọt vào Google Analytics */}
+        <script is:inline>
+          window.dataLayer = window.dataLayer || [];
+          function gtag() { dataLayer.push(arguments); }
+          gtag("js", new Date());
+          gtag("config", "G-YXVCXJ9ZXQ", {
+            page_location: location.origin + location.pathname,
+            page_referrer: document.referrer.split(/[?#]/)[0],
+          });
+        </script>
+      </>
+    )}
     <script is:inline>
       // Chọn ngôn ngữ lần đầu: theo lựa chọn đã lưu, không có thì theo ngôn ngữ trình duyệt, không thuộc 5 ngôn ngữ thì tiếng Anh.
       // Chỉ chạy ở trang tiếng Việt thường. Trang có tiền tố (/en/, /ja/...) là địa chỉ chủ ý, giữ nguyên.
