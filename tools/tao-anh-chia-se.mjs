@@ -19,6 +19,13 @@ const CO_TUONG = {
   "zh-tw": { mon: "象棋", moi: "邀請你下一盤象棋", phong: "'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', sans-serif" },
   ko: { mon: "샹치", moi: "샹치(중국 장기) 한 판 두실래요?", phong: "'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" },
   ja: { mon: "シャンチー", moi: "シャンチーで対局しませんか", phong: "'Yu Gothic', 'Meiryo', 'Hiragino Sans', 'Noto Sans JP', sans-serif" },
+  "zh-cn": { mon: "象棋", moi: "邀请你下一盘象棋", phong: "'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif" },
+  "es": { mon: "Xiangqi", moi: "Te invitamos a jugar una partida de xiangqi", phong: "'Segoe UI', Arial, sans-serif" },
+  "ru": { mon: "Сянци", moi: "Приглашаем сыграть партию в сянци", phong: "'Segoe UI', Arial, sans-serif" },
+  "pt-br": { mon: "Xiangqi", moi: "Você foi convidado para uma partida de xiangqi", phong: "'Segoe UI', Arial, sans-serif" },
+  "fr": { mon: "Xiangqi", moi: "Vous êtes invité à jouer une partie de xiangqi", phong: "'Segoe UI', Arial, sans-serif" },
+  "de": { mon: "Xiangqi", moi: "Du bist zu einer Partie Xiangqi eingeladen", phong: "'Segoe UI', Arial, sans-serif" },
+  "id": { mon: "Xiangqi", moi: "Kamu diundang bermain xiangqi", phong: "'Segoe UI', Arial, sans-serif" },
 };
 const CO_VUA = {
   vi: { ...CO_TUONG.vi, mon: "Cờ vua", moi: "Mời bạn chơi một ván cờ vua" },
@@ -26,6 +33,13 @@ const CO_VUA = {
   "zh-tw": { ...CO_TUONG["zh-tw"], mon: "西洋棋", moi: "邀請你下一盤西洋棋" },
   ko: { ...CO_TUONG.ko, mon: "체스", moi: "체스 한 판 두실래요?" },
   ja: { ...CO_TUONG.ja, mon: "チェス", moi: "チェスで対局しませんか" },
+  "zh-cn": { mon: "国际象棋", moi: "邀请你下一盘国际象棋", phong: "'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif" },
+  "es": { mon: "Ajedrez", moi: "Te invitamos a jugar una partida de ajedrez", phong: "'Segoe UI', Arial, sans-serif" },
+  "ru": { mon: "Шахматы", moi: "Приглашаем сыграть партию в шахматы", phong: "'Segoe UI', Arial, sans-serif" },
+  "pt-br": { mon: "Xadrez", moi: "Você foi convidado para uma partida de xadrez", phong: "'Segoe UI', Arial, sans-serif" },
+  "fr": { mon: "Échecs", moi: "Vous êtes invité à jouer une partie d’échecs", phong: "'Segoe UI', Arial, sans-serif" },
+  "de": { mon: "Schach", moi: "Du bist zu einer Schachpartie eingeladen", phong: "'Segoe UI', Arial, sans-serif" },
+  "id": { mon: "Catur", moi: "Kamu diundang bermain catur", phong: "'Segoe UI', Arial, sans-serif" },
 };
 const CO_CARO = {
   vi: { ...CO_TUONG.vi, mon: "Cờ caro", moi: "Mời bạn chơi một ván cờ caro" },
@@ -33,6 +47,13 @@ const CO_CARO = {
   "zh-tw": { ...CO_TUONG["zh-tw"], mon: "五子棋", moi: "邀請你下一盤五子棋" },
   ko: { ...CO_TUONG.ko, mon: "오목", moi: "오목 한 판 두실래요?" },
   ja: { ...CO_TUONG.ja, mon: "五目並べ", moi: "五目並べで対局しませんか" },
+  "zh-cn": { mon: "五子棋", moi: "邀请你下一盘五子棋", phong: "'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif" },
+  "es": { mon: "Gomoku", moi: "Te invitamos a jugar una partida de gomoku", phong: "'Segoe UI', Arial, sans-serif" },
+  "ru": { mon: "Гомоку", moi: "Приглашаем сыграть партию в гомоку", phong: "'Segoe UI', Arial, sans-serif" },
+  "pt-br": { mon: "Gomoku", moi: "Você foi convidado para uma partida de gomoku", phong: "'Segoe UI', Arial, sans-serif" },
+  "fr": { mon: "Gomoku", moi: "Vous êtes invité à jouer une partie de gomoku", phong: "'Segoe UI', Arial, sans-serif" },
+  "de": { mon: "Gomoku", moi: "Du bist zu einer Partie Gomoku eingeladen", phong: "'Segoe UI', Arial, sans-serif" },
+  "id": { mon: "Gomoku", moi: "Kamu diundang bermain gomoku", phong: "'Segoe UI', Arial, sans-serif" },
 };
 
 // Bàn cờ cắt một góc kèm vài quân, cùng kiểu với bàn cờ trong trang (xem src/lib/co-tuong/ve.js)
