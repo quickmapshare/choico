@@ -1,5 +1,6 @@
 // Tạo ảnh hiện ra khi dán link vào mạng xã hội (Open Graph, 1200 x 630), mỗi loại cờ, mỗi ngôn ngữ một ảnh:
-// cờ tướng (và trang chủ) ở public/og/<ngôn ngữ>.png, cờ vua ở public/og/co-vua/<ngôn ngữ>.png (Layout chọn theo loại cờ).
+// cờ tướng (và trang chủ) ở public/og/<ngôn ngữ>.png, cờ vua ở public/og/co-vua/<ngôn ngữ>.png, caro ở
+// public/og/caro/<ngôn ngữ>.png (Layout chọn theo loại cờ).
 // Dùng Chrome ở chế độ không giao diện để vẽ, nên chữ Việt, Hoa, Hàn, Nhật lấy phông có sẵn trên máy.
 // Chạy: node tools/tao-anh-chia-se.mjs   (đặt CHROME nếu Chrome không nằm ở chỗ mặc định). Đổi nội dung thì sửa rồi chạy lại, commit ảnh.
 // Chữ trên ảnh do AI viết, chưa có người bản ngữ kiểm tra (xem CLAUDE.md).
@@ -25,6 +26,13 @@ const CO_VUA = {
   "zh-tw": { ...CO_TUONG["zh-tw"], mon: "西洋棋", moi: "邀請你下一盤西洋棋" },
   ko: { ...CO_TUONG.ko, mon: "체스", moi: "체스 한 판 두실래요?" },
   ja: { ...CO_TUONG.ja, mon: "チェス", moi: "チェスで対局しませんか" },
+};
+const CO_CARO = {
+  vi: { ...CO_TUONG.vi, mon: "Cờ caro", moi: "Mời bạn chơi một ván cờ caro" },
+  en: { ...CO_TUONG.en, mon: "Gomoku", moi: "You're invited to play Gomoku" },
+  "zh-tw": { ...CO_TUONG["zh-tw"], mon: "五子棋", moi: "邀請你下一盤五子棋" },
+  ko: { ...CO_TUONG.ko, mon: "오목", moi: "오목 한 판 두실래요?" },
+  ja: { ...CO_TUONG.ja, mon: "五目並べ", moi: "五目並べで対局しませんか" },
 };
 
 // Bàn cờ cắt một góc kèm vài quân, cùng kiểu với bàn cờ trong trang (xem src/lib/co-tuong/ve.js)
@@ -61,6 +69,21 @@ function banCoVua() {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${rong}" height="${cao}" viewBox="0 0 ${rong} ${cao}">${svg}</svg>`;
 }
 
+// Bàn cờ caro cắt một góc (giao điểm, giống src/lib/caro/ve.js) kèm vài quân tròn đặc đỏ/đen, có một dãy gần thắng
+function banCaro() {
+  const KC = 84, SC = 4, SH = 5; // 5 x 6 giao điểm, cùng khung với banCo() cờ tướng
+  const x = (c) => 40 + c * KC;
+  const y = (r) => 40 + r * KC;
+  const net = 'stroke="#7a4b1e" stroke-width="3" fill="none"';
+  let svg = `<rect width="${40 * 2 + KC * SC}" height="${40 * 2 + KC * SH}" rx="22" fill="#f1dca8"/>`;
+  for (let r = 0; r <= SH; r++) svg += `<line ${net} x1="${x(0)}" y1="${y(r)}" x2="${x(SC)}" y2="${y(r)}"/>`;
+  for (let c = 0; c <= SC; c++) svg += `<line ${net} x1="${x(c)}" y1="${y(0)}" x2="${x(c)}" y2="${y(SH)}"/>`;
+  const quan = (c, r, mau) => `<circle cx="${x(c)}" cy="${y(r)}" r="30" fill="${mau}" stroke="#00000030" stroke-width="2"/>`;
+  const DO = "#b3261e", DEN = "#1f1f1f";
+  svg += quan(0, 4, DO) + quan(1, 3, DO) + quan(2, 2, DO) + quan(3, 1, DO) + quan(1, 1, DEN) + quan(3, 3, DEN);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${40 * 2 + KC * SC}" height="${40 * 2 + KC * SH}" viewBox="0 0 ${40 * 2 + KC * SC} ${40 * 2 + KC * SH}">${svg}</svg>`;
+}
+
 // Logo quân cờ tròn đỏ chữ Co (giống src/components/Logo.astro)
 const LOGO = `<svg width="150" height="150" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#b3261e"/><g transform="translate(32 32) scale(1.38) translate(-32 -32)" fill="none" stroke="#fbf6e6"><path d="M41 21.3A14 14 0 1 0 41 42.7" stroke-width="9" stroke-linecap="round"/><circle cx="46" cy="32" r="4.5" fill="#fbf6e6" stroke="none"/></g></svg>`;
 
@@ -85,6 +108,7 @@ function trang(n, ban) {
 const BO = [
   { thuMuc: path.join(goc, "public", "og"), chu: CO_TUONG, ban: banCo() },
   { thuMuc: path.join(goc, "public", "og", "co-vua"), chu: CO_VUA, ban: banCoVua() },
+  { thuMuc: path.join(goc, "public", "og", "caro"), chu: CO_CARO, ban: banCaro() },
 ];
 for (const { thuMuc, chu, ban } of BO) {
   fs.mkdirSync(thuMuc, { recursive: true });
