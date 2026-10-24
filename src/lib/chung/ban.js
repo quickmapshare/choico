@@ -239,6 +239,13 @@ export function oBamDuoc(e) {
   return o ? [Number(o.getAttribute("data-r")), Number(o.getAttribute("data-c"))] : null;
 }
 
+// Nước đặt quân trực tiếp vào ô (r, c), cho loại cờ không "nhặt quân lên rồi đi" mà chỉ đặt một quân mới vào ô trống
+// (cờ caro): nước có ô đi và ô đến là cùng một ô. Cờ tướng/cờ vua không có nước nào như vậy nên luôn trả về null,
+// bàn bấm vẫn theo đúng cách chọn quân rồi chọn ô đích như cũ.
+export function nuocDatTaiO(luat, the, r, c) {
+  return luat.nuocHopLe(the).find((m) => m.tu[0] === r && m.tu[1] === c && m.den[0] === r && m.den[1] === c) || null;
+}
+
 // Phóng to bàn cờ: trình duyệt có Fullscreen API (máy tính, Android) thì dùng nó, còn iPhone Safari phủ kín màn hình bằng CSS.
 // nut: nút phóng to; nutMo, nutDong: hai biểu tượng trong nút; nutThuNho: nút cố định góc phải để thu lại (chỉ hiện khi phóng bằng CSS).
 // nhan: { phongTo, thuNhoBan } lấy từ chuỗi của trang. Ẩn nút chat khi đang phóng to, để nút chat không che bàn.

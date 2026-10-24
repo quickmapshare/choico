@@ -2,6 +2,7 @@
 // Mẫu có chỗ thay dạng {ten}; hàm dien() điền vào. {link} là chỗ đặt liên kết trong câu.
 // Chuỗi chung viết theo cờ tướng; chuỗi riêng của loại cờ khác nằm ở file riêng (co-vua.js) và đè lên khi cần.
 import { CHU_CO_VUA } from "./co-vua.js";
+import { CHU_CARO } from "./caro.js";
 
 export const NGON_NGU = [
   { ma: "vi", html: "vi", ten: "Tiếng Việt", tienTo: "" },
@@ -24,7 +25,7 @@ export function dien(mau, v = {}) {
 }
 
 // Chuỗi riêng của loại cờ troChoi đè lên chuỗi chung (chuỗi chung viết theo cờ tướng). Loại cờ không có chuỗi riêng thì rỗng.
-const RIENG = { co_vua: CHU_CO_VUA };
+const RIENG = { co_vua: CHU_CO_VUA, caro: CHU_CARO };
 export const chuRieng = (lang, troChoi) => ({ ...RIENG[troChoi]?.vi, ...RIENG[troChoi]?.[lang] });
 export const t = (lang, khoa, v, troChoi) => dien(chuRieng(lang, troChoi)[khoa] ?? CHU[lang]?.[khoa] ?? CHU.vi[khoa], v);
 // Mọi chuỗi của trang (gửi cho script phía trình duyệt): chung, ngôn ngữ trang, rồi riêng của loại cờ
@@ -246,6 +247,10 @@ export const CHU = {
     trLyLuat50: "50 nước không ăn quân, không đi tốt",
     trLyThieuQuan: "không đủ quân để chiếu hết",
     homeCo2Mo: "Chơi với máy, chơi với bạn bè, hoặc thượng đài đấu người khác.",
+    menuCaro: "Cờ caro",
+    homeCo3: "Cờ caro",
+    homeCo3Mo: "Chơi với máy, chơi với bạn bè, hoặc thượng đài đấu người khác.",
+    trLyNamLienTiep: "đủ 5 quân liên tiếp",
   },
 
   en: {
@@ -457,6 +462,10 @@ export const CHU = {
     trLyLuat50: "50-move rule",
     trLyThieuQuan: "insufficient material",
     homeCo2Mo: "Play the computer, play a friend privately, or step onto the arena against other players.",
+    menuCaro: "Gomoku",
+    homeCo3: "Gomoku",
+    homeCo3Mo: "Play the computer, play a friend privately, or step onto the arena against other players.",
+    trLyNamLienTiep: "five in a row",
   },
 
   "zh-tw": {
@@ -668,6 +677,10 @@ export const CHU = {
     trLyLuat50: "五十步規則",
     trLyThieuQuan: "子力不足以將死",
     homeCo2Mo: "與電腦對弈、與朋友私下對弈，或登上擂台挑戰其他玩家。",
+    menuCaro: "五子棋",
+    homeCo3: "五子棋",
+    homeCo3Mo: "與電腦對弈、與朋友私下對弈，或登上擂台挑戰其他玩家。",
+    trLyNamLienTiep: "連成五子",
   },
 
   ko: {
@@ -879,6 +892,10 @@ export const CHU = {
     trLyLuat50: "50수 규칙",
     trLyThieuQuan: "체크메이트할 기물 부족",
     homeCo2Mo: "컴퓨터와 대국하거나, 친구와 비공개로 두거나, 무대에 올라 다른 사람과 겨루세요.",
+    menuCaro: "오목",
+    homeCo3: "오목",
+    homeCo3Mo: "컴퓨터와 대국하거나, 친구와 비공개로 두거나, 무대에 올라 다른 사람과 겨루세요.",
+    trLyNamLienTiep: "5개 연속 완성",
   },
 
   ja: {
@@ -1090,5 +1107,9 @@ export const CHU = {
     trLyLuat50: "50手ルール",
     trLyThieuQuan: "チェックメイトに必要な駒の不足",
     homeCo2Mo: "コンピューターと対戦、友だちと非公開で対局、またはアリーナで他の人と対局できます。",
+    menuCaro: "五目並べ",
+    homeCo3: "五目並べ",
+    homeCo3Mo: "コンピューターと対戦、友だちと非公開で対局、またはアリーナで他の人と対局できます。",
+    trLyNamLienTiep: "5つ並んだ",
   },
 };

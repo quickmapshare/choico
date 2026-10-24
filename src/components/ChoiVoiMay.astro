@@ -97,7 +97,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   import { VE, MUC, taoMay, docChu, f } from "../lib/chung/trinh-duyet.js";
   import { batDauDangNhap, headerXacThuc, docToken, xoaToken } from "../lib/chung/tai-khoan.js";
   import { taoAmThanh } from "../lib/chung/am.js";
-  import { veBanCo, veHaiKhay, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutKhung, oBamDuoc, chonNuocPhong, THOI_GIAN } from "../lib/chung/ban.js";
+  import { veBanCo, veHaiKhay, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutKhung, oBamDuoc, nuocDatTaiO, chonNuocPhong, THOI_GIAN } from "../lib/chung/ban.js";
   import { taoXemLai } from "../lib/chung/xem-lai.js";
   import { duocDung } from "../lib/chung/tinh-nang.js";
   import { banVanBan } from "../lib/co-tuong/luat.js";
@@ -330,7 +330,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   function lyDo(ly: string) {
     const ma: Record<string, string> = {
       het_nuoc_hoa: f(T.trLyHetNuocHoa, { n: luat.NUOC_TOI_DA }), chieu_het: T.trLyChieuHet, hoa_pat: T.trLyHoaPat,
-      lap_3: T.trLyLap3, luat_50: T.trLyLuat50, thieu_quan: T.trLyThieuQuan,
+      lap_3: T.trLyLap3, luat_50: T.trLyLuat50, thieu_quan: T.trLyThieuQuan, thang_5: T.trLyNamLienTiep,
     };
     return ma[ly] ? ` (${ma[ly]})` : "";
   }
@@ -421,6 +421,17 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     if (!o || ketThuc || dangChoMay || dangChonPhong || xemLai.dangXem()) return;
     const [r, c] = o;
     const p = the.b[r][c];
+
+    // Cờ caro: đặt quân trực tiếp vào ô trống, không cần chọn quân trước (xem nuocDatTaiO)
+    if (!chon && the.s === "r") {
+      const dat = nuocDatTaiO(luat, the, r, c);
+      if (dat) {
+        if (diNuoc(dat)) return;
+        luuTrangThai();
+        veLai();
+        return void mayDi();
+      }
+    }
 
     if (chon) {
       const cacNuoc = gioDi.filter((x) => x.den[0] === r && x.den[1] === c);

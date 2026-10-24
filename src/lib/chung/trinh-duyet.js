@@ -3,21 +3,25 @@
 import { TRO_CHOI } from "../tro-choi.js";
 import veCoTuong from "../co-tuong/ve.js";
 import veCoVua from "../co-vua/ve.js";
+import veCaro from "../caro/ve.js";
 import { MUC as MUC_CO_TUONG } from "../co-tuong/muc.js";
 import { MUC as MUC_CO_VUA } from "../co-vua/muc.js";
+import { MUC as MUC_CARO } from "../caro/muc.js";
 
-export const VE = { co_tuong: veCoTuong, co_vua: veCoVua };
-export const MUC = { co_tuong: MUC_CO_TUONG, co_vua: MUC_CO_VUA };
+export const VE = { co_tuong: veCoTuong, co_vua: veCoVua, caro: veCaro };
+export const MUC = { co_tuong: MUC_CO_TUONG, co_vua: MUC_CO_VUA, caro: MUC_CARO };
 
 // Vite cần đường dẫn worker viết thẳng trong new Worker(new URL(...)) nên mỗi loại cờ một dòng
 const TAO_WORKER = {
   co_tuong: () => new Worker(new URL("../co-tuong/may-worker.js", import.meta.url), { type: "module" }),
   co_vua: () => new Worker(new URL("../co-vua/may-worker.js", import.meta.url), { type: "module" }),
+  caro: () => new Worker(new URL("../caro/may-worker.js", import.meta.url), { type: "module" }),
 };
 // Trình duyệt không chạy được worker thì tải máy vào trang (trang đứng hình trong lúc máy nghĩ)
 const TAI_MAY = {
   co_tuong: () => import("../co-tuong/may.js"),
   co_vua: () => import("../co-vua/may.js"),
+  caro: () => import("../caro/may.js"),
 };
 
 // Máy của một loại cờ, chạy trong Web Worker để trang vẫn bấm được và hiệu ứng vẫn mượt khi máy nghĩ lâu.

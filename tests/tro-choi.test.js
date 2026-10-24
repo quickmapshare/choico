@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { TRO_CHOI, MA_TRO_CHOI, layTroChoi, locTroChoi } from "../src/lib/tro-choi.js";
 import { CHU } from "../src/i18n/strings.js";
 import { CHU_CO_VUA } from "../src/i18n/co-vua.js";
+import { CHU_CARO } from "../src/i18n/caro.js";
 import { phatLai, xacMinhVan } from "../src/lib/chung/van.js";
 
 const HAM = ["khoiTao", "saoChep", "nuocHopLe", "timNuoc", "apDung", "apKy", "kyHieu", "biChieu", "quanBiAn", "ketThucNhanh", "ketThuc"];
@@ -46,7 +47,8 @@ describe("danh sách loại cờ", () => {
     expect(layTroChoi("")).toBe(TRO_CHOI.co_tuong);
     expect(layTroChoi(undefined)).toBe(TRO_CHOI.co_tuong);
     expect(layTroChoi("co_vua")).toBe(TRO_CHOI.co_vua);
-    expect(layTroChoi("caro")).toBeNull();
+    expect(layTroChoi("caro")).toBe(TRO_CHOI.caro);
+    expect(layTroChoi("ma_la")).toBeNull();
     expect(locTroChoi("co_tuong")).toBe('(tro_choi="co_tuong" || tro_choi="")');
     expect(locTroChoi("co_vua")).toBe('tro_choi="co_vua"');
   });
@@ -64,5 +66,12 @@ describe("chuỗi giao diện", () => {
     for (const l of Object.keys(CHU_CO_VUA)) expect(Object.keys(CHU_CO_VUA[l]).sort(), l).toEqual(khoa);
     const rieng = ["quanQ", "quanR", "quanB", "quanN"];
     for (const k of khoa) if (!rieng.includes(k)) expect(CHU.vi, k).toHaveProperty(k);
+  });
+
+  it("chuỗi riêng của cờ caro: đủ 5 ngôn ngữ, cùng khóa, chỉ đè lên khóa có sẵn (không có loại quân riêng)", () => {
+    const khoa = Object.keys(CHU_CARO.vi).sort();
+    expect(Object.keys(CHU_CARO).sort()).toEqual(Object.keys(CHU).sort());
+    for (const l of Object.keys(CHU_CARO)) expect(Object.keys(CHU_CARO[l]).sort(), l).toEqual(khoa);
+    for (const k of khoa) expect(CHU.vi, k).toHaveProperty(k);
   });
 });

@@ -13,14 +13,15 @@ import { TRO_CHOI } from "../lib/tro-choi.js";
 const { tieuDe, moTa, lang = "vi", nhung = false, khongDich = false, khongLapChiMuc = false, troChoi = "" } = Astro.props;
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 const duongGoc = boTienTo(Astro.url.pathname); // đường dẫn tiếng Việt của cùng trang
-// Mục menu đang sáng: trang dưới /co-vua/ (và bản nhúng, mã nhúng cờ vua) thuộc cờ vua; trang cờ tướng giữ đường dẫn cũ
-// ở gốc (/co-tuong/, /thuong-dai/, /tran/, /xem-van/, /nhung/co-tuong/). Trang /nhung/ chung (liệt kê mọi loại cờ) không
-// sáng tab nào. Trang trận và sảnh truyền troChoi; trang trận đổi lại bằng script khi biết loại cờ của trận (sangMenu
-// trong src/lib/chung/trinh-duyet.js).
-const menuSang = troChoi || (/^\/(co-vua|nhung\/co-vua)\//.test(duongGoc) ? "co_vua" : /^\/(co-tuong|thuong-dai|tran|xem-van|nhung\/co-tuong)\//.test(duongGoc) ? "co_tuong" : "");
+// Mục menu đang sáng: trang dưới /co-vua/ hoặc /caro/ (và bản nhúng, mã nhúng tương ứng) thuộc loại cờ đó; trang cờ
+// tướng giữ đường dẫn cũ ở gốc (/co-tuong/, /thuong-dai/, /tran/, /xem-van/, /nhung/co-tuong/). Trang /nhung/ chung
+// (liệt kê mọi loại cờ) không sáng tab nào. Trang trận và sảnh truyền troChoi; trang trận đổi lại bằng script khi biết
+// loại cờ của trận (sangMenu trong src/lib/chung/trinh-duyet.js).
+const menuSang = troChoi || (/^\/(co-vua|nhung\/co-vua)\//.test(duongGoc) ? "co_vua" : /^\/(caro|nhung\/caro)\//.test(duongGoc) ? "caro" : /^\/(co-tuong|thuong-dai|tran|xem-van|nhung\/co-tuong)\//.test(duongGoc) ? "co_tuong" : "");
 const MENU = [
   { ma: "co_tuong", href: "/co-tuong/", khoa: "menuCoTuong" },
   { ma: "co_vua", href: "/co-vua/", khoa: "menuCoVua" },
+  { ma: "caro", href: "/caro/", khoa: "menuCaro" },
 ];
 // Menu con của loại cờ đang chọn (nằm sát dưới tab loại cờ): chơi với máy, chơi với bạn, thượng đài.
 // Mục sáng theo đường dẫn; /tran/ dùng chung cho chơi với bạn và thượng đài nên mặc định là chơi với bạn,
@@ -35,9 +36,10 @@ const mucConSang = troChoiMenu ? (MUC_CON.find((m) => troChoiMenu.duong[m.ma] ==
 // Tự chọn ngôn ngữ chỉ ở trang tiếng Việt thường (không phải bản nhúng, không phải trang trung tính)
 const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
 // Thẻ Open Graph và Twitter: tiêu đề, mô tả và ảnh hiện ra khi dán link vào mạng xã hội. Ảnh theo ngôn ngữ của trang
-// và loại cờ (cờ tướng và trang chủ: public/og/<ngôn ngữ>.png, cờ vua: public/og/co-vua/<ngôn ngữ>.png;
-// tạo bằng tools/tao-anh-chia-se.mjs).
-const anhChiaSe = new URL(`/og/${menuSang === "co_vua" ? "co-vua/" : ""}${lang}.png`, Astro.site);
+// và loại cờ (cờ tướng và trang chủ: public/og/<ngôn ngữ>.png, cờ vua: public/og/co-vua/<ngôn ngữ>.png, caro:
+// public/og/caro/<ngôn ngữ>.png; tạo bằng tools/tao-anh-chia-se.mjs).
+const THU_MUC_OG: Record<string, string> = { co_vua: "co-vua/", caro: "caro/" };
+const anhChiaSe = new URL(`/og/${THU_MUC_OG[menuSang] || ""}${lang}.png`, Astro.site);
 const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "zh_TW", ko: "ko_KR", ja: "ja_JP" };
 ---
 <!doctype html>

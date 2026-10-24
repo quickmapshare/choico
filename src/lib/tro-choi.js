@@ -17,6 +17,7 @@
 // ket_qua: "do" bên đi trước thắng, "den" bên đi sau thắng, "hoa".
 import coTuong from "./co-tuong/index.js";
 import coVua from "./co-vua/index.js";
+import caro from "./caro/index.js";
 
 // duong: đường dẫn các trang (chưa có tiền tố ngôn ngữ). Cờ tướng giữ đường dẫn cũ để link đã chia sẻ vẫn mở được.
 // chuongSanh: mã bản ghi chuông chung của sảnh thượng đài (collection co_tuong_tin_hieu).
@@ -35,6 +36,13 @@ export const TRO_CHOI = {
     duong: { cong: "/co-vua/", may: "/co-vua/may/", tran: "/co-vua/tran/", dai: "/co-vua/thuong-dai/", xemVan: "/co-vua/xem-van/", nhung: "/nhung/co-vua/", maNhung: "/nhung/co-vua/ma/" },
     chuongSanh: "sanhcovuadai001",
     khoaLuu: "choico-co-vua-van",
+  },
+  caro: {
+    ma: "caro",
+    luat: caro,
+    duong: { cong: "/caro/", may: "/caro/may/", tran: "/caro/tran/", dai: "/caro/thuong-dai/", xemVan: "/caro/xem-van/", nhung: "/nhung/caro/", maNhung: "/nhung/caro/ma/" },
+    chuongSanh: "sanhcarodai0001",
+    khoaLuu: "choico-caro-van",
   },
 };
 
