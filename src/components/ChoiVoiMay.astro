@@ -95,7 +95,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   import { chonTrongDinh } from "../lib/chung/may.js";
   import { layTroChoi } from "../lib/tro-choi.js";
   import { VE, MUC, taoMay, docChu, f } from "../lib/chung/trinh-duyet.js";
-  import { batDauDangNhap, headerXacThuc, docToken, xoaToken } from "../lib/chung/tai-khoan.js";
+  import { batDauDangNhap, headerXacThuc, docToken, xoaToken, PB_URL } from "../lib/chung/tai-khoan.js";
   import { taoAmThanh } from "../lib/chung/am.js";
   import { veBanCo, veHaiKhay, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutKhung, oBamDuoc, nuocDatTaiO, chonNuocPhong, THOI_GIAN } from "../lib/chung/ban.js";
   import { taoXemLai } from "../lib/chung/xem-lai.js";
@@ -656,7 +656,9 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     dungNghe = ngheTinHieu(
       v.tin_hieu,
       (banGhi: any) => {
-        if (!apTomTatXem(banGhi?.tom_tat)) void docLaiTrucTiep();
+        // Vừa kết nối lại (không kèm bản ghi): đọc chuông để bù nước có thể đã lỡ
+        if (!banGhi) void dongBo();
+        else if (!apTomTatXem(banGhi.tom_tat)) void docLaiTrucTiep();
         henDocLai();
       },
       (ok: boolean) => {
@@ -668,14 +670,21 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     henDocLai();
   }
 
-  // Tóm tắt trong chuông: đúng một nước mới thì đi quân ngay, cùng số nước thì chỉ cập nhật giờ. Trả false nếu cần đọc lại cả trận.
+  // Tóm tắt trong chuông: đúng một nước mới thì đi quân ngay, cùng số nước thì chỉ cập nhật giờ; trận vừa xong (tóm tắt có kết
+  // quả) thì kết thúc tại trang. Trả false nếu cần gọi server đọc lại cả trận (lỡ nhiều nước, chuông cũ chưa có kết quả).
   function apTomTatXem(t: any): boolean {
-    if (!trucTiep || !t || t.trang_thai !== "dang_dau") return false;
-    if (t.n === nuocDaDi.length + 1) {
+    if (!trucTiep || !t) return false;
+    const n = nuocDaDi.length;
+    if (t.trang_thai !== "dang_dau") {
+      if (!(t.trang_thai === "ket_thuc" || t.trang_thai === "huy") || !("ket_qua" in t) || (t.n !== n && t.n !== n + 1)) return false;
+      ketThucTrucTiep({ ...trucTiep, nuoc: t.n === n ? [...nuocDaDi] : [...nuocDaDi, t.ky], ket_qua: t.ket_qua, ly_do: t.ly_do });
+      return true;
+    }
+    if (t.n === n + 1) {
       const m = luat.timNuoc(the, t.ky);
       if (!m) return false;
       apNuoc(m);
-    } else if (t.n !== nuocDaDi.length) {
+    } else if (t.n !== n) {
       return false;
     }
     trucTiep.han_nuoc = t.han;
@@ -722,7 +731,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     clearInterval(gioTimer);
     const h1 = document.getElementById("co-h1");
     if (h1) h1.textContent = T.xvTieuDe;
-    if (!v.nuoc) {
+    if (!v.nuoc?.length) {
       hienTrangThai("");
       return veLai();
     }
@@ -740,9 +749,26 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     if (!trucTiep) return;
     const doTre = dangNghe ? XEM_DU_PHONG_MS : document.hidden ? 10000 : XEM_KHONG_CHUONG_MS;
     henDoc = window.setTimeout(async () => {
-      await docLaiTrucTiep();
+      await dongBo();
       henDocLai();
     }, doTre);
+  }
+
+  // Đọc dự phòng và đọc bù sau khi kết nối lại: đọc thẳng bản ghi chuông trên PocketBase (ai biết mã đều đọc được, không tính
+  // vào hạn mức Pages Functions). Chỉ gọi /api/van-xem khi tóm tắt không đủ.
+  async function dongBo() {
+    if (!trucTiep) return;
+    let t = null;
+    if (trucTiep.tin_hieu) {
+      try {
+        const r = await fetch(`${PB_URL}/api/collections/co_tuong_tin_hieu/records/${trucTiep.tin_hieu}?fields=tom_tat`);
+        if (r.ok) t = (await r.json()).tom_tat ?? null;
+      } catch {
+        // lỗi mạng: thử qua server bên dưới
+      }
+    }
+    if (!trucTiep) return; // trận đã xong trong lúc chờ
+    if (!apTomTatXem(t)) await docLaiTrucTiep();
   }
 
   function vanMoi() {

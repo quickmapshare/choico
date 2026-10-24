@@ -72,10 +72,15 @@ export async function baoTinHieu(pb, H, id, tomTat = null) {
 }
 
 // Tóm tắt trận gửi kèm chuông. gui: giờ (theo server) bên đi bấm nước, để bên kia đo được nước đi tới chậm bao lâu.
+// Trận đã xong thì kèm kết quả và lý do, để người xem trực tiếp kết thúc tại trang mà không cùng lúc gọi lại server.
 export function tomTatTran(tran, gui = 0) {
   const nuoc = tran.nuoc || [];
   const tt = { n: nuoc.length, ky: nuoc[nuoc.length - 1] || "", han: tran.han_nuoc || "", trang_thai: tran.trang_thai };
   if (gui) tt.gui = gui;
+  if (tran.trang_thai === "ket_thuc" || tran.trang_thai === "huy") {
+    tt.ket_qua = tran.ket_qua || null;
+    tt.ly_do = tran.ly_do || null;
+  }
   return tt;
 }
 

@@ -30,4 +30,10 @@ describe("tomTatTran (tóm tắt gửi kèm chuông)", () => {
   it("trận chưa có nước, không hạn nước, không giờ bấm", () => {
     expect(tomTatTran({ trang_thai: "cho" })).toEqual({ n: 0, ky: "", han: "", trang_thai: "cho" });
   });
+
+  it("trận đã xong hoặc đã đóng kèm kết quả và lý do", () => {
+    expect(tomTatTran({ nuoc: ["h2e2"], trang_thai: "ket_thuc", ket_qua: "do", ly_do: "dau_hang" }))
+      .toEqual({ n: 1, ky: "h2e2", han: "", trang_thai: "ket_thuc", ket_qua: "do", ly_do: "dau_hang" });
+    expect(tomTatTran({ nuoc: [], trang_thai: "huy", ly_do: "bo_do" })).toMatchObject({ ket_qua: null, ly_do: "bo_do" });
+  });
 });
