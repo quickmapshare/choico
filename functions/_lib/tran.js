@@ -49,7 +49,7 @@ export async function docTran(pb, H, ma) {
 
 // Chuông báo (collection co_tuong_tin_hieu): trình duyệt nghe realtime, thay cho việc hỏi liên tục. Chuông của trận mang kèm
 // tóm tắt "tom_tat" (số nước, nước cuối, hạn nước, trạng thái): bên kia đi quân ngay khi chuông rung, không phải gọi server đọc
-// lại. Nước đi không phải dữ liệu riêng tư, và mã chuông chỉ người trong trận biết.
+// lại. Nước đi không phải dữ liệu riêng tư; mã chuông chỉ người trong trận và người có link xem trực tiếp biết.
 export const BANG_TIN_HIEU = "co_tuong_tin_hieu";
 // Chuông chung của sảnh thượng đài, mỗi loại cờ một cái. Không bao giờ xóa khi dọn trận.
 const CHUONG_SANH = new Set(Object.values(TRO_CHOI).map((t) => t.chuongSanh));

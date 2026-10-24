@@ -76,15 +76,16 @@ export function taoXemLai({ am, nhan, khiVe, khiThoat = () => {}, khiDoi = () =>
     capNhat();
   }
 
-  // Bắt đầu xem lại danh sách nước dsNuoc của loại cờ có bộ luật luatVan, từ thế mở đầu, tự chạy nếu tuChay
-  function batDau(luatVan, dsNuoc, { tuChay = true } = {}) {
+  // Bắt đầu xem lại danh sách nước dsNuoc của loại cờ có bộ luật luatVan, từ thế sau tu nước (mặc định thế mở đầu),
+  // tự chạy nếu tuChay
+  function batDau(luatVan, dsNuoc, { tuChay = true, tu = 0 } = {}) {
     if (dang || !dsNuoc?.length) return;
     am.mo(); // tạo ngữ cảnh âm thanh trong lúc người dùng bấm (iPhone chỉ cho phép như vậy)
     luat = luatVan;
     nuoc = [...dsNuoc];
     dang = true;
     k = -1;
-    den(0);
+    den(tu);
     if (tuChay) chay();
   }
 

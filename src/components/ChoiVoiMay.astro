@@ -100,6 +100,8 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   import { veBanCo, veHaiKhay, chayHieuUng, tongThoiGianHieuUng, phatTiengNuoc, gaiNutKhung, oBamDuoc, nuocDatTaiO, chonNuocPhong, THOI_GIAN } from "../lib/chung/ban.js";
   import { taoXemLai } from "../lib/chung/xem-lai.js";
   import { duocDung } from "../lib/chung/tinh-nang.js";
+  import { ngheTinHieu } from "../lib/chung/realtime.js";
+  import { benDenLuot } from "../lib/chung/tran.js";
   import { banVanBan } from "../lib/co-tuong/luat.js";
 
   type O = [number, number];
@@ -346,9 +348,8 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     void nopDiem();
   }
 
-  // Đi một nước (của người hoặc máy) trên bàn đang chơi: chạy hiệu ứng, phát tiếng, ghi nhật ký.
-  // Trả về true nếu ván vừa kết thúc (đã lưu và vẽ lại).
-  function diNuoc(m: any) {
+  // Đặt nước m lên bàn đang hiện: chạy hiệu ứng, phát tiếng, ghi nhật ký (dùng khi chơi và khi xem trực tiếp)
+  function apNuoc(m: any) {
     luat.apDung(the, m);
     nuocCuoi = [m.tu, m.den];
     if (m.an) anCuoi = m.an;
@@ -356,6 +357,11 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     hieuUng = { batDau: Date.now(), quanBiAn: m.an || null, oAn: m.oAn, chieu };
     phatTiengNuoc(am, Boolean(m.an), chieu);
     nuocDaDi.push(luat.kyHieu(m));
+  }
+
+  // Đi một nước (của người hoặc máy) trên bàn đang chơi. Trả về true nếu ván vừa kết thúc (đã lưu và vẽ lại).
+  function diNuoc(m: any) {
+    apNuoc(m);
     chon = null;
     gioDi = [];
     const kt = luat.ketThuc(the, nuocDaDi.length);
@@ -557,29 +563,33 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   }
   chepEl.addEventListener("click", () => void chepLink());
 
-  // Mở qua link: ván đấu máy (?ma=) hoặc trận giữa hai người đã xong (?tran=). Tải nhật ký nước đi từ server rồi xem lại
-  // từ thế khởi đầu, theo đúng loại cờ của ván.
-  async function moVanChiaSe() {
-    const q = new URLSearchParams(location.search);
-    const maTran = q.get("tran") || "";
-    const url = maTran ? `/api/van-xem?tran=${encodeURIComponent(maTran)}` : `/api/van-xem?ma_van=${encodeURIComponent(q.get("ma") || "")}`;
-    hienTrangThai(T.dangTaiVan);
-    let v;
+  // Mở qua link: ván đấu máy (?ma=) hoặc trận giữa hai người (?tran=). Ván đã xong thì tải nhật ký nước đi rồi xem lại từ thế
+  // khởi đầu; trận đang đấu thì xem trực tiếp. Bàn theo đúng loại cờ của ván.
+  const qXem = new URLSearchParams(location.search);
+  const maTranXem = qXem.get("tran") || "";
+  const urlXem = maTranXem ? `/api/van-xem?tran=${encodeURIComponent(maTranXem)}` : `/api/van-xem?ma_van=${encodeURIComponent(qXem.get("ma") || "")}`;
+
+  // Đọc ván từ server. Trả về dữ liệu ván, hoặc chuỗi thông báo lỗi.
+  async function taiVanXem(): Promise<any> {
     try {
-      const r = await fetch(url, { headers: headerXacThuc() });
-      if (r.status === 400 || r.status === 404) return hienTrangThai(T.vanKhongCo);
+      const r = await fetch(urlXem, { headers: headerXacThuc() });
+      if (r.status === 400 || r.status === 404) return T.vanKhongCo;
       if (!r.ok) throw new Error("tai_loi");
-      v = await r.json();
+      return await r.json();
     } catch {
-      return hienTrangThai(T.loiMang);
+      return T.loiMang;
     }
+  }
+
+  // Tên người cầm bên s của trận hai người (máy trên thượng đài thì tên theo ngôn ngữ đang chọn)
+  const tenBenTran = (v: any, s: string) => (s === "r" ? (v.may_muc ? f(T.tenMay, { c: v.may_muc }) : v.ten_do) : v.ten_den) || "";
+
+  // Ván đã xong: hiện kết quả rồi xem lại từ thế sau tu nước (0: từ đầu và tự chạy; xem trực tiếp xong thì đứng ở thế cuối)
+  function xemVanXong(v: any, tu = 0) {
     if (!v.nuoc) return hienTrangThai(T.vanKhongNuoc);
-    if (v.tro_choi !== tc.ma) datTroChoi(v.tro_choi);
-    if (maTran) {
-      // Trận hai người: tên hai bên và kết quả theo bên (máy trên thượng đài thì tên theo ngôn ngữ đang chọn)
-      const tenDo = v.may_muc ? f(T.tenMay, { c: v.may_muc }) : v.ten_do;
+    if (maTranXem) {
       const kq = v.ket_qua === "do" ? T.trKetDo : v.ket_qua === "den" ? T.trKetDen : v.ket_qua === "hoa" ? T.trKetHoa : "";
-      thongBaoDiem(`${tenDo} – ${v.ten_den}${kq ? `: ${kq}` : ""}`);
+      thongBaoDiem(`${tenBenTran(v, "r")} – ${tenBenTran(v, "b")}${kq ? `: ${kq}` : ""}`);
     } else {
       const kq = v.ket_qua === "thang" ? T.kqThang : v.ket_qua === "thua" ? T.kqThua : T.kqHoa;
       thongBaoDiem(f(T.vanCuaAi, { ten: v.ten, kq }));
@@ -589,7 +599,150 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     ketThuc = true;
     daNop = true; // trang này không ghi điểm
     the = luat.khoiTao();
-    xemLai.batDau(luat, nuocDaDi);
+    xemLai.batDau(luat, nuocDaDi, { tu, tuChay: tu === 0 });
+  }
+
+  async function moVanChiaSe() {
+    hienTrangThai(T.dangTaiVan);
+    const v = await taiVanXem();
+    if (typeof v === "string") return hienTrangThai(v);
+    if (v.tro_choi !== tc.ma) datTroChoi(v.tro_choi);
+    if (v.dang_dau) return batDauTrucTiep(v);
+    xemVanXong(v);
+  }
+
+  // Xem trực tiếp trận hai người đang đấu. Bàn đi theo chuông realtime của trận: chuông mang tóm tắt kèm nước vừa đi nên
+  // không phải gọi server; chỉ đọc lại cả trận khi chuông báo việc khác (trận kết thúc, lỡ nước) hoặc vừa kết nối lại.
+  // Có thể nhiều người cùng xem nên lần đọc dự phòng thưa hơn trang chơi; không nghe được chuông thì đọc lại theo nhịp.
+  const XEM_DU_PHONG_MS = 60000;
+  const XEM_KHONG_CHUONG_MS = 3000;
+  let trucTiep: any = null; // trận đang xem trực tiếp (dữ liệu /api/van-xem), null khi không xem trực tiếp
+  let lechGio = 0; // giờ server trừ giờ máy, để đếm ngược đúng
+  let dangNghe = false;
+  let dungNghe: (() => void) | null = null;
+  let henDoc: number | undefined;
+  let gioTimer: number | undefined;
+  let dangDoc = false;
+  let canDocLai = false; // chuông rung trong lúc đang đọc: đọc thêm một lần sau đó
+
+  function nhanTrucTiep(v: any) {
+    trucTiep = v;
+    if (v.bay_gio) lechGio = Date.parse(v.bay_gio) - Date.now();
+  }
+
+  // Dòng "Trực tiếp · Đến lượt X · Còn N giây", cập nhật mỗi giây
+  function capNhatGioXem() {
+    if (!trucTiep) return;
+    let gio = T.trKhongGioiHan;
+    if (trucTiep.han_nuoc) {
+      const giay = Math.ceil((Date.parse(trucTiep.han_nuoc) - (Date.now() + lechGio)) / 1000);
+      gio = giay <= 0 ? T.trHetGioNgan : f(T.trGioCon, { s: giay });
+    }
+    hienTrangThai(f(T.xvLuot, { ten: tenBenTran(trucTiep, benDenLuot(nuocDaDi.length)), gio }));
+  }
+
+  function batDauTrucTiep(v: any) {
+    nhanTrucTiep(v);
+    const h1 = document.getElementById("co-h1");
+    if (h1) h1.textContent = T.xvTrucTiep;
+    thongBaoDiem(`${tenBenTran(v, "r")} – ${tenBenTran(v, "b")}`);
+    nuocDaDi = [...v.nuoc];
+    ketThuc = true; // khóa bàn: người xem không đi quân
+    daNop = true;
+    dungBanDen();
+    veLai();
+    capNhatGioXem();
+    gioTimer = window.setInterval(capNhatGioXem, 1000);
+    dungNghe = ngheTinHieu(
+      v.tin_hieu,
+      (banGhi: any) => {
+        if (!apTomTatXem(banGhi?.tom_tat)) void docLaiTrucTiep();
+        henDocLai();
+      },
+      (ok: boolean) => {
+        const doi = ok !== dangNghe;
+        dangNghe = ok;
+        if (doi) henDocLai();
+      },
+    );
+    henDocLai();
+  }
+
+  // Tóm tắt trong chuông: đúng một nước mới thì đi quân ngay, cùng số nước thì chỉ cập nhật giờ. Trả false nếu cần đọc lại cả trận.
+  function apTomTatXem(t: any): boolean {
+    if (!trucTiep || !t || t.trang_thai !== "dang_dau") return false;
+    if (t.n === nuocDaDi.length + 1) {
+      const m = luat.timNuoc(the, t.ky);
+      if (!m) return false;
+      apNuoc(m);
+    } else if (t.n !== nuocDaDi.length) {
+      return false;
+    }
+    trucTiep.han_nuoc = t.han;
+    veLai();
+    capNhatGioXem();
+    return true;
+  }
+
+  async function docLaiTrucTiep() {
+    if (dangDoc) {
+      canDocLai = true;
+      return;
+    }
+    dangDoc = true;
+    const v = await taiVanXem();
+    dangDoc = false;
+    if (!trucTiep) return;
+    if (typeof v !== "string") {
+      if (!v.dang_dau) return ketThucTrucTiep(v);
+      const cu = nuocDaDi.length;
+      nhanTrucTiep(v);
+      const tomTat = { trang_thai: "dang_dau", n: v.nuoc.length, ky: v.nuoc[v.nuoc.length - 1], han: v.han_nuoc };
+      if (v.nuoc.length < cu || !apTomTatXem(tomTat)) {
+        // Lệch nhiều nước (mất kết nối lâu): dựng lại bàn từ cả nhật ký, không chạy hiệu ứng
+        nuocDaDi = [...v.nuoc];
+        hieuUng = null;
+        dungBanDen();
+        veLai();
+        capNhatGioXem();
+      }
+    } // lỗi mạng: lần dự phòng sau đọc lại
+    if (canDocLai) {
+      canDocLai = false;
+      void docLaiTrucTiep();
+    }
+  }
+
+  // Trận vừa xong trong lúc xem: thôi nghe, hiện kết quả và đứng ở thế cuối (xem lại được bằng thanh nút)
+  function ketThucTrucTiep(v: any) {
+    trucTiep = null;
+    dungNghe?.();
+    dungNghe = null;
+    clearTimeout(henDoc);
+    clearInterval(gioTimer);
+    const h1 = document.getElementById("co-h1");
+    if (h1) h1.textContent = T.xvTieuDe;
+    if (!v.nuoc) {
+      hienTrangThai("");
+      return veLai();
+    }
+    // Trận kết thúc bằng một nước mới (chiếu hết, đủ 5...): đi nước đó có hiệu ứng, chạy xong mới chuyển sang thanh xem lại
+    const m = v.nuoc.length === nuocDaDi.length + 1 && luat.timNuoc(the, v.nuoc[v.nuoc.length - 1]);
+    if (!m) return xemVanXong(v, v.nuoc.length);
+    apNuoc(m);
+    veLai();
+    const cho = giamChuyenDong ? 0 : tongThoiGianHieuUng(hieuUng?.chieu);
+    setTimeout(() => xemVanXong(v, v.nuoc.length), cho);
+  }
+
+  function henDocLai() {
+    clearTimeout(henDoc);
+    if (!trucTiep) return;
+    const doTre = dangNghe ? XEM_DU_PHONG_MS : document.hidden ? 10000 : XEM_KHONG_CHUONG_MS;
+    henDoc = window.setTimeout(async () => {
+      await docLaiTrucTiep();
+      henDocLai();
+    }, doTre);
   }
 
   function vanMoi() {

@@ -36,8 +36,26 @@ describe("xem lại trận hai người qua link", () => {
     expect(data).toMatchObject({ tro_choi: "co_tuong", ten_do: "Máy mức 3", may_muc: 3 });
   });
 
-  it("trận đang đấu hoặc không có thì không cho xem; mã sai dạng bị từ chối", async () => {
-    gia({ ma: MA, trang_thai: "dang_dau", nuoc: ["h7e7"] });
+  it("trận đang đấu: xem trực tiếp, có hạn nước, giờ server và mã chuông", async () => {
+    gia({ ma: MA, loai: "khep_kin", trang_thai: "dang_dau", do: "k_x", ten_do: "An", ten_den: "Bình", nuoc: ["h7e7"], han_nuoc: "2026-10-24 10:00:00.000Z", tin_hieu: "c".repeat(15) });
+    const { status, data } = await goi(`tran=${MA}`);
+    expect(status).toBe(200);
+    expect(data).toMatchObject({ dang_dau: true, nuoc: ["h7e7"], han_nuoc: "2026-10-24 10:00:00.000Z", tin_hieu: "c".repeat(15), ket_qua: null });
+    expect(data.bay_gio).toBeTruthy();
+    // Chưa đi nước nào vẫn xem được (bàn khởi đầu)
+    gia({ ma: MA, trang_thai: "dang_dau", nuoc: [] });
+    expect((await goi(`tran=${MA}`)).data.nuoc).toEqual([]);
+  });
+
+  it("trận đã xong không có trường xem trực tiếp", async () => {
+    gia({ ma: MA, trang_thai: "ket_thuc", ket_qua: "hoa", nuoc: ["h7e7"], tin_hieu: "c".repeat(15) });
+    const { data } = await goi(`tran=${MA}`);
+    expect(data).not.toHaveProperty("dang_dau");
+    expect(data).not.toHaveProperty("tin_hieu");
+  });
+
+  it("trận còn chờ người vào hoặc không có thì không cho xem; mã sai dạng bị từ chối", async () => {
+    gia({ ma: MA, trang_thai: "cho", nuoc: [] });
     expect((await goi(`tran=${MA}`)).status).toBe(404);
     gia(null);
     expect((await goi(`tran=${MA}`)).status).toBe(404);

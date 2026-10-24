@@ -72,8 +72,10 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     <button type="button" id="tr-nut-chep-xem" class="nut nut-phu nut-nho">{T.chepLink}</button>
   </div>
   <p id="tr-tiep" class="tr-khoi" hidden><a id="tr-tiep-a" href="#"></a></p>
+  <!-- Trận đang đấu: đầu hàng, và chép link /xem-van/?tran=... để ai có link cũng xem trực tiếp -->
   <div id="tr-dieu-khien" class="tr-khoi" hidden>
     <button type="button" id="tr-nut-dau-hang" class="nut nut-phu">{T.trDauHang}</button>
+    <button type="button" id="tr-nut-chep-truc-tiep" class="nut nut-phu nut-nho">{T.chepLinkTrucTiep}</button>
   </div>
 
 <style is:global>
@@ -305,16 +307,20 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
   nut("tr-nut-xem").addEventListener("click", () => {
     if (xemDuoc()) xemLai.batDau(luat, tran.nuoc);
   });
-  nut("tr-nut-chep-xem").addEventListener("click", async () => {
+  // Cùng một link /xem-van/?tran=...: trận đang đấu thì xem trực tiếp, trận đã xong thì xem lại
+  async function chepLinkXem(idNut: string, nhan: string) {
     const url = `${location.origin}${tienTo}${tc.duong.xemVan}?tran=${ma}`;
     try {
       await navigator.clipboard.writeText(url);
-      $("tr-nut-chep-xem").textContent = T.daChepLink;
-      setTimeout(() => ($("tr-nut-chep-xem").textContent = T.chepLink), 2000);
+      $(idNut).textContent = T.daChepLink;
+      setTimeout(() => ($(idNut).textContent = T[nhan]), 2000);
     } catch {
       baoLoi(url); // trình duyệt chặn clipboard: hiện link để người dùng tự chép
     }
-  });
+  }
+  nut("tr-nut-chep-xem").addEventListener("click", () => void chepLinkXem("tr-nut-chep-xem", "chepLink"));
+  nut("tr-nut-chep-truc-tiep").addEventListener("click", () => void chepLinkXem("tr-nut-chep-truc-tiep", "chepLinkTrucTiep"));
+  $("tr-nut-chep-truc-tiep").hidden = !coXemLai;
 
   // Đi nước m (đã hợp lệ) trên bàn đang hiện: hiệu ứng và tiếng như nước đi của máy
   function apMove(m: any) {
