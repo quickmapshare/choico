@@ -13,10 +13,11 @@ import { TRO_CHOI } from "../lib/tro-choi.js";
 const { tieuDe, moTa, lang = "vi", nhung = false, khongDich = false, khongLapChiMuc = false, troChoi = "" } = Astro.props;
 const duongCanhTac = new URL(Astro.url.pathname, Astro.site);
 const duongGoc = boTienTo(Astro.url.pathname); // đường dẫn tiếng Việt của cùng trang
-// Mục menu đang sáng: trang dưới /co-vua/ (và bản nhúng cờ vua) thuộc cờ vua; trang cờ tướng giữ đường dẫn cũ ở gốc
-// (/co-tuong/, /thuong-dai/, /tran/, /xem-van/, /nhung/). Trang trận và sảnh truyền troChoi; trang trận đổi lại bằng
-// script khi biết loại cờ của trận (sangMenu trong src/lib/chung/trinh-duyet.js).
-const menuSang = troChoi || (/^\/(co-vua|nhung\/co-vua)\//.test(duongGoc) ? "co_vua" : /^\/(co-tuong|thuong-dai|tran|xem-van|nhung)\//.test(duongGoc) ? "co_tuong" : "");
+// Mục menu đang sáng: trang dưới /co-vua/ (và bản nhúng, mã nhúng cờ vua) thuộc cờ vua; trang cờ tướng giữ đường dẫn cũ
+// ở gốc (/co-tuong/, /thuong-dai/, /tran/, /xem-van/, /nhung/co-tuong/). Trang /nhung/ chung (liệt kê mọi loại cờ) không
+// sáng tab nào. Trang trận và sảnh truyền troChoi; trang trận đổi lại bằng script khi biết loại cờ của trận (sangMenu
+// trong src/lib/chung/trinh-duyet.js).
+const menuSang = troChoi || (/^\/(co-vua|nhung\/co-vua)\//.test(duongGoc) ? "co_vua" : /^\/(co-tuong|thuong-dai|tran|xem-van|nhung\/co-tuong)\//.test(duongGoc) ? "co_tuong" : "");
 const MENU = [
   { ma: "co_tuong", href: "/co-tuong/", khoa: "menuCoTuong" },
   { ma: "co_vua", href: "/co-vua/", khoa: "menuCoVua" },

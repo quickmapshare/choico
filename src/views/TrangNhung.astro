@@ -1,13 +1,16 @@
 ---
 // Trang lấy mã nhúng bàn cờ vào web bất kỳ, dùng chung cho mọi ngôn ngữ: mỗi loại cờ một đoạn mã và một khung xem trước.
 // Mã nhúng trỏ tới bản nhúng cùng ngôn ngữ với trang này.
+// troChoi: để trống thì liệt kê mọi loại cờ (trang /nhung/ chung); truyền vào thì chỉ hiện một loại cờ
+// (trang riêng /nhung/<loại>/ma/, để menu sáng đúng tab và không hiện lẫn loại cờ khác).
 import Layout from "../layouts/Layout.astro";
 import { t, duongDan } from "../i18n/strings.js";
 import { TRO_CHOI } from "../lib/tro-choi.js";
 
-const { lang = "vi" } = Astro.props;
+const { lang = "vi", troChoi = "" } = Astro.props;
+const dsTroChoi = troChoi ? [TRO_CHOI[troChoi]] : Object.values(TRO_CHOI);
 // Mã nhúng: một iframe và một đoạn script nhỏ để khung tự cao theo nội dung
-const cacBan = Object.values(TRO_CHOI).map((tc) => {
+const cacBan = dsTroChoi.map((tc) => {
   const src = new URL(duongDan(lang, tc.duong.nhung), Astro.site);
   const tieuDe = t(lang, "nhungKhungTieuDe", {}, tc.ma);
   const ma = [
@@ -22,8 +25,11 @@ const cacBan = Object.values(TRO_CHOI).map((tc) => {
   return { ma: tc.ma, ten: t(lang, "tenCo", {}, tc.ma), src, tieuDe, maNhung: ma };
 });
 const nhanChep = t(lang, "nhungSaoChep");
+// Một loại cờ: tiêu đề/mô tả riêng cho loại đó; mọi loại cờ: giữ chuỗi chung
+const tieuDeTrang = troChoi ? `${t(lang, "tenCo", {}, troChoi)} – ${t(lang, "nhungTieuDe")}` : t(lang, "nhungTieuDe");
+const moTaTrang = troChoi ? t(lang, "nhungBanMoTa", {}, troChoi) : t(lang, "nhungMoTa");
 ---
-<Layout lang={lang} tieuDe={t(lang, "nhungTieuDe")} moTa={t(lang, "nhungMoTa")}>
+<Layout lang={lang} tieuDe={tieuDeTrang} moTa={moTaTrang} troChoi={troChoi}>
   <h1>{t(lang, "nhungH1")}</h1>
   <p class="phu">{t(lang, "nhungGioiThieu")}</p>
 

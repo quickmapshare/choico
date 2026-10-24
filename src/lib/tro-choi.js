@@ -25,14 +25,14 @@ export const TRO_CHOI = {
   co_tuong: {
     ma: "co_tuong",
     luat: coTuong,
-    duong: { cong: "/co-tuong/", may: "/co-tuong/may/", tran: "/tran/", dai: "/thuong-dai/", xemVan: "/xem-van/", nhung: "/nhung/co-tuong/" },
+    duong: { cong: "/co-tuong/", may: "/co-tuong/may/", tran: "/tran/", dai: "/thuong-dai/", xemVan: "/xem-van/", nhung: "/nhung/co-tuong/", maNhung: "/nhung/co-tuong/ma/" },
     chuongSanh: "sanhthuongdai01",
     khoaLuu: "co-tuong-van-v2",
   },
   co_vua: {
     ma: "co_vua",
     luat: coVua,
-    duong: { cong: "/co-vua/", may: "/co-vua/may/", tran: "/co-vua/tran/", dai: "/co-vua/thuong-dai/", xemVan: "/co-vua/xem-van/", nhung: "/nhung/co-vua/" },
+    duong: { cong: "/co-vua/", may: "/co-vua/may/", tran: "/co-vua/tran/", dai: "/co-vua/thuong-dai/", xemVan: "/co-vua/xem-van/", nhung: "/nhung/co-vua/", maNhung: "/nhung/co-vua/ma/" },
     chuongSanh: "sanhcovuadai001",
     khoaLuu: "choico-co-vua-van",
   },

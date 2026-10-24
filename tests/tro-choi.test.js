@@ -16,7 +16,7 @@ describe("danh sách loại cờ", () => {
       for (const h of HAM) expect(typeof tc.luat[h], `${ma}.${h}`).toBe("function");
       expect(tc.luat.MAU_KY).toBeInstanceOf(RegExp);
       expect(Number.isInteger(tc.luat.NUOC_TOI_DA)).toBe(true);
-      for (const k of ["cong", "may", "tran", "dai", "xemVan", "nhung"]) expect(tc.duong[k]).toMatch(/^\/.*\/$/);
+      for (const k of ["cong", "may", "tran", "dai", "xemVan", "nhung", "maNhung"]) expect(tc.duong[k]).toMatch(/^\/.*\/$/);
       // Mã bản ghi PocketBase: đúng 15 ký tự a-z0-9
       expect(tc.chuongSanh).toMatch(/^[a-z0-9]{15}$/);
       chuong.add(tc.chuongSanh);
