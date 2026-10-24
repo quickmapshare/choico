@@ -42,7 +42,6 @@ export async function bamDanhMay(pb, H, troChoi = TRO_CHOI_MAC_DINH) {
         do: `${TIEN_TO_MAY}${muc}`,
         ten_do: tenMay(muc),
         nuoc: [],
-        da_tinh_diem: false,
       }).catch(() => {}),
     ),
   );

@@ -100,7 +100,6 @@ export async function onRequestPost({ request, env, waitUntil }) {
       do: nguoi.id,
       ten_do: nguoi.ten,
       nuoc: [],
-      da_tinh_diem: false,
     });
     if (!r.ok) return tra(502, { loi: "khong_len_dai_duoc" });
     await baoTinHieu(pb, H, troChoi.chuongSanh); // người khác trong sảnh thấy ngay người vừa lên đài

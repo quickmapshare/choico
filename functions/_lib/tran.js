@@ -2,8 +2,7 @@
 // Người chơi là tài khoản (header Authorization) hoặc khách (header x-khach-id, khép kín không cần tài khoản).
 // Trận ghi loại cờ ở cột tro_choi (trận cũ để trống là cờ tướng).
 import { xacThuc, tra, headerAdmin, docBang } from "./pocketbase.js";
-import { capNhatDiem } from "./diem.js";
-import { ketQuaChoBen, laMay } from "../../src/lib/chung/tran.js";
+import { laMay } from "../../src/lib/chung/tran.js";
 import { TRO_CHOI, layTroChoi } from "../../src/lib/tro-choi.js";
 
 export const BANG_TRAN = "co_tuong_tran";
@@ -152,25 +151,11 @@ export async function donTranCu(pb, H) {
   return canDon.size;
 }
 
-// Cộng điểm cho cả hai người của một trận thượng đài đã có kết quả, vào bảng điểm của loại cờ của trận.
-// Điểm tính như đấu máy (xem diem.js), không hoãn nước.
-async function tinhDiemTran(pb, H, tran, ketQua) {
-  const troChoi = troChoiTran(tran).ma;
-  const ben = [["r", tran.do, tran.ten_do], ["b", tran.den, tran.ten_den]];
-  for (const [s, id, ten] of ben) {
-    if (laMay(id)) continue; // máy không có tài khoản, không cộng điểm
-    await capNhatDiem(pb, H, { id }, ten, troChoi, ketQuaChoBen(ketQua, s), 0);
-  }
-}
-
-// Kết thúc trận (hết nước, đầu hàng, hết giờ bị xử thua, bỏ dở). Chỉ trận thượng đài ("dai") mới tính điểm.
-// Cờ da_tinh_diem được ghi cùng lúc với kết quả để giữ chỗ trước, tránh cộng điểm hai lần nếu hai yêu cầu kết thúc trận cùng lúc.
+// Kết thúc trận (hết nước, đầu hàng, hết giờ bị xử thua, bỏ dở). Không trận nào cộng trừ điểm ở đây:
+// trận thượng đài cũng không tính điểm, vì nếu tính thì một người có thể lập tài khoản phụ thách đấu rồi đầu hàng để ăn điểm.
+// Điểm chỉ tăng từ ván với máy (van.js), nên không có đường nào để tài khoản này cộng điểm cho tài khoản khác.
 export async function ketThucTran(pb, H, tran, { ket_qua, ly_do, nuoc }) {
   const data = { trang_thai: "ket_thuc", ket_qua, ly_do, han_nuoc: "" };
   if (nuoc) data.nuoc = nuoc;
-  const tinhDiem = tran.loai === "dai" && !tran.da_tinh_diem;
-  if (tinhDiem) data.da_tinh_diem = true;
-  const r = await capNhatTran(pb, H, tran, data);
-  if (r.ok && tinhDiem) await tinhDiemTran(pb, H, tran, ket_qua);
-  return r;
+  return capNhatTran(pb, H, tran, data);
 }

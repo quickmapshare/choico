@@ -109,7 +109,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
 </style>
 
 <script>
-  import { thoiGianNghi, diemCongVan } from "../lib/chung/diem.js";
+  import { thoiGianNghi } from "../lib/chung/diem.js";
   import { phatLai } from "../lib/chung/van.js";
   import { chonTrongDinh } from "../lib/chung/may.js";
   import { benDenLuot, ketQuaChoBen, GIAY_MOI_NUOC } from "../lib/chung/tran.js";
@@ -584,11 +584,7 @@ const chuGui = { chung: chuCaTrang(lang), rieng: Object.fromEntries(MA_TRO_CHOI.
     const ten = tenBen(minhDo ? "b" : "r");
     doiEl.textContent = ten ? f(T.trDoi, { ten }) : "";
     const kq = tran.ket_qua === "do" ? T.trKetDo : tran.ket_qua === "den" ? T.trKetDen : T.trKetHoa;
-    let diem = T.trKhongTinh;
-    if (tran.loai === "dai") {
-      const d = diemCongVan(ketQuaChoBen(tran.ket_qua, tran.ban_cua), 0);
-      diem = f(T.trDiemTran, { diem: `${d > 0 ? "+" : ""}${d}` });
-    }
+    const diem = tran.loai === "dai" ? T.trDaiKhongTinh : T.trKhongTinh;
     batTrangThai(`${kq}${tran.ly_do ? ` (${lyDo(tran.ly_do)})` : ""}. ${diem}`);
     hienBuocTiep();
     if (!daBaoKetThuc) {

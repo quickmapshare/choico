@@ -92,7 +92,6 @@ export async function onRequestPost({ request, env, waitUntil }) {
       ten_do: ten,
       nuoc: [],
       het_han: sauPhut(HAN_KHEP_KIN_GIO * 3600),
-      da_tinh_diem: false,
       ip_bam: ipBam,
     });
     if (!r.ok) return tra(502, { loi: "khong_tao_duoc" });
