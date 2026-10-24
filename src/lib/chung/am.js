@@ -62,6 +62,38 @@ const KIEU = {
   hoa: (c, d, t) => [440, 440].forEach((f, i) => note(c, d, t + i * 0.16, f, 0.2, "triangle", 0.4)),
 };
 
+// iPhone gạt nút im lặng thì Web Audio bị tắt tiếng hẳn (iOS xếp nó vào loại "ambient"), còn thẻ <audio> vẫn kêu.
+// Phát một đoạn im lặng bằng thẻ <audio> trong lúc người dùng bấm thì iOS chuyển cả trang sang loại "playback",
+// từ đó Web Audio kêu dù đang gạt im lặng. iOS 17 trở lên có sẵn navigator.audioSession để đặt thẳng.
+let daMoKenhPhat = false;
+function moKenhPhat() {
+  if (daMoKenhPhat) return;
+  daMoKenhPhat = true;
+  try {
+    if (globalThis.navigator?.audioSession) globalThis.navigator.audioSession.type = "playback";
+  } catch { /* bỏ qua */ }
+  if (typeof globalThis.Audio !== "function" || typeof globalThis.Blob !== "function") return;
+  try {
+    // WAV 8 bit, 8000 Hz, 0,1 giây toàn giá trị giữa (128) là im lặng
+    const soMau = 800;
+    const b = new Uint8Array(44 + soMau);
+    const v = new DataView(b.buffer);
+    const chu = (o, s) => [...s].forEach((k, i) => (b[o + i] = k.charCodeAt(0)));
+    chu(0, "RIFF"); v.setUint32(4, 36 + soMau, true); chu(8, "WAVE");
+    chu(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+    chu(36, "data"); v.setUint32(40, soMau, true);
+    b.fill(128, 44);
+    const a = new globalThis.Audio(URL.createObjectURL(new Blob([b], { type: "audio/wav" })));
+    a.setAttribute("x-webkit-airplay", "deny");
+    a.disableRemotePlayback = true;
+    const p = a.play();
+    if (p && p.catch) p.catch(() => { daMoKenhPhat = false; }); // bị chặn thì thử lại ở lần bấm sau
+  } catch {
+    daMoKenhPhat = false;
+  }
+}
+
 // taoNguCanh: hàm tạo AudioContext, truyền vào để kiểm thử được mà không cần trình duyệt.
 export function taoAmThanh(taoNguCanh) {
   const tao = taoNguCanh || (() => new (globalThis.AudioContext || globalThis.webkitAudioContext)());
@@ -73,6 +105,7 @@ export function taoAmThanh(taoNguCanh) {
   // Tạo (nếu chưa có) và mở lại ngữ cảnh nếu bị trình duyệt tạm dừng. Gọi trong lúc người dùng đang bấm.
   function mo() {
     if (!bat) return null;
+    moKenhPhat();
     if (!c) {
       c = tao();
       dich = c.createGain();
@@ -82,7 +115,8 @@ export function taoAmThanh(taoNguCanh) {
       const d = nhieu.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
-    if (c.state === "suspended" && c.resume) c.resume();
+    // iPhone còn có trạng thái "interrupted" (sau cuộc gọi, khi chuyển app), cũng phải mở lại
+    if (c.state !== "running" && c.state !== "closed" && c.resume) c.resume();
     return c;
   }
 
