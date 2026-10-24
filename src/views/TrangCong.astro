@@ -8,12 +8,21 @@ import { TRO_CHOI } from "../lib/tro-choi.js";
 const { lang = "vi", troChoi = "co_tuong" } = Astro.props;
 const d = TRO_CHOI[troChoi].duong;
 const c = (khoa) => t(lang, khoa, {}, troChoi);
+// Biểu tượng svg (viewBox 24x24, nét currentColor) để nhận diện nhanh từng thẻ
+const svg = (noiDung: string) => `<svg viewBox="0 0 24 24" aria-hidden="true">${noiDung}</svg>`;
+const BT = {
+  may: svg('<rect x="3" y="4" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 20.5h7M12 17v3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'),
+  ban: svg('<circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 20c.4-3.6 2.8-6 5.5-6s5.1 2.4 5.5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="17.5" cy="7.5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15.3 13.2c2-.5 4 .6 4.9 3.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'),
+  dai: svg('<path d="M7 4.5h10v3.5a5 5 0 0 1-10 0v-3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 5.5H5a2 2 0 0 0 0 4h1.3M17 5.5h2a2 2 0 0 1 0 4h-1.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 13v3.5M9 20.5h6M8.5 17.5h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'),
+  diem: svg('<path d="M5 20v-6M12 20V8M19 20v-9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'),
+  nhung: svg('<path d="M9 6.5l-4.5 5.5 4.5 5.5M15 6.5l4.5 5.5-4.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'),
+};
 const trang = [
-  { href: duongDan(lang, d.may), ten: c("ctcThe1"), mo: c("ctcThe1Mo") },
-  { href: duongDan(lang, d.tran), ten: c("ctcThe5"), mo: c("ctcThe5Mo") },
-  { href: duongDan(lang, d.dai), ten: c("ctcThe4"), mo: c("ctcThe4Mo") },
-  { href: duongDan(lang, d.may) + "#co-bang-diem-tieu-de", ten: c("ctcThe2"), mo: c("ctcThe2Mo") },
-  { href: duongDan(lang, d.maNhung), ten: c("ctcThe3"), mo: c("ctcThe3Mo") },
+  { href: duongDan(lang, d.may), ten: c("ctcThe1"), mo: c("ctcThe1Mo"), icon: BT.may },
+  { href: duongDan(lang, d.tran), ten: c("ctcThe5"), mo: c("ctcThe5Mo"), icon: BT.ban },
+  { href: duongDan(lang, d.dai), ten: c("ctcThe4"), mo: c("ctcThe4Mo"), icon: BT.dai },
+  { href: duongDan(lang, d.may) + "#co-bang-diem-tieu-de", ten: c("ctcThe2"), mo: c("ctcThe2Mo"), icon: BT.diem },
+  { href: duongDan(lang, d.maNhung), ten: c("ctcThe3"), mo: c("ctcThe3Mo"), icon: BT.nhung },
 ];
 ---
 <Layout lang={lang} tieuDe={c("ctcTieuDe")} moTa={c("ctcMoTa")}>
@@ -30,8 +39,11 @@ const trang = [
     {trang.map((x) => (
       <li>
         <a class="the-lien-ket" href={x.href}>
-          <strong>{x.ten}</strong>
-          <span class="phu">{x.mo}</span>
+          <span class="bt-icon" aria-hidden="true" set:html={x.icon} />
+          <span class="noi-dung">
+            <strong>{x.ten}</strong>
+            <span class="phu">{x.mo}</span>
+          </span>
         </a>
       </li>
     ))}
@@ -45,9 +57,15 @@ const trang = [
   .danh-sach { list-style: none; padding: 0; margin: 1.2rem 0; display: grid; gap: .75rem; }
   .danh-sach li { margin: 0; }
   .the-lien-ket {
-    display: block; padding: .9rem 1.1rem; background: var(--mat); border: 1px solid var(--vien);
+    display: flex; align-items: center; gap: .9rem; padding: .9rem 1.1rem; background: var(--mat); border: 1px solid var(--vien);
     border-radius: 14px; box-shadow: var(--bong); color: var(--chu); text-decoration: none;
   }
   .the-lien-ket:hover { border-color: var(--nhan); text-decoration: none; }
   .the-lien-ket strong { display: block; color: var(--nhan); }
+  .noi-dung { flex: 1; min-width: 0; }
+  .bt-icon {
+    flex: none; width: 2.5rem; height: 2.5rem; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; background: var(--nhan-nhe); color: var(--nhan);
+  }
+  .bt-icon :global(svg) { width: 1.4rem; height: 1.4rem; display: block; }
 </style>
