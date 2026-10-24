@@ -162,31 +162,45 @@ const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "
       .ten-web .logo { flex: none; }
       .ten-web span span { color: var(--nhan); }
       .thanh-tren-phai { display: flex; align-items: center; gap: .9rem; }
-      .thanh-tren nav { display: flex; gap: 1rem; font-size: .93rem; font-weight: 600; }
+      .thanh-tren #menu-chinh { display: flex; gap: 1rem; font-size: .93rem; font-weight: 600; }
+      .thanh-tren #menu-chinh a { color: var(--phu); }
+      .thanh-tren #menu-chinh a:hover, .thanh-tren #menu-chinh a[aria-current="page"] { color: var(--nhan); }
+      /* Máy tính: loại cờ là các tab nằm sát đáy thanh đầu; tab đang chọn có viền như tab trình duyệt, nền trùng màu
+         hàng menu con bên dưới và che đường kẻ ngăn cách nên hai phần liền một khối */
+      @media (min-width: 641px) {
+        .thanh-tren-noi { padding-top: 0; padding-bottom: 0; align-items: stretch; }
+        .ten-web, .thanh-tren-phai > :not(#menu-chinh) { align-self: center; }
+        .ten-web { padding: .6rem 0; }
+        .thanh-tren-phai { align-items: stretch; }
+        .thanh-tren #menu-chinh { gap: .2rem; align-items: flex-end; }
+        .thanh-tren #menu-chinh a { position: relative; padding: .45rem 1rem; border: 1px solid transparent; border-bottom: 0; border-radius: 10px 10px 0 0; }
+        .thanh-tren #menu-chinh a:hover { text-decoration: none; }
+        .thanh-tren #menu-chinh a[aria-current="page"] { background: var(--mat); border-color: var(--vien); margin-bottom: -1px; padding-bottom: calc(.45rem + 1px); z-index: 1; }
+      }
       .nut-menu { display: none; width: 2.1rem; height: 2.1rem; padding: 0; align-items: center; justify-content: center; border: 1px solid var(--vien); border-radius: 50%; background: var(--mat); color: var(--phu); cursor: pointer; transition: border-color .15s, color .15s; }
       .nut-menu:hover, .thanh-tren[data-mo] .nut-menu { border-color: var(--nhan); color: var(--nhan); }
       /* Điện thoại: menu gọn lại sau nút ☰, bấm vào thì thả xuống dưới thanh đầu (giữ cú pháp media query cũ cho iOS cũ) */
       @media (max-width: 640px) {
         .nut-menu { display: inline-flex; }
-        .thanh-tren nav { display: none; }
-        .thanh-tren[data-mo] nav { display: flex; flex-direction: column; gap: 0; position: absolute; left: 0; right: 0; top: 100%; padding: .3rem 1rem .6rem; background: var(--nen); border-bottom: 1px solid var(--vien); font-size: 1rem; }
-        .thanh-tren nav a { padding: .7rem 0; border-top: 1px solid var(--vien); }
-        .thanh-tren nav a:first-child { border-top: 0; }
+        .thanh-tren #menu-chinh { display: none; }
+        .thanh-tren[data-mo] #menu-chinh { display: flex; flex-direction: column; gap: 0; position: absolute; left: 0; right: 0; top: 100%; padding: .3rem 1rem .6rem; background: var(--nen); border-bottom: 1px solid var(--vien); font-size: 1rem; }
+        .thanh-tren #menu-chinh a { padding: .7rem 0; border-top: 1px solid var(--vien); }
+        .thanh-tren #menu-chinh a:first-child { border-top: 0; }
       }
       /* Màn hình rất hẹp: ẩn chữ ChoiCo, chỉ giữ logo để các nút vừa cùng một hàng với logo */
       @media (max-width: 420px) {
         .thanh-tren-noi { flex-wrap: nowrap; }
         .ten-web span { display: none; }
       }
-      .thanh-tren nav a { color: var(--phu); }
-      .thanh-tren nav a:hover, .thanh-tren nav a[aria-current="page"] { color: var(--nhan); }
-      /* Tab loại cờ đang chọn nối liền với hàng menu con ngay dưới */
-      .thanh-tren nav a[aria-current="page"] { background: var(--nhan-nhe); padding: .15rem .7rem; border-radius: 999px; margin: -.15rem 0; }
-      .menu-con { background: var(--nhan-nhe); border-top: 1px solid var(--vien); }
-      .menu-con-noi { max-width: 46rem; margin: 0 auto; padding: .25rem 1rem; display: flex; gap: .3rem; overflow-x: auto; font-size: .9rem; font-weight: 600; }
-      .menu-con-noi a { flex: none; padding: .3rem .8rem; border-radius: 999px; color: var(--phu); white-space: nowrap; }
-      .menu-con-noi a:hover { text-decoration: none; color: var(--nhan); }
-      .menu-con-noi a[aria-current="page"] { background: var(--nhan); color: var(--nen); }
+      /* Menu con của loại cờ đang chọn: nền như mặt thẻ, mục đang mở gạch chân màu nhấn */
+      .menu-con { position: relative; background: var(--mat); border-top: 1px solid var(--vien); }
+      .menu-con-noi { max-width: 46rem; margin: 0 auto; padding: 0 1rem; display: flex; gap: 1.6rem; overflow-x: auto; scrollbar-width: none; font-size: .92rem; font-weight: 600; }
+      .menu-con-noi a { flex: none; padding: .55rem 0 calc(.55rem - 2px); border-bottom: 2px solid transparent; color: var(--phu); white-space: nowrap; }
+      .menu-con-noi a:hover { text-decoration: none; color: var(--chu); }
+      .menu-con-noi a[aria-current="page"] { color: var(--nhan); border-bottom-color: var(--nhan); }
+      @media (max-width: 420px) {
+        .menu-con-noi { gap: 1rem; font-size: .86rem; }
+      }
       .chan-trang { max-width: 46rem; margin: 0 auto; padding: 1rem 1rem 2rem; border-top: 1px solid var(--vien); color: var(--phu); font-size: .85rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
       main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
       a { color: var(--nhan); text-decoration: none; }
