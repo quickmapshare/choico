@@ -198,8 +198,14 @@ const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "
       .menu-con-noi a { flex: none; padding: .55rem 0 calc(.55rem - 2px); border-bottom: 2px solid transparent; color: var(--phu); white-space: nowrap; }
       .menu-con-noi a:hover { text-decoration: none; color: var(--chu); }
       .menu-con-noi a[aria-current="page"] { color: var(--nhan); border-bottom-color: var(--nhan); }
+      .ten-co-con { display: none; flex: none; align-items: center; gap: .25rem; margin: .35rem 0; padding: 0 1rem 0 0; border: 0; border-right: 1px solid var(--vien); background: none; color: var(--chu); font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; }
+      .thanh-tren[data-mo] .ten-co-con { color: var(--nhan); }
+      @media (max-width: 640px) {
+        .ten-co-con { display: inline-flex; }
+      }
       @media (max-width: 420px) {
         .menu-con-noi { gap: 1rem; font-size: .86rem; }
+        .ten-co-con { padding-right: .8rem; }
       }
       .chan-trang { max-width: 46rem; margin: 0 auto; padding: 1rem 1rem 2rem; border-top: 1px solid var(--vien); color: var(--phu); font-size: .85rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
       main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
@@ -250,6 +256,11 @@ const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "
         {troChoiMenu && (
           <div class="menu-con">
             <nav class="menu-con-noi" id="menu-con" aria-label={t(lang, "menuAria")}>
+              {/* Điện thoại: tab loại cờ nằm sau nút ☰ nên hiện tên loại cờ ở đầu hàng, bấm vào để mở menu đổi cờ */}
+              <button type="button" class="ten-co-con" data-mo-menu aria-controls="menu-chinh">
+                <span>{t(lang, MENU.find((m) => m.ma === menuSang)?.khoa ?? "")}</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
               {MUC_CON.map((m) => <a href={duongDan(lang, troChoiMenu.duong[m.ma])} data-muc={m.ma} aria-current={mucConSang === m.ma ? "page" : undefined}>{t(lang, m.khoa)}</a>)}
             </nav>
           </div>
@@ -266,16 +277,17 @@ const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "
       </footer>
     )}
     <script is:inline>
-      // Menu trên điện thoại: bấm ☰ để mở/đóng; đóng khi chọn một mục, bấm ra ngoài hoặc nhấn Esc
+      // Menu trên điện thoại: bấm ☰ (hoặc tên loại cờ ở hàng menu con) để mở/đóng; đóng khi chọn một mục, bấm ra ngoài hoặc nhấn Esc
       (function () {
         var thanh = document.querySelector(".thanh-tren");
         var nut = document.querySelector(".nut-menu");
         if (!thanh || !nut) return;
+        var cacNut = thanh.querySelectorAll(".nut-menu, [data-mo-menu]");
         function dat(mo) {
           if (mo) thanh.setAttribute("data-mo", ""); else thanh.removeAttribute("data-mo");
-          nut.setAttribute("aria-expanded", mo ? "true" : "false");
+          cacNut.forEach(function (n) { n.setAttribute("aria-expanded", mo ? "true" : "false"); });
         }
-        nut.addEventListener("click", function () { dat(!thanh.hasAttribute("data-mo")); });
+        cacNut.forEach(function (n) { n.addEventListener("click", function () { dat(!thanh.hasAttribute("data-mo")); }); });
         document.addEventListener("click", function (e) { if (!thanh.contains(e.target)) dat(false); });
         document.addEventListener("keydown", function (e) { if (e.key === "Escape") dat(false); });
         thanh.querySelectorAll("nav a").forEach(function (a) { a.addEventListener("click", function () { dat(false); }); });

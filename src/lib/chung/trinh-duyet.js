@@ -75,8 +75,11 @@ export function taoMay(troChoi) {
 // Menu con (chơi với máy / bạn / thượng đài) đổi theo loại cờ; muc là mã mục con cần sáng ("tran", "dai"), bỏ trống thì giữ nguyên.
 export function sangMenu(troChoi, muc = "") {
   for (const a of document.querySelectorAll("#menu-chinh a[data-tro-choi]")) {
-    if (a.getAttribute("data-tro-choi") === troChoi) a.setAttribute("aria-current", "page");
-    else a.removeAttribute("aria-current");
+    if (a.getAttribute("data-tro-choi") === troChoi) {
+      a.setAttribute("aria-current", "page");
+      const ten = document.querySelector(".ten-co-con span");
+      if (ten) ten.textContent = a.textContent;
+    } else a.removeAttribute("aria-current");
   }
   const tienTo = document.documentElement.dataset.tienTo || "";
   for (const a of document.querySelectorAll("#menu-con a[data-muc]")) {
