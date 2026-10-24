@@ -5,7 +5,7 @@ import Layout from "../layouts/Layout.astro";
 import { CHU } from "../i18n/strings.js";
 const chu = JSON.stringify(Object.fromEntries(Object.entries(CHU).map(([ma, c]) => [ma, { h1: c.dnH1, cho: c.dnCho, ve: c.dnVe, huy: c.dnHuy, loi: c.dnLoi, tieuDe: c.dnTieuDe }])));
 ---
-<Layout lang="vi" tieuDe={CHU.vi.dnTieuDe} moTa={CHU.vi.dnH1} khongDich>
+<Layout lang="vi" tieuDe={CHU.vi.dnTieuDe} moTa={CHU.vi.dnH1} khongDich khongLapChiMuc>
   <script is:inline type="application/json" id="dn-chu" set:html={chu}></script>
   <h1 id="dn-h1">{CHU.vi.dnH1}</h1>
   <p id="thong-bao" class="phu">{CHU.vi.dnCho}</p>

@@ -1,0 +1,10 @@
+---
+// Trang 404 thật: Cloudflare Pages dùng dist/404.html cho đường dẫn không có, nếu không có thì trả trang chủ với mã 200
+// (Google coi đó là trang lỗi mềm). Trang này không lập chỉ mục.
+import Layout from "../layouts/Layout.astro";
+---
+<Layout lang="vi" tieuDe="Không tìm thấy trang · ChoiCo" moTa="Trang này không tồn tại trên ChoiCo." khongDich khongLapChiMuc>
+  <h1>Không tìm thấy trang</h1>
+  <p class="phu">Đường dẫn bạn mở không tồn tại hoặc đã đổi.</p>
+  <p><a href="/">← Về trang chủ ChoiCo</a></p>
+</Layout>
