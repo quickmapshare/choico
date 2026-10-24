@@ -34,8 +34,9 @@ const mucConSang = troChoiMenu ? (MUC_CON.find((m) => troChoiMenu.duong[m.ma] ==
 // Tự chọn ngôn ngữ chỉ ở trang tiếng Việt thường (không phải bản nhúng, không phải trang trung tính)
 const tuChonNgonNgu = lang === "vi" && !nhung && !khongDich;
 // Thẻ Open Graph và Twitter: tiêu đề, mô tả và ảnh hiện ra khi dán link vào mạng xã hội. Ảnh theo ngôn ngữ của trang
-// (public/og/<ngôn ngữ>.png, tạo bằng tools/tao-anh-chia-se.mjs).
-const anhChiaSe = new URL(`/og/${lang}.png`, Astro.site);
+// và loại cờ (cờ tướng và trang chủ: public/og/<ngôn ngữ>.png, cờ vua: public/og/co-vua/<ngôn ngữ>.png;
+// tạo bằng tools/tao-anh-chia-se.mjs).
+const anhChiaSe = new URL(`/og/${menuSang === "co_vua" ? "co-vua/" : ""}${lang}.png`, Astro.site);
 const OG_LOCALE: Record<string, string> = { vi: "vi_VN", en: "en_US", "zh-tw": "zh_TW", ko: "ko_KR", ja: "ja_JP" };
 ---
 <!doctype html>
